@@ -4,11 +4,13 @@ import rospy
 import ros_datacentre_msgs.srv as dc_srv
 from ros_datacentre_msgs.msg import StringPair
 import ros_datacentre.util as dc_util
-from strands_executive_msgs.msg import Task
 from ros_datacentre.message_store import MessageStoreProxy
 from geometry_msgs.msg import Pose, Point, Quaternion
 import StringIO
+
 from strands_executive_msgs import task_utils
+from strands_executive_msgs.msg import Task
+from strands_executive_msgs.srv import AddTask
 # import strands_executive_msgs
 
 
@@ -34,8 +36,18 @@ if __name__ == '__main__':
         task = Task(node_id='WayPoint1')        
         task_utils.add_string_argument(task, 'hello world')
         task_utils.add_object_id_argument(task, pose_id, Pose)
+
         print task
-        
+
+        # now register this with the executor
+        add_task_srv_name = '/task_executor/add_task'
+        rospy.loginfo("Waiting for task_executor service...")
+        rospy.wait_for_service(add_task_srv_name)
+        rospy.loginfo("Done")        
+        add_task_srv = rospy.ServiceProxy(add_task_srv_name, AddTask)
+        print add_task_srv(task)
+
+
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
 
