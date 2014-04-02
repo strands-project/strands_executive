@@ -8,6 +8,8 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation ros_datacentre_msgs geometry_msgs actionlib_msgs actionlib
 )
 
+catkin_python_setup()
+
 ################################################
 ## Declare ROS messages, services and actions ##
 ################################################
