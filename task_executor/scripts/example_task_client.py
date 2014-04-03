@@ -33,7 +33,7 @@ if __name__ == '__main__':
         else:
         	pose_id = meta["_id"]	        
 
-        task = Task(node_id='WayPoint1')        
+        task = Task(node_id='WayPoint1', action='test_task')        
         task_utils.add_string_argument(task, 'hello world')
         task_utils.add_object_id_argument(task, pose_id, Pose)
 

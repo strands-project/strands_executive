@@ -13,6 +13,7 @@ class TestTaskAction(object):
         self.server.start() 
 
     def execute(self, goal):
+        print 'called with goal %s'%goal
         # Do lots of awesome groundbreaking robot stuff here
         self.server.set_succeeded()
 
