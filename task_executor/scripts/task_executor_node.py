@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
+import Queue
 from strands_executive_msgs.msg import Task
 from strands_executive_msgs.srv import AddTask
 
@@ -10,7 +11,7 @@ class TaskExecutor(object):
     def __init__(self):
         rospy.init_node("task_executor")
         self.task_counter = 0
-        self.tasks = []
+        self.tasks = Queue.Queue()
 
 
         # advertise ros services
@@ -24,8 +25,10 @@ class TaskExecutor(object):
         """
         Adds a task into the task execution framework.
         """
-        print req.task
-        return self.task_counter
+        req.task = self.task_counter
+        self.task_counter += 1
+        self.tasks.put(req.task)
+        return req.task
     add_task_ros_srv.type=AddTask
 
 

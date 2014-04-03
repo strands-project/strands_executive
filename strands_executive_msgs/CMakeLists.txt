@@ -5,7 +5,7 @@ project(strands_executive_msgs)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  message_generation ros_datacentre_msgs geometry_msgs actionlib_msgs actionlib
+  message_generation ros_datacentre_msgs geometry_msgs 
 )
 
 catkin_python_setup()
@@ -27,18 +27,11 @@ add_service_files(
   CancelTask.srv
 )
 
-# Generate actions in the 'action' folder
-add_action_files(
-  FILES
-  TestExecution.action
-)
 
 # Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-  geometry_msgs
   ros_datacentre_msgs
-  actionlib_msgs
 )
 
 ###################################

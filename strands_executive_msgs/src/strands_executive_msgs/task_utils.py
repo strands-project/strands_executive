@@ -8,3 +8,4 @@ def add_string_argument(task, string_arg):
 
 def add_object_id_argument(task, oid, msg_type):
 	task.arguments.append(StringPair(first=msg_type._type, second=str(oid)))
+
