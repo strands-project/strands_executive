@@ -1,0 +1,8 @@
+# something to print
+string some_goal_string
+# something to test typing
+geometry_msgs/Pose test_pose
+---
+---
+# feedback message
+float32 percent_complete

@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<package>
+  <name>task_executor</name>
+  <version>0.0.0</version>
+  <description>A package for triggering and monitoring the execution of actionlib-based tasks.</description>
+
+ 
+  <maintainer email="n.a.hawes@cs.bham.ac.uk">Nick Hawes</maintainer>
+
+
+  <!-- One license tag required, multiple allowed, one license per tag -->
+  <!-- Commonly used license strings: -->
+  <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
+  <license>MIT</license>
+
+  <author email="n.a.hawes@cs.bham.ac.uk">Nick Hawes</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>message_generation</build_depend>
+  <build_depend>actionlib</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>strands_executive_msgs</build_depend>
+  <build_depend>ros_datacentre_msgs</build_depend>
+  <build_depend>ros_datacentre</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>actionlib</build_depend>
+  <build_depend>actionlib_msgs</build_depend>
+  <build_depend>topological_navigation</build_depend>
+  <build_depend>rostest</build_depend>
+
+  <run_depend>message_runtime</run_depend>
+  <run_depend>actionlib</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>strands_executive_msgs</run_depend>
+  <run_depend>ros_datacentre_msgs</run_depend>
+  <run_depend>ros_datacentre</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>actionlib</run_depend>
+  <run_depend>actionlib_msgs</run_depend>
+  <run_depend>topological_navigation</run_depend>
+  
+
+</package>

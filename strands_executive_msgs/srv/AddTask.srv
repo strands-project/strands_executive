@@ -1,0 +1,4 @@
+# The task to be added to the executive system
+Task task
+---
+uint64 task_id

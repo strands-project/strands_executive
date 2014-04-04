@@ -1,0 +1,7 @@
+# Set to true to start execution, or false to pause execution
+bool status
+---
+# The state execution was in previously
+bool previous_status
+
+

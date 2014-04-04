@@ -1,0 +1,5 @@
+# The id of the task to be cancelled
+uint64 task_id
+---
+bool cancelled
+
