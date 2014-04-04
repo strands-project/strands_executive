@@ -16,6 +16,7 @@ from geometry_msgs.msg import Pose, Point, Quaternion
 from strands_executive_msgs import task_utils
 from strands_executive_msgs.msg import Task
 from strands_executive_msgs.srv import AddTask, SetExecutionStatus
+from topological_navigation.msg import GotoNodeAction
 
 
 class FakeActionServer(object):
@@ -32,6 +33,7 @@ class FakeActionServer(object):
         rospy.sleep(self.action_sleep)
 
         task_description = self.master.task_descriptions.pop(0)
+        self.tester.assertEquals(task_description[0], self.master.node_i)
         self.tester.assertEquals(task_description[1], self.action_string)
         self.tester.assertEquals(task_description[2], goal.some_goal_string)
         self.tester.assertEquals(task_description[3], goal.test_pose)
@@ -43,8 +45,18 @@ class FIFOTester(object):
     def __init__(self, action_types, action_prefix, task_descriptions, action_sleep, tester):
         rospy.init_node(NAME)
         self.tester = tester
+        self.action_sleep = action_sleep
+        self.node_id = ''
         self.task_descriptions = task_descriptions
         self.action_servers = [FakeActionServer(action_prefix + str(n), action_sleep, self, tester) for n in range(action_types)]
+        self.nav_server = actionlib.SimpleActionServer('topological_navigation', GotoNodeAction, execute_cb = self.nav_callback, auto_start = False)
+        self.nav_server.start() 
+
+    def nav_callback(self, goal):
+        rospy.sleep(action_sleep)        
+        self.node_id = goal.target
+        print 'updated position to %s' % self.node_id
+        self.nav_server.set_succeeded()
 
     def wait_for_completion(self, wait_duration):
         # give everything time to complete
