@@ -30,7 +30,6 @@ class AbstractTaskExecutor(object):
         pass
 
 
-
     def __init__(self):
         self.task_counter = 1
         self.msg_store = MessageStoreProxy() 
@@ -69,7 +68,7 @@ class AbstractTaskExecutor(object):
             rospy.logwarn('Provided task had no node_id or action %s' % self.active_task)
             self.active_task = None
             self.active_task_id = Task.NO_TASK
-            
+
 
     def start_task_action(self):
         (action_string, goal_string) = self.get_task_types(self.active_task.action)
@@ -93,7 +92,12 @@ class AbstractTaskExecutor(object):
     def navigation_complete_cb(self, goal_status, result):
         # todo: check goal status to see if we really go there
         # now do the action
-        self.start_task_action()
+        if self.active_task.action != '':                    
+            self.start_task_action()
+        else:
+            self.task_complete(self.active_task)
+            self.active_task = None
+            self.active_task_id = Task.NO_TASK
 
 
     def task_execution_complete_cb(self, goal_status, result):
