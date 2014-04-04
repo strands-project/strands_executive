@@ -16,14 +16,8 @@ class FIFOTaskExecutor(AbstractTaskExecutor):
 
 
     def add_task(self, task):
-        print task
+        """ Called with a new task for the executor """
         self.tasks.put(task)
-
-    def start_execution(self):
-        pass
-
-    def pause_execution(self):
-        pass
 
     def run_executor(self):
         r = rospy.Rate(1) # 1hz
@@ -31,7 +25,7 @@ class FIFOTaskExecutor(AbstractTaskExecutor):
         while not rospy.is_shutdown():
 
             if self.executing:
-                if self.active_task == Task.NO_TASK:
+                if self.active_task_id == Task.NO_TASK:
                     print "need a task"
                     try:
                         task = self.tasks.get(False)
@@ -39,7 +33,7 @@ class FIFOTaskExecutor(AbstractTaskExecutor):
                     except Empty, e:
                         pass
                 else:
-                    print "executing task %s" % self.active_task
+                    print "executing task %s" % self.active_task_id
                 
             r.sleep()
         

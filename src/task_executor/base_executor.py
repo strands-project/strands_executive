@@ -10,11 +10,33 @@ from ros_datacentre.message_store import MessageStoreProxy
 
 
 class AbstractTaskExecutor(object):
+
+    # These can be implemented by sub classes to provide hooks into the execution system
+
+    def add_task(self, task):
+        """ Called with a new task for the executor """
+        self.tasks.put(task)
+
+    def start_execution(self):
+        """ Called when overall execution should  (re)start """
+        pass
+
+    def pause_execution(self):
+        """ Called when overall execution should pause """
+        pass
+
+    def task_complete(self, task):
+        """ Called when the given task has completed execution """
+        pass
+
+
+
     def __init__(self):
         self.task_counter = 1
         self.msg_store = MessageStoreProxy() 
         self.executing = False
-        self.active_task = Task.NO_TASK
+        self.active_task = None
+        self.active_task_id = Task.NO_TASK
 
         # advertise ros services
 
@@ -47,9 +69,17 @@ class AbstractTaskExecutor(object):
         argument_list = self.get_arguments(task.arguments)
 
         goal = goal_clz(*argument_list) 
-        self.active_task = task.task_id       
-        client.send_goal(goal)
-        client.wait_for_result(rospy.Duration.from_sec(5.0))
+
+        self.active_task = task
+        self.active_task_id = task.task_id               
+
+        client.send_goal(goal, self.task_execution_complete_cb)
+        
+    def task_execution_complete_cb(self, goal_status, result):
+        self.task_complete(self.active_task)
+        self.active_task = None
+        self.active_task_id = Task.NO_TASK
+
 
     def add_task_ros_srv(self, req):
         """
