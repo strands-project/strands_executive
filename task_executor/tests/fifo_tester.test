@@ -1,7 +1,6 @@
 <launch>
 
   <include file="$(find ros_datacentre)/launch/datacentre.launch" />
-
   <node pkg="task_executor" type="fifo_task_executor.py" name="fifo_task_executor" />
   <test test-name="fifo_tester" pkg="task_executor" type="fifo_tester.py" />
 </launch>

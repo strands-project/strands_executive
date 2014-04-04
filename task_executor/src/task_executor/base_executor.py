@@ -43,7 +43,7 @@ class AbstractTaskExecutor(object):
         for attr in dir(self):
             if attr.endswith("_ros_srv"):
                 service=getattr(self, attr)                
-                rospy.Service(rospy.get_name() + "/" + attr[:-8], service.type, service)
+                rospy.Service("/task_executor/" + attr[:-8], service.type, service)
 
 
     def get_task_types(self, action_name):
