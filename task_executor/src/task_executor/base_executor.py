@@ -7,7 +7,7 @@ import ros_datacentre.util as dc_util
 import actionlib
 from geometry_msgs.msg import Pose, Point, Quaternion
 from ros_datacentre.message_store import MessageStoreProxy
-
+from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
 
 class AbstractTaskExecutor(object):
 
@@ -37,9 +37,9 @@ class AbstractTaskExecutor(object):
         self.executing = False
         self.active_task = None
         self.active_task_id = Task.NO_TASK
+        self.nav_client = actionlib.SimpleActionClient('topological_navigation', GotoNodeAction)
 
         # advertise ros services
-
         for attr in dir(self):
             if attr.endswith("_ros_srv"):
                 service=getattr(self, attr)                
@@ -59,22 +59,38 @@ class AbstractTaskExecutor(object):
 
 
     def execute_task(self, task):
-        (action_string, goal_string) = self.get_task_types(task.action)
+        self.active_task = task
+        self.active_task_id = task.task_id               
+        if self.active_task.node_id == '':
+            self.start_task_action()
+        else:
+            self.start_task_navigation()
+
+    def start_task_action(self):
+        (action_string, goal_string) = self.get_task_types(self.active_task.action)
         action_clz = dc_util.load_class(dc_util.type_to_class_string(action_string))
         goal_clz = dc_util.load_class(dc_util.type_to_class_string(goal_string))
 
-        client = actionlib.SimpleActionClient(task.action, action_clz)
+        client = actionlib.SimpleActionClient(self.active_task.action, action_clz)
         client.wait_for_server()
 
-        argument_list = self.get_arguments(task.arguments)
+        argument_list = self.get_arguments(self.active_task.arguments)
 
         goal = goal_clz(*argument_list) 
 
-        self.active_task = task
-        self.active_task_id = task.task_id               
-
         client.send_goal(goal, self.task_execution_complete_cb)
         
+    def start_task_navigation(self):
+        nav_goal = GotoNodeGoal(target = self.active_task.node_id)
+        print "navigating to %s" % nav_goal
+        self.nav_client.send_goal(nav_goal, self.navigation_complete_cb)
+
+    def navigation_complete_cb(self, goal_status, result):
+        # todo: check goal status to see if we really go there
+        # now do the action
+        self.start_task_action()
+
+
     def task_execution_complete_cb(self, goal_status, result):
         self.task_complete(self.active_task)
         self.active_task = None
