@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import rospy
-import Queue
 from strands_executive_msgs.msg import Task
 from strands_executive_msgs.srv import AddTask
 import ros_datacentre.util as dc_util
@@ -10,18 +9,18 @@ from geometry_msgs.msg import Pose, Point, Quaternion
 from ros_datacentre.message_store import MessageStoreProxy
 
 
-class TaskExecutor(object):
+class AbstractTaskExecutor(object):
     def __init__(self):
-        rospy.init_node("task_executor")
         self.task_counter = 0
-        self.tasks = Queue.Queue()
         self.msg_store = MessageStoreProxy() 
 
         # advertise ros services
+
         for attr in dir(self):
             if attr.endswith("_ros_srv"):
-                service=getattr(self, attr)
+                service=getattr(self, attr)                
                 rospy.Service(rospy.get_name() + "/" + attr[:-8], service.type, service)
+
 
     def get_task_types(self, action_name):
         """ 
@@ -42,7 +41,8 @@ class TaskExecutor(object):
         """
         req.task.task_id = self.task_counter
         self.task_counter += 1
-        self.tasks.put(req.task)
+
+        self.add_task(req.task)        
 
         (action_string, goal_string) = self.get_task_types(req.task.action)
         action_clz = dc_util.load_class(dc_util.type_to_class_string(action_string))
@@ -78,6 +78,3 @@ class TaskExecutor(object):
 
 
 
-if __name__ == '__main__':
-    executor = TaskExecutor()    
-    rospy.spin()
