@@ -61,10 +61,15 @@ class AbstractTaskExecutor(object):
     def execute_task(self, task):
         self.active_task = task
         self.active_task_id = task.task_id               
-        if self.active_task.node_id == '':
+        if self.active_task.node_id != '':                    
+            self.start_task_navigation()
+        elif self.active_task.action != '':                    
             self.start_task_action()
         else:
-            self.start_task_navigation()
+            rospy.logwarn('Provided task had no node_id or action %s' % self.active_task)
+            self.active_task = None
+            self.active_task_id = Task.NO_TASK
+            
 
     def start_task_action(self):
         (action_string, goal_string) = self.get_task_types(self.active_task.action)
