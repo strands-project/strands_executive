@@ -11,6 +11,10 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs actionlib
 )
 
+if (CATKIN_ENABLE_TESTING)
+  find_package(catkin REQUIRED COMPONENTS rostest)
+endif()
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -155,6 +159,11 @@ include_directories(
 #############
 ## Testing ##
 #############
+
+if (CATKIN_ENABLE_TESTING)
+  add_rostest(tests/fifo_tester.test)
+endif()
+
 
 ## Add gtest based cpp test target and link libraries
 # catkin_add_gtest(${PROJECT_NAME}-test test/test_task_executor.cpp)
