@@ -1,4 +1,7 @@
 
+# Constant to represent no task 
+uint64 NO_TASK=0
+
 # This holds the id of the task. This will be assigned by the framework, and doesn't need to be provided.
 
 uint64 task_id

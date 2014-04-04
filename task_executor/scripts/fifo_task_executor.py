@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
-import Queue
+from Queue import Queue, Empty
 from strands_executive_msgs.msg import Task
 from task_executor.base_executor import AbstractTaskExecutor
 
@@ -12,14 +12,38 @@ class FIFOTaskExecutor(AbstractTaskExecutor):
         rospy.init_node("task_executor")
         # init superclasses
         super( FIFOTaskExecutor, self ).__init__()
-        self.tasks = Queue.Queue()
+        self.tasks = Queue()
 
 
     def add_task(self, task):
         print task
         self.tasks.put(task)
 
+    def start_execution(self):
+        pass
+
+    def pause_execution(self):
+        pass
+
+    def run_executor(self):
+        r = rospy.Rate(1) # 1hz
+        
+        while not rospy.is_shutdown():
+
+            if self.executing:
+                if self.active_task == Task.NO_TASK:
+                    print "need a task"
+                    try:
+                        task = self.tasks.get(False)
+                        self.execute_task(task)
+                    except Empty, e:
+                        pass
+                else:
+                    print "executing task %s" % self.active_task
+                
+            r.sleep()
+        
 
 if __name__ == '__main__':
     executor = FIFOTaskExecutor()    
-    rospy.spin()
+    executor.run_executor()    

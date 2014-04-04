@@ -37,5 +37,7 @@
   <run_depend>actionlib</run_depend>
   <run_depend>actionlib_msgs</run_depend>
 
+  <test_depend>topological_navigation</test_depend>
+
 
 </package>

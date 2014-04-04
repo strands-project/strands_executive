@@ -25,6 +25,8 @@ add_service_files(
   FILES
   AddTask.srv
   CancelTask.srv
+  SetExecutionStatus.srv 
+  GetExecutionStatus.srv
 )
 
 
