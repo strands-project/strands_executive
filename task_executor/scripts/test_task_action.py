@@ -14,7 +14,8 @@ class TestTaskAction(object):
 
     def execute(self, goal):
         print 'called with goal %s'%goal
-        # Do lots of awesome groundbreaking robot stuff here
+        rospy.sleep(5)
+        print 'done here'
         self.server.set_succeeded()
 
 
