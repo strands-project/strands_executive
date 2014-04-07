@@ -36,13 +36,16 @@ If your actionlib goal type needs arguments, you must then add them to the task 
 string some_goal_string
 # something to test typing
 geometry_msgs/Pose test_pose
+# something for numbers
+int32 an_int
+float32 a_float
 ---
 ---
 # feedback message
 float32 percent_complete
 ```
 
-You need to supply a string argument followed by a pose. To add the string, do the following
+You need to supply a string argument followed by a pose, then an int then a float. To add the string, do the following
 
 ```python
 from strands_executive_msgs import task_utils
@@ -55,6 +58,13 @@ For the pose, this must be added to the ros_datacentre message store and then th
 p = Pose()
 object_id = msg_store.insert(p)
 task_utils.add_object_id_argument(task, object_id, Pose)
+```
+
+Ints and floats can be added as follows
+
+```python
+task_utils.add_int_argument(task, 24)
+task_utils.add_float_argument(task, 63.678)
 ```
 
 Finally the task can be registered with the task executor and started:

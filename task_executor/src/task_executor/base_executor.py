@@ -80,6 +80,9 @@ class AbstractTaskExecutor(object):
 
         argument_list = self.get_arguments(self.active_task.arguments)
 
+        # print "ARGS:"
+        # print argument_list
+
         goal = goal_clz(*argument_list) 
 
         client.send_goal(goal, self.task_execution_complete_cb)
@@ -138,6 +141,10 @@ class AbstractTaskExecutor(object):
     def instantiate_from_string_pair(self, string_pair):
         if len(string_pair.first) == 0:
             return string_pair.second
+        elif string_pair.first == Task.INT_TYPE:
+            return int(string_pair.second)
+        elif string_pair.first == Task.FLOAT_TYPE:
+            return float(string_pair.second)     
         else:
             msg = self.msg_store.query_id(string_pair.second, string_pair.first)[0]
             print msg
