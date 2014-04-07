@@ -6,12 +6,26 @@ from strands_executive_msgs.msg import Task
 from strands_executive_msgs.srv import AddTask, SetExecutionStatus
 from std_msgs.msg import String
 from random import shuffle
+from ros_datacentre.message_store import MessageStoreProxy
+from topological_utils.msg import node
+
+def load_nodes():
+    msg_store = MessageStoreProxy()
+    query_meta = {}
+    query_meta["pointset"] = rospy.get_param('topological_map_name')
+    nodes = msg_store.query(node._type, {}, query_meta)
+    return [n for [n, meta] in nodes]
 
 
 class PatrolScheduler(object):
-
+	""" Repeatedly ends a randomised list of task to the task executor. These don't have tasks associated with them. If you want to add tasks, see fifo_tester.py for an example."""
 	def __init__(self):
-		self.waypoints = ['WayPoint1', 'WayPoint2', 'WayPoint3']
+
+		# load waypoint from datacentre
+		nodes = load_nodes()
+		# and extract the names for later
+		self.waypoints = [n.name for n in nodes]
+		rospy.loginfo('Patrolling the following nodes: %s' % self.waypoints)
 		self.current_waypoint = ''
 		self.add_task_srv = None
 		rospy.Subscriber("/current_node", String, self.current_node_cb)
