@@ -11,6 +11,7 @@ Most task instances will contain both the name of a [topological map node](https
 To create a task, first create an instance of the `Task` message type. Examples are given in Python, as the helper functions currently only exist for Python, but C++ is also possible (and C++ helpers will be added soon).
 
 ```python
+from strands_executive_msgs.msg import Task
 task = Task()
 ```
 
@@ -41,5 +42,39 @@ geometry_msgs/Pose test_pose
 float32 percent_complete
 ```
 
-You need to supply a string argument followed by a pose. 
+You need to supply a string argument followed by a pose. To add the string, do the following
+
+```python
+from strands_executive_msgs import task_utils
+task_utils.add_string_argument(task, 'my string argumment goes here')
+```
+
+For the pose, this must be added to the ros_datacentre message store and then the `ObjectID` of the pose is used to communicate its location. This is done as follows
+
+```python
+p = Pose()
+object_id = msg_store.insert(p)
+task_utils.add_object_id_argument(task, object_id, Pose)
+```
+
+Finally the task can be registered with the task executor and started:
+
+```python
+add_task_srv_name = '/task_executor/add_task'
+set_exe_stat_srv_name = '/task_executor/set_execution_status'
+rospy.wait_for_service(add_task_srv_name)
+rospy.wait_for_service(set_exe_stat_srv_name)
+add_task_srv = rospy.ServiceProxy(add_task_srv_name, AddTask)
+set_execution_status = rospy.ServiceProxy(set_exe_stat_srv_name, SetExecutionStatus)
+    
+try:
+	# add task to the execution framework
+    task_id = add_task_srv(task)
+    # make sure execution is running -- this only needs to be done onece      
+    set_execution_status(True)
+except rospy.ServiceException, e: 
+	print "Service call failed: %s"%e		
+```
+
+
 
