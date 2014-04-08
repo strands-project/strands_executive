@@ -7,13 +7,13 @@ from strands_executive_msgs.srv import AddTask, SetExecutionStatus
 from std_msgs.msg import String
 from random import shuffle
 from ros_datacentre.message_store import MessageStoreProxy
-from topological_utils.msg import node
+from strands_navigation_msgs.msg import TopologicalNode
 
 def load_nodes():
     msg_store = MessageStoreProxy()
     query_meta = {}
     query_meta["pointset"] = rospy.get_param('topological_map_name')
-    nodes = msg_store.query(node._type, {}, query_meta)
+    nodes = msg_store.query(TopologicalNode._type, {}, query_meta)
     return [n for [n, meta] in nodes]
 
 
