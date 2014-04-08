@@ -38,6 +38,8 @@ if __name__ == '__main__':
         task = Task(node_id='WayPoint1', action='test_task')        
         task_utils.add_string_argument(task, 'hello world')
         task_utils.add_object_id_argument(task, pose_id, Pose)
+        task_utils.add_int_argument(task, 24)
+        task_utils.add_float_argument(task, 63.678)
 
         print task
 
