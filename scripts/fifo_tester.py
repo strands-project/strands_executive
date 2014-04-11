@@ -84,7 +84,7 @@ class TestEntry(unittest.TestCase):
             task_descriptions += [[waypoint_prefix + str(randrange(waypoints)), 
                 action_prefix + str(randrange(action_types)),
                 string,
-                pose]]
+                pose, n, n + 0.1]]
         assert test_tasks == len(task_descriptions)
 
         executor = FIFOTester(action_types, action_prefix, task_descriptions, action_sleep, self)    
@@ -107,6 +107,8 @@ class TestEntry(unittest.TestCase):
                 # add some dummy arguments
                 task_utils.add_string_argument(task, task_description[2])
                 task_utils.add_object_id_argument(task, msg_store.insert(task_description[3]), Pose)
+                task_utils.add_int_argument(task, task_description[4])
+                task_utils.add_float_argument(task, task_description[5])
                 task_id = add_task_srv(task)
                 print task_id
                     
