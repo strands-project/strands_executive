@@ -67,6 +67,12 @@ find_package(catkin REQUIRED COMPONENTS)
 #   std_msgs  # Or other packages containing msgs
 # )
 
+FILE(GLOB scipopt_libs "${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite/scip-3.0.2/lib/*.a")
+MESSAGE("providing scipopt_libs from " ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite/scip-3.0.2/lib/)
+MESSAGE("scipopt_libs " ${scipopt_libs})
+set(scipopt_external_libs "gmp readline zlib m")
+
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -77,11 +83,13 @@ find_package(catkin REQUIRED COMPONENTS)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
- # INCLUDE_DIRS include
- LIBRARIES scipoptsuite
-#  CATKIN_DEPENDS gmp readline zlib
-#  DEPENDS system_lib
+ INCLUDE_DIRS ${CATKIN_DEVEL_PREFIX}/include/scipoptsuite
+ LIBRARIES ${scipopt_libs} 
+ # CATKIN_DEPENDS 
+ # DEPENDS gmp readline zlib m 
 )
+
+
 
 ###########
 ## Build ##
@@ -94,7 +102,7 @@ ExternalProject_Add(
    PREFIX scipoptsuite
    URL http://scip.zib.de/download/release/scipoptsuite-3.0.2.tgz
    UPDATE_COMMAND ""
-   PATCH_COMMAND patch -R -p0 < ${CMAKE_CURRENT_SOURCE_DIR}/scipoptsuite-3.0.2-darwin-clang.diff
+   PATCH_COMMAND patch -p0 < ${CMAKE_CURRENT_SOURCE_DIR}/scipoptsuite-3.0.2-darwin-clang.diff
    CONFIGURE_COMMAND ""
    BUILD_COMMAND make -C ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite
    INSTALL_COMMAND make -C ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite/scip-3.0.2 INSTALLDIR=${CATKIN_DEVEL_PREFIX} installlibs
@@ -161,7 +169,7 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-# add_executable(scipoptsuite_node src/scipoptsuite_node.cpp)
+# add_executable(dummy_target src/dummy_target.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
