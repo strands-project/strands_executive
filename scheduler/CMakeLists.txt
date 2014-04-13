@@ -112,8 +112,9 @@ add_definitions(-std=c++0x -DNDEBUG -DWITH_SCIPDEF -DROUNDING_FE -DNPARASCIP -DW
 
 # -mtune=native -fomit-frame-pointer -m64
 
-## Declare a cpp executable
-add_executable(scheduler_exe src/main.cpp src/main.cpp src/task.cpp src/scheduler.cpp src/distWrapper.cpp src/scipUser.cpp)
+add_library(scheduler src/task.cpp src/scheduler.cpp src/distWrapper.cpp src/scipUser.cpp)
+
+add_executable(scheduler_exe src/main.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -123,6 +124,10 @@ link_directories(/usr/local/lib)
 
 # Specify libraries to link a library or executable target against
 target_link_libraries(scheduler_exe
+  scheduler
+)
+
+target_link_libraries(scheduler
   ${catkin_LIBRARIES}
   gmp readline z m
 )

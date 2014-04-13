@@ -16,5 +16,11 @@ string node_id
 # The action server to be called to trigger the task
 string action
 
+# The task cannot start before this time
+time start_after
+
+# The task be completed after this time
+time end_by
+
 # Additional arguments to the action server. These are interpreted in two ways, either "","string" is interpreted as a string or "ros message type", "datacentre id" is a reference to the ObjectID of an entry in the datacentre obtained from the result of MongoInsertMsg.srv. 
 ros_datacentre_msgs/StringPair[] arguments
