@@ -67,7 +67,8 @@ find_package(catkin REQUIRED COMPONENTS)
 #   std_msgs  # Or other packages containing msgs
 # )
 
-FILE(GLOB scipopt_libs "${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext/scip-3.0.2/lib/*.a")
+# FILE(GLOB scipopt_libs "${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext/scip-3.0.2/lib/*.a")
+SET(scipopt_libs ${CATKIN_DEVEL_PREFIX}/lib/libscip.a ${CATKIN_DEVEL_PREFIX}/lib/libobjscip.a ${CATKIN_DEVEL_PREFIX}/lib/liblpispx.a ${CATKIN_DEVEL_PREFIX}/lib/libnlpi.cppad.a ${CATKIN_DEVEL_PREFIX}/lib/libsoplex.a ${CATKIN_DEVEL_PREFIX}/lib/libzimpl.a)
 MESSAGE("providing scipopt_libs from " ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext/scip-3.0.2/lib/)
 MESSAGE("scipopt_libs " ${scipopt_libs})
 set(scipopt_external_libs "gmp readline zlib m")
@@ -88,7 +89,7 @@ ExternalProject_Add(
    PATCH_COMMAND patch -p0 < ${CMAKE_CURRENT_SOURCE_DIR}/scipoptsuite-3.0.2-darwin-clang.diff
    CONFIGURE_COMMAND ""
    BUILD_COMMAND make -C ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext
-   INSTALL_COMMAND make -C ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext/scip-3.0.2 INSTALLDIR=${CATKIN_DEVEL_PREFIX} installlibs
+   INSTALL_COMMAND make -C ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext/scip-3.0.2 INSTALLDIR=${CATKIN_DEVEL_PREFIX} installlibs COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/create-lib-links.bash ${CATKIN_DEVEL_PREFIX}/lib
 )
 MESSAGE( STATUS "CMAKE_BINARY_DIR:         " ${CATKIN_PACKAGE_LIB_DESTINATION} )
 MESSAGE( STATUS "CMAKE_BINARY_DIR:         " ${CATKIN_PACKAGE_INCLUDE_DESTINATION} )
@@ -136,34 +137,16 @@ ExternalProject_Add_Step(scipoptsuite_ext install_headers
    DEPENDERS install
 )
 
-# need explicit unpack inorder to apply patch on OSX
-ExternalProject_Add_Step(scipoptsuite_ext ln_scip_lib
-   COMMAND ln -fs libscip*.a libscip.a WORKING_DIRECTORY ${CATKIN_DEVEL_PREFIX}/lib
-   DEPENDERS install
-   DEPENDEES done
-)
-
-ExternalProject_Add_Step(scipoptsuite_ext ln_objscip_lib
-   COMMAND ln -fs libobjscip*.a libobjscip.a WORKING_DIRECTORY ${CATKIN_DEVEL_PREFIX}/lib
-   DEPENDERS install
-   DEPENDEES done
-)
-
-ExternalProject_Add_Step(scipoptsuite_ext ln_lpispx_lib
-   COMMAND ln -fs liblpispx*.a liblpispx.a WORKING_DIRECTORY ${CATKIN_DEVEL_PREFIX}/lib
-   DEPENDERS install
-   DEPENDEES done
-)
-
-ExternalProject_Add_Step(scipoptsuite_ext ln_nlpi_lib
-   COMMAND ln -fs libnlpi.cppad*.a libnlpi.cppad.a WORKING_DIRECTORY ${CATKIN_DEVEL_PREFIX}/lib
-   DEPENDERS install
-   DEPENDEES done
-)
+# # need explicit unpack inorder to apply patch on OSX
+# ExternalProject_Add_Step(scipoptsuite_ext ln_scip_lib
+#    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/create-lib-links.bash WORKING_DIRECTORY ${CATKIN_DEVEL_PREFIX}/lib
+#    DEPENDERS install
+#    DEPENDEES complete
+# )
 
 
+# need to make this in advance to stop catkin failing
 set(HEADER_DIRECTORY ${CATKIN_DEVEL_PREFIX}/include/scipoptsuite)
-
 file(MAKE_DIRECTORY ${HEADER_DIRECTORY})
 
 
