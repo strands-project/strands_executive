@@ -5,7 +5,9 @@ project(scheduler)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  scipoptsuite strands_executive_msgs
+	  roscpp 
+	  scipoptsuite 
+	  strands_executive_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -109,28 +111,30 @@ include_directories(
 
 
 add_definitions(-std=c++0x -DNDEBUG -DWITH_SCIPDEF -DROUNDING_FE -DNPARASCIP -DWITH_ZLIB -DWITH_GMP -DWITH_READLINE -DWITH_ZIMPL -fomit-frame-pointer  -mtune=native -m64)
-
-# -mtune=native -fomit-frame-pointer -m64
-
 add_library(scheduler src/task.cpp src/scheduler.cpp src/distWrapper.cpp src/scipUser.cpp)
-
-add_executable(scheduler_exe src/main.cpp)
-
-## Add cmake target dependencies of the executable/library
-## as an example, message headers may need to be generated before nodes
-add_dependencies(scheduler_exe scipoptsuite_ext strands_executive_msgs_generate_messages_cpp)
-
-link_directories(/usr/local/lib)
-
-# Specify libraries to link a library or executable target against
-target_link_libraries(scheduler_exe
-  scheduler
-)
-
+add_dependencies(scheduler scipoptsuite_ext)
 target_link_libraries(scheduler
   ${catkin_LIBRARIES}
   gmp readline z m
 )
+
+add_executable(scheduler_exe src/main.cpp)
+target_link_libraries(scheduler_exe
+  scheduler
+)
+
+add_executable(scheduler_node src/scheduler_node.cpp)
+add_dependencies(scheduler_node strands_executive_msgs_generate_messages_cpp)
+target_link_libraries(scheduler_node
+  scheduler
+  ${catkin_LIBRARIES}
+)
+
+link_directories(/usr/local/lib)
+
+# Specify libraries to link a library or executable target against
+
+
 
 #############
 ## Install ##
@@ -147,7 +151,7 @@ target_link_libraries(scheduler
 # )
 
 # Mark executables and/or libraries for installation
-install(TARGETS scheduler_exe 
+install(TARGETS scheduler_exe scheduler_node 
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

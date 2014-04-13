@@ -3,6 +3,7 @@
 import rospy
 from Queue import Queue, Empty
 from strands_executive_msgs.msg import Task
+from strands_executive_msgs.srv import GetSchedule
 from task_executor.base_executor import AbstractTaskExecutor
 from threading import Thread
 from task_executor.execution_schedule import ExecutionSchedule
@@ -16,6 +17,11 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         # init superclasses
         super( ScheduledTaskExecutor, self ).__init__()
 
+        # service for scheduler
+        schedule_srv_name = 'get_schedule'
+        rospy.wait_for_service(schedule_srv_name)
+        self.schedule_srv = rospy.ServiceProxy(schedule_srv_name, GetSchedule)
+
         # defaults for setting the ends of tasks
         self.default_duration = rospy.Duration.from_sec(60 * 60 * 4)
         
@@ -25,11 +31,18 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         # data structure that manages tasks
         self.execution_schedule = ExecutionSchedule()
 
-        self.scheduling_thread = Thread(target=self.schedule_tasks)
-        self.scheduling_thread.start()
-
+        self.scheduling_thread = Thread(target=self.schedule_tasks)    
         self.execution_thread = Thread(target=self.execute_tasks)
-        self.execution_thread.start()
+
+        self.running = False
+
+    def start_execution(self):
+        """ Called when overall execution should  (re)start """
+        if not self.running:
+            self.scheduling_thread.start()    
+            self.execution_thread.start()
+            self.running = True
+
 
     def get_default_end_time(self, start_time):
         return start_time + self.default_duration
@@ -50,7 +63,8 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         self.unscheduled_tasks.put(task)
 
     def call_scheduler(self, tasks):
-        
+        resp = self.schedule_srv(tasks)
+        return (resp.task_order, resp.execution_times)
 
     def schedule_tasks(self):
         loopSecs = 5

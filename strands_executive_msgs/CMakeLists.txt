@@ -27,6 +27,7 @@ add_service_files(
   CancelTask.srv
   SetExecutionStatus.srv 
   GetExecutionStatus.srv
+  GetSchedule.srv
 )
 
 
