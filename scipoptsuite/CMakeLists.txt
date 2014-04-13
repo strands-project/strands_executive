@@ -67,10 +67,80 @@ find_package(catkin REQUIRED COMPONENTS)
 #   std_msgs  # Or other packages containing msgs
 # )
 
-FILE(GLOB scipopt_libs "${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite/scip-3.0.2/lib/*.a")
-MESSAGE("providing scipopt_libs from " ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite/scip-3.0.2/lib/)
+FILE(GLOB scipopt_libs "${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext/scip-3.0.2/lib/*.a")
+MESSAGE("providing scipopt_libs from " ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext/scip-3.0.2/lib/)
 MESSAGE("scipopt_libs " ${scipopt_libs})
 set(scipopt_external_libs "gmp readline zlib m")
+
+
+
+###########
+## Build ##
+###########
+
+include(ExternalProject)
+
+ExternalProject_Add(
+   scipoptsuite_ext   
+   PREFIX scipoptsuite
+   URL http://scip.zib.de/download/release/scipoptsuite-3.0.2.tgz
+   UPDATE_COMMAND ""
+   PATCH_COMMAND patch -p0 < ${CMAKE_CURRENT_SOURCE_DIR}/scipoptsuite-3.0.2-darwin-clang.diff
+   CONFIGURE_COMMAND ""
+   BUILD_COMMAND make -C ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext
+   INSTALL_COMMAND make -C ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext/scip-3.0.2 INSTALLDIR=${CATKIN_DEVEL_PREFIX} installlibs
+)
+MESSAGE( STATUS "CMAKE_BINARY_DIR:         " ${CATKIN_PACKAGE_LIB_DESTINATION} )
+MESSAGE( STATUS "CMAKE_BINARY_DIR:         " ${CATKIN_PACKAGE_INCLUDE_DESTINATION} )
+MESSAGE( STATUS "CMAKE_ROOT: " ${CMAKE_ROOT} )
+MESSAGE( STATUS "CMAKE_ROOT: " ${CATKIN_INSTALL_PREFIX} )
+
+# need explicit unpack inorder to apply patch on OSX
+ExternalProject_Add_Step(scipoptsuite_ext extract_scip
+   COMMAND ${CMAKE_COMMAND} -E tar zxvf scip-3.0.2.tgz WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext
+   DEPENDEES download
+   DEPENDERS patch
+)
+
+# need explicit unpack inorder to apply patch on OSX
+ExternalProject_Add_Step(scipoptsuite_ext extract_gcg
+   COMMAND ${CMAKE_COMMAND} -E tar zxvf gcg-1.1.1.tgz WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext
+   DEPENDEES download
+   DEPENDERS patch
+)
+
+# need explicit unpack inorder to apply patch on OSX
+ExternalProject_Add_Step(scipoptsuite_ext extract_ug
+   COMMAND ${CMAKE_COMMAND} -E tar zxvf ug-0.7.2.tgz WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext
+   DEPENDEES download
+   DEPENDERS patch
+)
+
+# need explicit unpack inorder to apply patch on OSX
+ExternalProject_Add_Step(scipoptsuite_ext extract_soplex
+   COMMAND ${CMAKE_COMMAND} -E tar zxvf soplex-1.7.2.tgz WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext
+   DEPENDEES download
+   DEPENDERS patch
+)
+
+# need explicit unpack inorder to apply patch on OSX
+ExternalProject_Add_Step(scipoptsuite_ext extract_zimpl
+   COMMAND ${CMAKE_COMMAND} -E tar zxvf zimpl-3.3.1.tgz WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext
+   DEPENDEES download
+   DEPENDERS patch
+)
+
+
+
+ExternalProject_Add_Step(scipoptsuite_ext install_headers
+   COMMAND make -C ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext/scip-3.0.2 INSTALLDIR=${CATKIN_DEVEL_PREFIX}/include INCLUDEDIR=scipoptsuite installheaders 
+   DEPENDEES build
+   DEPENDERS install
+)
+
+set(HEADER_DIRECTORY ${CATKIN_DEVEL_PREFIX}/include/scipoptsuite)
+
+file(MAKE_DIRECTORY ${HEADER_DIRECTORY})
 
 
 ###################################
@@ -83,77 +153,13 @@ set(scipopt_external_libs "gmp readline zlib m")
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
- INCLUDE_DIRS ${CATKIN_DEVEL_PREFIX}/include/scipoptsuite
+ INCLUDE_DIRS ${HEADER_DIRECTORY}
  LIBRARIES ${scipopt_libs} 
  # CATKIN_DEPENDS 
  # DEPENDS gmp readline zlib m 
+ EXPORTED_TARGETS scipoptsuite_ext
 )
 
-
-
-###########
-## Build ##
-###########
-
-include(ExternalProject)
-
-ExternalProject_Add(
-   scipoptsuite   
-   PREFIX scipoptsuite
-   URL http://scip.zib.de/download/release/scipoptsuite-3.0.2.tgz
-   UPDATE_COMMAND ""
-   PATCH_COMMAND patch -p0 < ${CMAKE_CURRENT_SOURCE_DIR}/scipoptsuite-3.0.2-darwin-clang.diff
-   CONFIGURE_COMMAND ""
-   BUILD_COMMAND make -C ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite
-   INSTALL_COMMAND make -C ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite/scip-3.0.2 INSTALLDIR=${CATKIN_DEVEL_PREFIX} installlibs
-)
-MESSAGE( STATUS "CMAKE_BINARY_DIR:         " ${CATKIN_PACKAGE_LIB_DESTINATION} )
-MESSAGE( STATUS "CMAKE_BINARY_DIR:         " ${CATKIN_PACKAGE_INCLUDE_DESTINATION} )
-MESSAGE( STATUS "CMAKE_ROOT: " ${CMAKE_ROOT} )
-MESSAGE( STATUS "CMAKE_ROOT: " ${CATKIN_INSTALL_PREFIX} )
-
-# need explicit unpack inorder to apply patch on OSX
-ExternalProject_Add_Step(scipoptsuite extract_scip
-   COMMAND ${CMAKE_COMMAND} -E tar zxvf scip-3.0.2.tgz WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite
-   DEPENDEES download
-   DEPENDERS patch
-)
-
-# need explicit unpack inorder to apply patch on OSX
-ExternalProject_Add_Step(scipoptsuite extract_gcg
-   COMMAND ${CMAKE_COMMAND} -E tar zxvf gcg-1.1.1.tgz WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite
-   DEPENDEES download
-   DEPENDERS patch
-)
-
-# need explicit unpack inorder to apply patch on OSX
-ExternalProject_Add_Step(scipoptsuite extract_ug
-   COMMAND ${CMAKE_COMMAND} -E tar zxvf ug-0.7.2.tgz WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite
-   DEPENDEES download
-   DEPENDERS patch
-)
-
-# need explicit unpack inorder to apply patch on OSX
-ExternalProject_Add_Step(scipoptsuite extract_soplex
-   COMMAND ${CMAKE_COMMAND} -E tar zxvf soplex-1.7.2.tgz WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite
-   DEPENDEES download
-   DEPENDERS patch
-)
-
-# need explicit unpack inorder to apply patch on OSX
-ExternalProject_Add_Step(scipoptsuite extract_zimpl
-   COMMAND ${CMAKE_COMMAND} -E tar zxvf zimpl-3.3.1.tgz WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite
-   DEPENDEES download
-   DEPENDERS patch
-)
-
-
-
-ExternalProject_Add_Step(scipoptsuite install_headers
-   COMMAND make -C ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite/scip-3.0.2 INSTALLDIR=${CATKIN_DEVEL_PREFIX}/include INCLUDEDIR=scipoptsuite installheaders 
-   DEPENDEES build
-   DEPENDERS install
-)
 
 
 ## Specify additional locations of header files

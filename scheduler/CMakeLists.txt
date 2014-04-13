@@ -117,7 +117,7 @@ add_executable(scheduler_exe src/main.cpp src/main.cpp src/task.cpp src/schedule
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-add_dependencies(scheduler_exe strands_executive_msgs_generate_messages_cpp)
+add_dependencies(scheduler_exe scipoptsuite_ext strands_executive_msgs_generate_messages_cpp)
 
 link_directories(/usr/local/lib)
 
