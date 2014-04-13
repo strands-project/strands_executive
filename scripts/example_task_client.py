@@ -54,6 +54,7 @@ if __name__ == '__main__':
         add_task_srv = rospy.ServiceProxy(add_task_srv_name, AddTask)
         set_execution_status = rospy.ServiceProxy(set_exe_stat_srv_name, SetExecutionStatus)
         print add_task_srv(task)
+        print add_task_srv(task)
 
         # Make sure the task executor is running
         set_execution_status(True)
