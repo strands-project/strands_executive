@@ -130,13 +130,37 @@ ExternalProject_Add_Step(scipoptsuite_ext extract_zimpl
    DEPENDERS patch
 )
 
-
-
 ExternalProject_Add_Step(scipoptsuite_ext install_headers
    COMMAND make -C ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext/scip-3.0.2 INSTALLDIR=${CATKIN_DEVEL_PREFIX}/include INCLUDEDIR=scipoptsuite installheaders 
    DEPENDEES build
    DEPENDERS install
 )
+
+# need explicit unpack inorder to apply patch on OSX
+ExternalProject_Add_Step(scipoptsuite_ext ln_scip_lib
+   COMMAND ln -fs libscip*.a libscip.a WORKING_DIRECTORY ${CATKIN_DEVEL_PREFIX}/lib
+   DEPENDERS install
+   DEPENDEES done
+)
+
+ExternalProject_Add_Step(scipoptsuite_ext ln_objscip_lib
+   COMMAND ln -fs libobjscip*.a libobjscip.a WORKING_DIRECTORY ${CATKIN_DEVEL_PREFIX}/lib
+   DEPENDERS install
+   DEPENDEES done
+)
+
+ExternalProject_Add_Step(scipoptsuite_ext ln_lpispx_lib
+   COMMAND ln -fs liblpispx*.a liblpispx.a WORKING_DIRECTORY ${CATKIN_DEVEL_PREFIX}/lib
+   DEPENDERS install
+   DEPENDEES done
+)
+
+ExternalProject_Add_Step(scipoptsuite_ext ln_nlpi_lib
+   COMMAND ln -fs libnlpi.cppad*.a libnlpi.cppad.a WORKING_DIRECTORY ${CATKIN_DEVEL_PREFIX}/lib
+   DEPENDERS install
+   DEPENDEES done
+)
+
 
 set(HEADER_DIRECTORY ${CATKIN_DEVEL_PREFIX}/include/scipoptsuite)
 
