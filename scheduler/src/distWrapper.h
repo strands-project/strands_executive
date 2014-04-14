@@ -9,6 +9,7 @@ using namespace std;
 class DistWrapper
 {
   public:
+  	///returns time tp travel between two points
   static double dist(string,string);
 };
 

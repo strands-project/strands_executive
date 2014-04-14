@@ -28,6 +28,7 @@ add_service_files(
   SetExecutionStatus.srv 
   GetExecutionStatus.srv
   GetSchedule.srv
+  GetExpectedTravelTime.srv
 )
 
 

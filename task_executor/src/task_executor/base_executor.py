@@ -60,12 +60,12 @@ class AbstractTaskExecutor(object):
     def execute_task(self, task):
         self.active_task = task
         self.active_task_id = task.task_id               
-        if self.active_task.node_id != '':                    
+        if self.active_task.start_node_id != '':                    
             self.start_task_navigation()
         elif self.active_task.action != '':                    
             self.start_task_action()
         else:
-            rospy.logwarn('Provided task had no node_id or action %s' % self.active_task)
+            rospy.logwarn('Provided task had no start_node_id or action %s' % self.active_task)
             self.active_task = None
             self.active_task_id = Task.NO_TASK
 
@@ -88,7 +88,7 @@ class AbstractTaskExecutor(object):
         client.send_goal(goal, self.task_execution_complete_cb)
         
     def start_task_navigation(self):
-        nav_goal = GotoNodeGoal(target = self.active_task.node_id)
+        nav_goal = GotoNodeGoal(target = self.active_task.start_node_id)
         print "navigating to %s" % nav_goal
         self.nav_client.send_goal(nav_goal, self.navigation_complete_cb)
 

@@ -12,7 +12,7 @@ class Task
   unsigned int id; //a number refering to the task 
   double start;  //the time when the task can start
   double end;    //the time when the task needs to be finished
-  double duration; 
+  double duration; //task duration, ignoring travel 
   string s_pos; //position where the task starts
   string e_pos; //position where the task ends
   bool no;     //if the task must happen now

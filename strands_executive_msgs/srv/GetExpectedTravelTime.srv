@@ -1,0 +1,10 @@
+string start_id
+
+string ltl_task
+
+# lookup in the time dictionary
+string time_of_day
+
+---
+
+duration travel_time
