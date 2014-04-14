@@ -52,8 +52,8 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         if task.start_after.is_zero():            
             task.start_after = rospy.get_rostime()
 
-        if task.end_by.is_zero():
-            task.end_by = self.get_default_end_time(task.start_after)
+        if task.end_before.is_zero():
+            task.end_before = self.get_default_end_time(task.start_after)
 
 
     def add_task(self, task):
