@@ -1,6 +1,6 @@
 from strands_executive_msgs.msg import Task
 from threading import Condition
-
+from copy import deepcopy
 
 class ExecutionSchedule(object):
 

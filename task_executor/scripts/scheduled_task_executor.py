@@ -63,19 +63,42 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         self.unscheduled_tasks.put(task)
 
     def call_scheduler(self, tasks):
+
+        # scheduler seems to need time to start at zero
+        min_window = rospy.Time(rospy.get_rostime().secs * 2)
+        for task in tasks:
+            if task.start_after < min_window:
+                min_window = task.start_after
+
+        # turn this time into a duration (since epoch)
+        min_window = rospy.Duration(min_window.secs, min_window.nsecs)
+        
+
+        # subtrack min window from all win values
+        for task in tasks:
+            task.start_after = task.start_after - min_window
+            task.end_before = task.end_before - min_window
+
+
         resp = self.schedule_srv(tasks)
 
         # add start times to a dictionary for fast lookup
         task_times = {}
         for (task_id, start_time) in zip(resp.task_order, resp.execution_times):
-            print 'task %s will start at %s.%s' % (task_id, start_time.secs, start_time.nsecs)            
             task_times[task_id] = start_time
 
         # set start times inside of tasks
         for task in tasks:
-            task.execution_time = task_times[task.task_id]
+            # add min_window back on to starting times
+            task.execution_time = task_times[task.task_id] + min_window
+            task.start_after = task.start_after + min_window
+            task.end_before = task.end_before + min_window
+
             assert task.execution_time >= task.start_after
             assert task.execution_time + task.expected_duration <= task.end_before
+
+            print 'task %s will start at %s.%s' % (task.task_id, task.execution_time.secs, task.execution_time.nsecs)                        
+
 
         return 
 
