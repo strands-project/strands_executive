@@ -7,6 +7,7 @@ from strands_executive_msgs.srv import GetSchedule
 from task_executor.base_executor import AbstractTaskExecutor
 from threading import Thread
 from task_executor.execution_schedule import ExecutionSchedule
+from operator import attrgetter
 
 class ScheduledTaskExecutor(AbstractTaskExecutor):
 
@@ -63,7 +64,11 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         self.unscheduled_tasks.put(task)
 
     def call_scheduler(self, tasks):
-
+        """ 
+        
+        Calls scheduler. Reorders the list of tasks in execution order with their execution times set. 
+        
+        """
         # scheduler seems to need time to start at zero
         min_window = rospy.Time(rospy.get_rostime().secs * 2)
         for task in tasks:
@@ -99,8 +104,8 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
             print 'task %s will start at %s.%s' % (task.task_id, task.execution_time.secs, task.execution_time.nsecs)                        
 
-
-        return 
+        tasks.sort(key=attrgetter('execution_time'))
+        
 
     def schedule_tasks(self):
         loopSecs = 5
@@ -122,8 +127,13 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
                 self.execution_schedule.add_new_tasks(unscheduled)
 
-                self.call_scheduler(self.execution_schedule.get_schedulable_tasks())
+                tasks = self.execution_schedule.get_schedulable_tasks()
 
+                # reorder tasks and add execution information
+                self.call_scheduler(tasks)
+
+                # put scheduled tasks back into execution. this will trigger a change in execution if necessary
+                self.execution_schedule.set_schedule(tasks)
 
             except Empty, e:
                 rospy.logdebug('No new tasks to schedule')
