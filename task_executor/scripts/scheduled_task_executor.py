@@ -64,7 +64,20 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
     def call_scheduler(self, tasks):
         resp = self.schedule_srv(tasks)
-        return (resp.task_order, resp.execution_times)
+
+        # add start times to a dictionary for fast lookup
+        task_times = {}
+        for (task_id, start_time) in zip(resp.task_order, resp.execution_times):
+            print 'task %s will start at %s.%s' % (task_id, start_time.secs, start_time.nsecs)            
+            task_times[task_id] = start_time
+
+        # set start times inside of tasks
+        for task in tasks:
+            task.execution_time = task_times[task.task_id]
+            assert task.execution_time >= task.start_after
+            assert task.execution_time + task.expected_duration <= task.end_before
+
+        return 
 
     def schedule_tasks(self):
         loopSecs = 5
@@ -86,7 +99,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
                 self.execution_schedule.add_new_tasks(unscheduled)
 
-                (order, start_times) = self.call_scheduler(self.execution_schedule.get_schedulable_tasks())
+                self.call_scheduler(self.execution_schedule.get_schedulable_tasks())
 
 
             except Empty, e:
