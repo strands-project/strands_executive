@@ -15,9 +15,10 @@ class ExecutionSchedule(object):
 
     def get_schedulable_tasks(self):
     	""" Get the tasks which are available to be scheduled. Does not include the task being executed. """
-    	return self.tasks
+    	return deepcopy(self.tasks)
 
     def set_schedule(self, order, start_times):
+    	# there is a chance that one of these tasks has been completed during scheduling
     	pass
 
 	# # wait for next task
