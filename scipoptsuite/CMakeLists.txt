@@ -4,12 +4,9 @@ project(scipoptsuite)
 
 find_package(catkin REQUIRED COMPONENTS)
 
-# FILE(GLOB scipopt_libs "${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext/scip-3.0.2/lib/*.a")
-SET(scipopt_libs ${CATKIN_DEVEL_PREFIX}/lib/libscip.a ${CATKIN_DEVEL_PREFIX}/lib/libobjscip.a ${CATKIN_DEVEL_PREFIX}/lib/liblpispx.a ${CATKIN_DEVEL_PREFIX}/lib/libnlpi.cppad.a ${CATKIN_DEVEL_PREFIX}/lib/libsoplex.a ${CATKIN_DEVEL_PREFIX}/lib/libzimpl.a)
 MESSAGE("providing scipopt_libs from " ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext/scip-3.0.2/lib/)
 MESSAGE("scipopt_libs " ${scipopt_libs})
 set(scipopt_external_libs "gmp readline zlib m")
-
 
 ###########
 ## Build ##
@@ -19,8 +16,12 @@ include(ExternalProject)
 
 if(APPLE)
    set(PATCH_FILE ${CMAKE_CURRENT_SOURCE_DIR}/scipoptsuite-3.0.2-darwin-clang.diff)
+   set(SHARED_OBJS false)
+   SET(scipopt_libs ${CATKIN_DEVEL_PREFIX}/lib/libscip.a ${CATKIN_DEVEL_PREFIX}/lib/libobjscip.a ${CATKIN_DEVEL_PREFIX}/lib/liblpispx.a ${CATKIN_DEVEL_PREFIX}/lib/libnlpi.cppad.a ${CATKIN_DEVEL_PREFIX}/lib/libsoplex.a ${CATKIN_DEVEL_PREFIX}/lib/libzimpl.a)
 else ()
    set(PATCH_FILE ${CMAKE_CURRENT_SOURCE_DIR}/scipoptsuite-3.0.2-linux-clang.diff)
+   set(SHARED_OBJS true)
+   SET(scipopt_libs ${CATKIN_DEVEL_PREFIX}/lib/libscip.so ${CATKIN_DEVEL_PREFIX}/lib/libobjscip.so ${CATKIN_DEVEL_PREFIX}/lib/liblpispx.so ${CATKIN_DEVEL_PREFIX}/lib/libnlpi.cppad.so ${CATKIN_DEVEL_PREFIX}/lib/libsoplex.so ${CATKIN_DEVEL_PREFIX}/lib/libzimpl.so)
 endif ()
 
 ExternalProject_Add(
@@ -30,8 +31,8 @@ ExternalProject_Add(
    UPDATE_COMMAND ""
    PATCH_COMMAND patch -p0 < ${PATCH_FILE}
    CONFIGURE_COMMAND ""
-   BUILD_COMMAND make -C ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext
-   INSTALL_COMMAND make -C ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext/scip-3.0.2 INSTALLDIR=${CATKIN_DEVEL_PREFIX} installlibs COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/create-lib-links.bash ${CATKIN_DEVEL_PREFIX}/lib
+   BUILD_COMMAND make -j4 SHARED=${SHARED_OBJS} -C ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext
+   INSTALL_COMMAND make SHARED=${SHARED_OBJS} -C ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext/scip-3.0.2 SHARED=${SHARED_OBJS} INSTALLDIR=${CATKIN_DEVEL_PREFIX} installlibs COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/create-lib-links.bash ${CATKIN_DEVEL_PREFIX}/lib
 )
 
 # need explicit unpack inorder to apply patch
