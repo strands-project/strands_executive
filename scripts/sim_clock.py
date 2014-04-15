@@ -18,13 +18,16 @@ if __name__ == '__main__':
     clock_pub = rospy.Publisher('/clock', Clock)
 
     # how much to increment the simulated clock per second, default 1 minute per second
-    seconds_per_second = rospy.Duration(rospy.get_param('sim_time_step', 60))
-    rospy.set_param('sim_time_step', seconds_per_second.to_sec())
-
-
+    seconds_per_second = rospy.get_param('sim_time_step', 60)
+    rospy.set_param('sim_time_step', seconds_per_second)
 
     # how often to update clock
-    rate = rospy.Rate(1)
+    updates_per_second = rospy.get_param('sim_time_update_freq', 10.0)
+    rospy.get_param('sim_time_update_freq', updates_per_second)
+    
+    hz = rospy.Rate(updates_per_second)
+
+    update = rospy.Duration(seconds_per_second / updates_per_second)
 
     # start value
     clock_msg = Clock(clock=rospy.get_rostime())
@@ -35,9 +38,9 @@ if __name__ == '__main__':
         clock_pub.publish(clock_msg)
 
         # update time
-        clock_msg.clock += seconds_per_second
+        clock_msg.clock += update
 
-        rate.sleep()
+        hz.sleep()
 
     # reset so sim time is not left on
     rospy.set_param('use_sim_time', False)
