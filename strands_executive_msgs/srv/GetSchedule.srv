@@ -1,0 +1,12 @@
+
+# the tasks to be scheduled
+Task[] tasks
+
+---
+
+# the order the tasks should be executed in
+uint64[] task_order
+
+# the start time of each task
+time[] execution_times
+

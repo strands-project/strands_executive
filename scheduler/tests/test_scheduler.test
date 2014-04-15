@@ -1,0 +1,5 @@
+<launch>
+
+  <node pkg="scheduler" type="scheduler_node" name="scheduler" />
+  <test test-name="scheduler_tester" pkg="scheduler" type="test_scheduler_node.py" />
+</launch>
