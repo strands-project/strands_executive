@@ -38,7 +38,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         self.execution_thread = Thread(target=self.execute_tasks)
 
         self.running = False
-        
+
         self.advertise_services()
 
     def start_execution(self):
@@ -66,6 +66,12 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         self.fill_times(task)
         print task
         self.unscheduled_tasks.put(task)
+
+    def task_complete(self, task):
+        """ Called when the given task has completed execution """
+        # pass signal to schedule
+        self.execution_schedule.task_complete(task)
+
 
     def call_scheduler(self, tasks):
         """ 

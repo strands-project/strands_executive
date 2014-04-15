@@ -118,8 +118,13 @@ target_link_libraries(scheduler
   gmp readline z m
 )
 
-add_executable(scheduler_exe src/main.cpp)
-target_link_libraries(scheduler_exe
+add_executable(scheduler_example src/main.cpp)
+target_link_libraries(scheduler_example
+  scheduler
+)
+
+add_executable(error_test src/error_test.cpp)
+target_link_libraries(error_test
   scheduler
 )
 
@@ -151,7 +156,7 @@ link_directories(/usr/local/lib)
 # )
 
 # Mark executables and/or libraries for installation
-install(TARGETS scheduler_exe scheduler_node 
+install(TARGETS scheduler_example error_test scheduler_node 
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

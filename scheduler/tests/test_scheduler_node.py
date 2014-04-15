@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from __future__ import division
+
 PKG = 'task_executor'
 NAME = 'scheduler_tester'
 
@@ -6,6 +8,7 @@ import rospy
 import unittest
 import rostest
 import sys
+from math import ceil
 
 from random import random
 from strands_executive_msgs.msg import Task
@@ -49,7 +52,7 @@ class TestEntry(unittest.TestCase):
             print "Service call failed: %s"%e
 
 
-    def create_tasks(self, task_count, start_of_window):           
+    def create_tasks_in_single_window(self, task_count, start_of_window):           
         one_hour_secs = 60 * 60 * 60
         max_duration = rospy.Duration(one_hour_secs)
         end_of_window = start_of_window + rospy.Duration(one_hour_secs * (task_count + 1))
@@ -68,13 +71,58 @@ class TestEntry(unittest.TestCase):
 
         return tasks
 
-    def test_start_at_zero(self):        
-        self.run_scheduler(self.create_tasks(5, rospy.Time(0)))
+
+    def create_tasks_in_two_windows(self, task_count, start_of_first_window):           
+        one_hour_secs = 60 * 60 * 60
+        max_duration = rospy.Duration(one_hour_secs)
+
+        first_window_count = int(ceil(task_count / 2))
+        second_window_count = task_count // 2
+        self.assertEquals(task_count, first_window_count + second_window_count)
+
+        end_of_first_window = start_of_first_window + rospy.Duration(one_hour_secs * (first_window_count + 1))
+
+        tasks = []
+        for task_id in range(first_window_count):    
+            # create the task from the description
+            task = Task()
+            task.task_id=task_id
+            task.start_node_id=str(task_id)
+            task.end_node_id=str(task_id)
+            task.start_after = start_of_first_window
+            task.end_before = end_of_first_window
+            task.expected_duration = rospy.Duration(max_duration.secs * random())
+            tasks.append(task)
+
+        window_interval = max_duration
+        start_of_second_window = end_of_first_window + window_interval
+        end_of_second_window = start_of_second_window + rospy.Duration(one_hour_secs * (second_window_count + 1))        
+        
+        for task_id in range(first_window_count, first_window_count+ second_window_count):    
+            # create the task from the description
+            task = Task()
+            task.task_id=task_id
+            task.start_node_id=str(task_id)
+            task.end_node_id=str(task_id)
+            task.start_after = start_of_second_window
+            task.end_before = end_of_second_window
+            task.expected_duration = rospy.Duration(max_duration.secs * random())
+            tasks.append(task)
+
+        self.assertEquals(task_count, len(tasks))
+        return tasks
+
+
+    def test_start_at_zero_one_window(self):        
+        self.run_scheduler(self.create_tasks_in_single_window(5, rospy.Time(0)))
+
+    def test_start_at_zero_two_windows(self):        
+        self.run_scheduler(self.create_tasks_in_two_windows(5, rospy.Time(0)))
 
 
     def test_start_at_now(self):
         """ this fails as time needs to start from zero """
-        self.run_scheduler(self.create_tasks(5, rospy.get_rostime()))
+        self.run_scheduler(self.create_tasks_in_single_window(5, rospy.get_rostime()))
         
 
 if __name__ == '__main__':
