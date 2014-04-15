@@ -25,11 +25,11 @@ class TestTaskAction(object):
     def __init__(self, expected_action_duration=1, expected_drive_duration=1):
         self.expected_action_duration = expected_action_duration
         self.expected_drive_duration = expected_drive_duration
-        self.task_server = actionlib.SimpleActionServer('test_task', TestExecutionAction, self.execute, False)
-        self.task_server.start() 
         self.nav_server = actionlib.SimpleActionServer('topological_navigation', GotoNodeAction, execute_cb = self.nav_callback, auto_start = False)
         self.nav_server.start() 
-
+        self.task_server = actionlib.SimpleActionServer('test_task', TestExecutionAction, execute_cb = self.execute, auto_start = False)
+        self.task_server.start() 
+        
 
     def execute(self, goal):
         print 'called with goal %s'%goal
@@ -123,10 +123,13 @@ if __name__ == '__main__':
     for task in tasks:
         # register task with the scheduler
         task.task_id = add_task(task)
-        print "Added %s" % task
+        print "Added %s" % task.task_id
+
+    print 'calling'
 
     # Set the task executor is running
     set_execution_status(True)
 
+    print 'spinning'
     rospy.spin()
 

@@ -8,9 +8,9 @@ from topological_navigation.msg import GotoNodeAction
 
 class TestTaskAction(object):
     def __init__(self):
-        rospy.init_node("test_task_action")
-        self.task_server = actionlib.SimpleActionServer('test_task', TestExecutionAction, self.execute, False)
-        self.task_server.start() 
+        rospy.init_node("test_task_action", log_level=rospy.INFO)
+        # self.task_server = actionlib.SimpleActionServer('test_task', TestExecutionAction, self.execute, False)
+        # self.task_server.start() 
         self.nav_server = actionlib.SimpleActionServer('topological_navigation', GotoNodeAction, execute_cb = self.nav_callback, auto_start = False)
         self.nav_server.start() 
 

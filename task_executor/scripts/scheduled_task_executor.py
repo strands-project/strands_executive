@@ -18,8 +18,10 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         # init superclasses
         super( ScheduledTaskExecutor, self ).__init__()
 
+
         # service for scheduler
         schedule_srv_name = 'get_schedule'
+        rospy.logdebug('Waiting for %s service' % schedule_srv_name)
         rospy.wait_for_service(schedule_srv_name)
         self.schedule_srv = rospy.ServiceProxy(schedule_srv_name, GetSchedule)
 
@@ -36,6 +38,8 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         self.execution_thread = Thread(target=self.execute_tasks)
 
         self.running = False
+        
+        self.advertise_services()
 
     def start_execution(self):
         """ Called when overall execution should  (re)start """
@@ -111,7 +115,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         loopSecs = 5
         
         while not rospy.is_shutdown():           
-            print "scheduling thread %s" % rospy.is_shutdown()      
+            # print "scheduling thread %s" % rospy.is_shutdown()      
             try:
                 unscheduled = []
                 # block until at least one task is available
@@ -141,22 +145,15 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
 
     def execute_tasks(self):
-        r = rospy.Rate(1) # 1hz
+        wait_time = 1 # 1second
         
         while not rospy.is_shutdown():           
 
-            print "executing thread %s" % rospy.is_shutdown()
-            # dequeue tasks to schedule
-
-            # if current schedule empty, create schedule and execute
-      
-            # if current schedule not empty but no execution, create schedule and execute 
-
-            # if executing, but no new tasks are now tasks
-                # - first try sceduling remaing tasks after the executing ne
-                # - if unnsuccessful, try rescheduling all
-
-            r.sleep()
+            # print "executing thread %s" % rospy.is_shutdown()
+            if(self.execution_schedule.wait_for_execution_change(wait_time)):
+                next_task = self.execution_schedule.get_current_task()
+                rospy.loginfo('Next task to execute: %s' % next_task)
+                self.execute_task(next_task)                
         
 
     # def wait_for_exit(self):
