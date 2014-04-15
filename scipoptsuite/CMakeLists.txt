@@ -28,6 +28,7 @@ ExternalProject_Add(
    scipoptsuite_ext   
    PREFIX scipoptsuite
    URL http://scip.zib.de/download/release/scipoptsuite-3.0.2.tgz
+   URL_MD5 db5b46986d4b8ed8aa20f2ee5876093b
    UPDATE_COMMAND ""
    PATCH_COMMAND patch -p0 < ${PATCH_FILE}
    CONFIGURE_COMMAND ""
