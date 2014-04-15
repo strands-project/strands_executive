@@ -9,10 +9,11 @@ from task_executor.base_executor import AbstractTaskExecutor
 class FIFOTaskExecutor(AbstractTaskExecutor):
     def __init__(self):
         # init node first, must be done before call to super init for service advertising to work
-        rospy.init_node("task_executor")
+        rospy.init_node("task_executor", log_level=rospy.DEBUG)
         # init superclasses
         super( FIFOTaskExecutor, self ).__init__()
         self.tasks = Queue()
+        self.advertise_services()
 
 
     def add_task(self, task):

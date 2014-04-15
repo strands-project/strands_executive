@@ -36,8 +36,14 @@ class AbstractTaskExecutor(object):
         self.executing = False
         self.active_task = None
         self.active_task_id = Task.NO_TASK
-        self.nav_client = actionlib.SimpleActionClient('topological_navigation', GotoNodeAction)
+        self.nav_client = None
 
+        
+
+    def advertise_services(self):
+        """
+        Adverstise ROS services. Only call at the end of constructor to avoid calls during construction.
+        """
         # advertise ros services
         for attr in dir(self):
             if attr.endswith("_ros_srv"):
@@ -60,17 +66,20 @@ class AbstractTaskExecutor(object):
     def execute_task(self, task):
         self.active_task = task
         self.active_task_id = task.task_id               
-        if self.active_task.node_id != '':                    
+        if self.active_task.start_node_id != '':                    
             self.start_task_navigation()
         elif self.active_task.action != '':                    
             self.start_task_action()
         else:
-            rospy.logwarn('Provided task had no node_id or action %s' % self.active_task)
+            rospy.logwarn('Provided task had no start_node_id or action %s' % self.active_task)
             self.active_task = None
             self.active_task_id = Task.NO_TASK
 
 
     def start_task_action(self):
+
+        rospy.logdebug('Starting to execute %s' % self.active_task.action)
+
         (action_string, goal_string) = self.get_task_types(self.active_task.action)
         action_clz = dc_util.load_class(dc_util.type_to_class_string(action_string))
         goal_clz = dc_util.load_class(dc_util.type_to_class_string(goal_string))
@@ -83,18 +92,25 @@ class AbstractTaskExecutor(object):
         # print "ARGS:"
         # print argument_list
 
-        goal = goal_clz(*argument_list) 
+        goal = goal_clz(*argument_list)         
 
         client.send_goal(goal, self.task_execution_complete_cb)
         
     def start_task_navigation(self):
-        nav_goal = GotoNodeGoal(target = self.active_task.node_id)
-        print "navigating to %s" % nav_goal
+        # handle delayed start up
+        if self.nav_client == None:
+            self.nav_client = actionlib.SimpleActionClient('topological_navigation', GotoNodeAction)
+            self.nav_client.wait_for_server()
+            rospy.logdebug("Created action client")
+
+        nav_goal = GotoNodeGoal(target = self.active_task.start_node_id)
         self.nav_client.send_goal(nav_goal, self.navigation_complete_cb)
+        rospy.logdebug("navigating to %s" % nav_goal)
 
     def navigation_complete_cb(self, goal_status, result):
         # todo: check goal status to see if we really go there
         # now do the action
+        rospy.logdebug('Navigation to %s completed' % self.active_task.start_node_id)        
         if self.active_task.action != '':                    
             self.start_task_action()
         else:
@@ -147,7 +163,7 @@ class AbstractTaskExecutor(object):
             return float(string_pair.second)     
         else:
             msg = self.msg_store.query_id(string_pair.second, string_pair.first)[0]
-            print msg
+            # print msg
             if msg == None:
                 raise RuntimeError("No matching object for id %s of type %s" % (string_pair.second, string_pair.first))
             return msg

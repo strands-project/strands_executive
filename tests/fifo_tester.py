@@ -33,7 +33,7 @@ class FakeActionServer(object):
         rospy.sleep(self.action_sleep)
 
         task_description = self.master.task_descriptions.pop(0)
-        self.tester.assertEquals(task_description[0], self.master.node_i)
+        self.tester.assertEquals(task_description[0], self.master.node_id)
         self.tester.assertEquals(task_description[1], self.action_string)
         self.tester.assertEquals(task_description[2], goal.some_goal_string)
         self.tester.assertEquals(task_description[3], goal.test_pose)
@@ -103,7 +103,7 @@ class TestEntry(unittest.TestCase):
                 
             for task_description in task_descriptions:    
                 # create the task from the description
-                task = Task(node_id=task_description[0], action=task_description[1])        
+                task = Task(start_node_id=task_description[0], action=task_description[1])        
                 # add some dummy arguments
                 task_utils.add_string_argument(task, task_description[2])
                 task_utils.add_object_id_argument(task, msg_store.insert(task_description[3]), Pose)
