@@ -2,6 +2,7 @@ import rospy
 from datetime import *
 from copy import copy
 from dateutil.tz import *
+from threading import Thread
 
 _epoch = datetime.utcfromtimestamp(0).replace(tzinfo=tzutc())
 
@@ -38,7 +39,10 @@ def start_of_the_day(day_delta=0):
         Returns:
             datetime.datetime: The date time at the start of the day 
     """
-    return datetime.fromordinal(datetime.utcfromtimestamp(rospy.get_rostime().to_sec()).toordinal())
+    return datetime.fromordinal(datetime.utcfromtimestamp(rospy.get_rostime().to_sec()).toordinal() + day_delta).replace(tzinfo=tzutc())
+
+        
+
 
 class DailyRoutine(object):
     """ An object for setting up the daily schedule of a robot. 
@@ -78,8 +82,6 @@ class DailyRoutine(object):
     """
     def add_task(self, task, daily_start, daily_end):
 
-        # convert to utc
-
         # bound by daily activity window
 
         self.sanity_check_task(daily_start, daily_end, task)
@@ -94,12 +96,67 @@ class DailyRoutine(object):
         Should be called each new day, in advance of the overall daily start time.
     """
     def _new_day(self):
+        start_of_today = start_of_the_day()    
+        # instantiate the daily tasks with release windows for today
+        todays_tasks = [self._instantiate_for_today(start_of_today, *task_tuple) for task_tuple in self.routine_tasks]
+        self._create_routine(todays_tasks)
 
-        start_of_today = start_of_the_day()
-        # 
-        for task_tuple in self.routine_tasks:
-            task = self._instantiate_for_today(start_of_today, *task_tuple)
-            self._queue_for_scheduling(task)
+
+
+    def _create_routine(self, tasks):
+
+        schedule_now, schedule_later = self._queue_for_scheduling(tasks)
+
+        rospy.loginfo('Scheduling %s tasks now and %s later' % (len(schedule_now), len(schedule_later)))
+
+        self._delay_tasks(schedule_later)
+        self._schedule_tasks(schedule_now)
+
+
+    def _delay_tasks(self, tasks):
+        """
+            Delays call to the scheduer until the first of these needs to start, then reruns check for scheduling
+        """
+
+        if len(tasks) == 0:
+            return
+
+        # find the soonest start date of all tasks
+
+        # an arbitrary large date
+        min_start_date = rospy.Time(unix_time(start_of_the_day(2)))
+        for task in tasks:
+            if task.start_after < min_start_date:           
+                min_start_date = task.start_after 
+
+        # only delay up to the pre-scheduler window 
+        min_start_date = min_start_date - self.pre_schedule_delay
+
+        now = rospy.get_rostime()
+
+        # print 'min start at %s' % min_start_date.secs
+        # print '      now at %s' % now.secs
+
+        delay = min_start_date - now
+
+        # print 'delaying %s' % delay.secs
+        self._delay_scheduling(tasks, delay)
+
+
+    # separated out to try differeing approaches
+    def _delay_scheduling(self, tasks, delay):
+        rospy.loginfo('Delaying %s tasks for %s secs' % (len(tasks), delay.secs))
+
+        def _check_tasks():
+            rospy.sleep(delay)
+            self._create_routine(tasks)
+
+        Thread(target=_check_tasks).start()
+
+
+    def _schedule_tasks(self, tasks):
+        rospy.loginfo('Sending %s tasks to the scheduler' % (len(tasks)))
+
 
     def _instantiate_for_today(self, start_of_today, daily_start, daily_end, task):
         """ 
@@ -110,32 +167,39 @@ class DailyRoutine(object):
         end_date = datetime.combine(start_of_today.date(), daily_end)
         instantiated_task.start_after = rospy.Time(unix_time(release_date))
         instantiated_task.end_before = rospy.Time(unix_time(end_date))
-        print '%s (%s)' % (release_date, instantiated_task.start_after.secs)
-        print '%s (%s)' % (end_date, instantiated_task.end_before.secs)
+        # print '%s (%s)' % (release_date, instantiated_task.start_after.secs)
+        # print '%s (%s)' % (end_date, instantiated_task.end_before.secs)
 
         return instantiated_task
 
 
-    def _queue_for_scheduling(self, task):
+    def _queue_for_scheduling(self, tasks):
         now = rospy.get_rostime()
 
-        print task.expected_duration.secs
-        print task.start_after.secs
-        print task.end_before.secs
-        print (now).secs
-        print (now + task.expected_duration).secs
 
-        # check we're not too late
-        if now + task.expected_duration > task.end_before:
-            raise RoutineException('%s is too late to schedule task %s' % (now.secs, task))
+        schedule_now = []
+        schedule_later = []
 
-        # if we're in the the window when this should be scheduled
-        if now > (task.start_after - self.pre_schedule_delay):
-            print "schedule it"
-        else:
-            print "delay it"
+        for task in tasks:
+
+            # print task.expected_duration.secs
+            print task.start_after.secs
+            print task.end_before.secs
+            print (now).secs
+            print (now + task.expected_duration).secs
 
 
+            # check we're not too late
+            if now + task.expected_duration > task.end_before:
+                raise RoutineException('%s is too late to schedule task %s' % (now.secs, task))
+
+            # if we're in the the window when this should be scheduled
+            if now > (task.start_after - self.pre_schedule_delay):
+                schedule_now.append(task)
+            else:
+                schedule_later.append(task)
+
+        return schedule_now, schedule_later
 
 
 

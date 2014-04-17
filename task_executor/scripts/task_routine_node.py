@@ -93,7 +93,7 @@ if __name__ == '__main__':
     ten = time(10,00, tzinfo=localtz)
     midday = time(12,00, tzinfo=localtz)
     end = time(17,00, tzinfo=localtz)
-    afternoon = (time(13,00, tzinfo=localtz), end)
+    afternoon = (time(14,00, tzinfo=localtz), end)
 
     # print start
     # print task_routine.time_to_secs(start)
@@ -132,6 +132,8 @@ if __name__ == '__main__':
     routine.add_task(task, *afternoon)
 
     routine._new_day()
+
+    print "off to spin"
 
     rospy.spin()
 
