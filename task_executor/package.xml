@@ -39,6 +39,7 @@
   <run_depend>actionlib</run_depend>
   <run_depend>actionlib_msgs</run_depend>
   <run_depend>topological_navigation</run_depend>
+  <run_depend>python-dateutil</run_depend>
   
 
 </package>
