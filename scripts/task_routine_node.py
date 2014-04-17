@@ -16,38 +16,6 @@ from ros_datacentre.message_store import MessageStoreProxy
 from geometry_msgs.msg import Pose, Point, Quaternion
 from dateutil.tz import tzlocal
 
-
-
-def print_time(event):
-    # print datetime.fromtimestamp(rospy.get_rostime().secs)
-    print datetime.fromtimestamp(event.current_real.secs)
-
-# Timer seems odd
-# def midnight_cb(event):
-#     print "MIDNIGHT: %s" % datetime.fromtimestamp(event.current_real.secs)
-#     if event.last_duration:
-#         print event.last_duration
-
-def delay_to_midnight():
-    # datetime for upcoming midnight
-
-    while not rospy.is_shutdown():
-        # jump to the start of the next day in rostime
-        midnight = datetime.fromordinal(datetime.fromtimestamp(rospy.get_rostime().to_sec()).toordinal() + 1)
-        print "midnight  %s" % midnight
-        midnight_rostime = rospy.Time(task_routine.unix_time(midnight))
-        
-        now = rospy.get_rostime()
-        print "midnight_rostime  %s" % midnight_rostime.to_sec()
-        print "             now  %s" % now.to_sec()
-        assert midnight_rostime > now
-        midnight_delay = midnight_rostime - now
-        
-        print "   midnight delay %s" % midnight_delay.to_sec()
-        # sleep until midnight
-        rospy.sleep(midnight_delay)
-        # the set a recurring timer for everynight
-        print "MIDNIGHT %s" % datetime.fromtimestamp(rospy.get_rostime().to_sec())
         
 
 def dummy_task():
@@ -89,51 +57,28 @@ if __name__ == '__main__':
 
     localtz = tzlocal()
 
-    start = time(9,00, tzinfo=localtz)
+    start = time(8,30, tzinfo=localtz)
     ten = time(10,00, tzinfo=localtz)
     midday = time(12,00, tzinfo=localtz)
     end = time(17,00, tzinfo=localtz)
-    afternoon = (time(14,00, tzinfo=localtz), end)
-
-    # print start
-    # print task_routine.time_to_secs(start)
-    # print end
-    # print task_routine.time_to_secs(end)
-
-    # print datetime.today()
-    # last_midnight = datetime.fromordinal(datetime.today().toordinal())
-    # print task_routine.unix_time(last_midnight)
-
-
-    # # some standard intervals
-    # today = (start, end)
-    # morning = (start, midday)
-    # afternoon = (midday, end)
-
-    # start_midnight_timer = Thread(target=delay_to_midnight)    
-    # start_midnight_timer.start()
-
-    # rospy.Timer(rospy.Duration(60*60), print_time)
-
-
-    routine = task_routine.DailyRoutine(start, end)
+    morning = (start, midday)
+    afternoon = (midday, end)
 
     task = dummy_task()
-    
+
+    routine = task_routine.DailyRoutine(start, end)
+    routine.repeat_every_hour(task, hours=2)
     
     # all these should except
-    # routine.add_task(task, midday, start)
-    # routine.add_task(task, start, start)
+    # routine.add_tasks([task], midday, start)
+    # routine.add_tasks([task], start, start)
     # task.expected_duration = 60 * 60 * 12;
-    # routine.add_task(task, start, midday)
+    # routine.add_tasks([task], start, midday)
 
-    task.expected_duration = rospy.Duration(timedelta(seconds=60).total_seconds());
 
-    routine.add_task(task, *afternoon)
-
-    routine._new_day()
-
-    print "off to spin"
+    # routine = task_routine.DailyRoutineRunner(start, end)
+    # task.expected_duration = rospy.Duration(timedelta(seconds=60).total_seconds());
+    # routine.add_tasks([([task, task], morning), ([task, task], afternoon)])
 
     rospy.spin()
 

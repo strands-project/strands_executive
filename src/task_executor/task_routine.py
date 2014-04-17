@@ -42,8 +42,6 @@ def start_of_the_day(day_delta=0):
     return datetime.fromordinal(datetime.utcfromtimestamp(rospy.get_rostime().to_sec()).toordinal() + day_delta).replace(tzinfo=tzutc())
 
         
-
-
 class DailyRoutine(object):
     """ An object for setting up the daily schedule of a robot. 
         Args:
@@ -51,13 +49,90 @@ class DailyRoutine(object):
             daily_end (datetime.time): The time of day by when all tasks should end, local time.
             pre_start_window (datetime.timedelta): The duration before a task's start that it should be passed to the scheduler. Defaults to 1 hour.
     """
-    def __init__(self, daily_start, daily_end, pre_start_window=timedelta(hours=1)):
+    def __init__(self, daily_start, daily_end):
         super(DailyRoutine, self).__init__()
+        self.daily_start = daily_start
+        self.daily_end = daily_end
+        self.routine_tasks = []
+
+    def repeat_every_day(self, tasks, times=1):
+        """
+        Repeat the given tasks a number of times during the day.
+        """
+        self.repeat_every(tasks, self.daily_start, self.daily_end, times)
+
+
+    def repeat_every_hour(self, tasks, hours=1, times=1):
+        """
+        Repeat the given tasks x times every n hours
+        """
+
+        window_start = self.daily_start
+        window_end =  window_start.replace(hour=(window_start.hour + hours))
+
+        while window_end <= self.daily_end:
+            # print '%s.%s - %s.%s' % (window_start.hour, window_start.minute, window_end.hour, window_end.minute)
+            window_start = window_end
+            window_end =  window_start.replace(hour=(window_start.hour + hours))
+            self.repeat_every(tasks, window_start, window_end, times)
+
+
+    def repeat_every(self, tasks, daily_start, daily_end, times=1):
+        """
+        Repeat the given task a number of times during the day.
+        """
+
+        # make tasks a list if its not already 
+        if not isinstance(tasks, list):            
+            tasks = [tasks]
+
+        for task in tasks:
+            self.routine_tasks += [(task, (daily_start, daily_end))] * times
+
+
+
+class DailyRoutineRunner(object):
+    """ An object for running the daily schedule of a robot. 
+        Args:
+            daily_start (datetime.time): The time of day when all tasks can start, local time.
+            daily_end (datetime.time): The time of day by when all tasks should end, local time.
+            pre_start_window (datetime.timedelta): The duration before a task's start that it should be passed to the scheduler. Defaults to 1 hour.
+    """
+    def __init__(self, daily_start, daily_end, pre_start_window=timedelta(hours=1)):
+        super(DailyRoutineRunner, self).__init__()
         self.daily_start = daily_start
         self.daily_end = daily_end
         # the tasks which need to be performed every day, tuples of form (daily_start, daily_end, task)
         self.routine_tasks = []
         self.pre_schedule_delay = rospy.Duration(pre_start_window.total_seconds())
+        self.midnight_thread = Thread(target=self._delay_to_midnight)
+        self.midnight_thread.start()
+
+
+    def _delay_to_midnight(self):
+        
+        while not rospy.is_shutdown():
+
+            # jump to the start of the next day in rostime
+            midnight = start_of_the_day(1)
+            print "midnight  %s" % midnight
+            midnight_rostime = rospy.Time(unix_time(midnight))
+            
+            now = rospy.get_rostime()
+            print "midnight_rostime  %s" % midnight_rostime.to_sec()
+            print "             now  %s" % now.to_sec()
+            assert midnight_rostime > now
+            midnight_delay = midnight_rostime - now
+            
+            print "   midnight delay %s" % midnight_delay.to_sec()
+            # sleep until midnight
+            rospy.sleep(midnight_delay)
+            # the set a recurring timer for everynight
+            print "MIDNIGHT %s" % datetime.fromtimestamp(rospy.get_rostime().to_sec())
+            self._new_day()
+
+
+
 
     """
         Does some basic checking on the task.
@@ -77,35 +152,58 @@ class DailyRoutine(object):
     """
         Adds a task to the daily routine.
         Args:
-            daily_start (datetime.time): The time of day when the task can start, local time.
-            daily_end (datetime.time): The time of day by when the task should end, local time.
+            routines: A list of tuples where each tuple is (task_list, window) where task_list is a list of task and window is a tuple (start, end) representing a time window in which to execute those tasks each day.
     """
-    def add_task(self, task, daily_start, daily_end):
+    def add_tasks(self, routines):
 
-        # bound by daily activity window
+        # add tasks to daily route
+        new_routine = []
+        for task_tuple in routines:
+            
+            daily_start = task_tuple[1][0]
+            daily_end = task_tuple[1][1]
 
-        self.sanity_check_task(daily_start, daily_end, task)
+            for task in task_tuple[0]:
+                # bound by daily activity window
+                if daily_start < self.daily_start:
+                    rospy.loginfo('Bounding task to daily start window')
+                    daily_start = self.daily_start
 
-        # if running, this needs to be added to the active routine
+                if daily_end > self.daily_end:
+                    rospy.loginfo('Bounding task to daily end window')
+                    daily_end = self.daily_end
 
-
-        # else, add to daily routine
-        self.routine_tasks.append((daily_start, daily_end, task))
+                self.sanity_check_task(daily_start, daily_end, task)
         
-    """
-        Should be called each new day, in advance of the overall daily start time.
-    """
+                # else, add to daily routine
+                routine = (daily_start, daily_end, task)
+                self.routine_tasks.append(routine)
+                new_routine.append(routine)
+
+        # see if we can still schedule any of these today
+        todays_tasks = self._instantiate_tasks_for_today(new_routine)
+        # the false means an exception is not thrown for any out of window tasks
+        self._create_routine(todays_tasks, False)
+
+        
     def _new_day(self):
-        start_of_today = start_of_the_day()    
-        # instantiate the daily tasks with release windows for today
-        todays_tasks = [self._instantiate_for_today(start_of_today, *task_tuple) for task_tuple in self.routine_tasks]
+        """
+            Should be called each new day, in advance of the overall daily start time.
+        """
+
+        todays_tasks = self._instantiate_tasks_for_today(self.routine_tasks)
         self._create_routine(todays_tasks)
 
 
+    def _instantiate_tasks_for_today(self, routine_tasks):
+        start_of_today = start_of_the_day()    
+        # instantiate the daily tasks with release windows for today
+        todays_tasks = [self._instantiate_for_day(start_of_today, *task_tuple) for task_tuple in routine_tasks]
+        return todays_tasks
 
-    def _create_routine(self, tasks):
+    def _create_routine(self, tasks, throw=True):
 
-        schedule_now, schedule_later = self._queue_for_scheduling(tasks)
+        schedule_now, schedule_later = self._queue_for_scheduling(tasks, throw)
 
         rospy.loginfo('Scheduling %s tasks now and %s later' % (len(schedule_now), len(schedule_later)))
 
@@ -148,6 +246,7 @@ class DailyRoutine(object):
         rospy.loginfo('Delaying %s tasks for %s secs' % (len(tasks), delay.secs))
 
         def _check_tasks():
+            # using a sleep instead of a timer as the timer seems flakey with sim time
             rospy.sleep(delay)
             self._create_routine(tasks)
 
@@ -158,13 +257,13 @@ class DailyRoutine(object):
         rospy.loginfo('Sending %s tasks to the scheduler' % (len(tasks)))
 
 
-    def _instantiate_for_today(self, start_of_today, daily_start, daily_end, task):
+    def _instantiate_for_day(self, start_of_day, daily_start, daily_end, task):
         """ 
             Create a copy of the given task with start and end times instantiated from input variables relative to the start date provided.
         """
         instantiated_task = copy(task)
-        release_date = datetime.combine(start_of_today.date(), daily_start)
-        end_date = datetime.combine(start_of_today.date(), daily_end)
+        release_date = datetime.combine(start_of_day.date(), daily_start)
+        end_date = datetime.combine(start_of_day.date(), daily_end)
         instantiated_task.start_after = rospy.Time(unix_time(release_date))
         instantiated_task.end_before = rospy.Time(unix_time(end_date))
         # print '%s (%s)' % (release_date, instantiated_task.start_after.secs)
@@ -173,9 +272,8 @@ class DailyRoutine(object):
         return instantiated_task
 
 
-    def _queue_for_scheduling(self, tasks):
+    def _queue_for_scheduling(self, tasks, throw=True):
         now = rospy.get_rostime()
-
 
         schedule_now = []
         schedule_later = []
@@ -183,21 +281,25 @@ class DailyRoutine(object):
         for task in tasks:
 
             # print task.expected_duration.secs
-            print task.start_after.secs
-            print task.end_before.secs
-            print (now).secs
-            print (now + task.expected_duration).secs
+            # print task.start_after.secs
+            # print task.end_before.secs
+            # print (now).secs
+            # print (now + task.expected_duration).secs
 
 
             # check we're not too late
             if now + task.expected_duration > task.end_before:
-                raise RoutineException('%s is too late to schedule task %s' % (now.secs, task))
-
-            # if we're in the the window when this should be scheduled
-            if now > (task.start_after - self.pre_schedule_delay):
-                schedule_now.append(task)
+                # 
+                if throw:
+                    raise RoutineException('%s is too late to schedule task %s' % (now.secs, task))
+                else:
+                    rospy.loginfo('Ignoring task for today')
             else:
-                schedule_later.append(task)
+                # if we're in the the window when this should be scheduled
+                if now > (task.start_after - self.pre_schedule_delay):
+                    schedule_now.append(task)
+                else:
+                    schedule_later.append(task)
 
         return schedule_now, schedule_later
 
