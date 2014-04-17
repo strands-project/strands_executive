@@ -2,7 +2,7 @@
 
 import rospy
 from strands_executive_msgs.msg import Task
-from strands_executive_msgs.srv import AddTask, SetExecutionStatus, GetExecutionStatus
+from strands_executive_msgs.srv import AddTasks, AddTask, SetExecutionStatus, GetExecutionStatus
 import ros_datacentre.util as dc_util
 import actionlib
 from geometry_msgs.msg import Pose, Point, Quaternion
@@ -13,9 +13,8 @@ class AbstractTaskExecutor(object):
 
     # These can be implemented by sub classes to provide hooks into the execution system
 
-    def add_task(self, task):
-        """ Called with a new task for the executor """
-        self.tasks.put(task)
+    def add_tasks(self, tasks):
+        """ Called with new tasks for the executor """
 
     def start_execution(self):
         """ Called when overall execution should  (re)start """
@@ -131,11 +130,27 @@ class AbstractTaskExecutor(object):
         """
         req.task.task_id = self.task_counter
         self.task_counter += 1
-
-        self.add_task(req.task)        
-        
+        self.add_tasks([req.task])                
         return req.task.task_id
     add_task_ros_srv.type=AddTask
+
+
+    def add_tasks_ros_srv(self, req):
+        """
+        Adds a task into the task execution framework.
+        """
+        task_ids = []
+        for task in req.tasks:
+            task.task_id = self.task_counter
+            task_ids += task.task_id
+            self.task_counter += 1
+
+        self.add_tasks(req.tasks)        
+        
+        return task_ids
+    add_tasks_ros_srv.type=AddTasks
+
+
 
     def get_execution_status_ros_srv(self, req):
         return self.executing
