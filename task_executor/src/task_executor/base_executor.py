@@ -142,12 +142,12 @@ class AbstractTaskExecutor(object):
         task_ids = []
         for task in req.tasks:
             task.task_id = self.task_counter
-            task_ids += task.task_id
+            task_ids.append(task.task_id)
             self.task_counter += 1
 
         self.add_tasks(req.tasks)        
         
-        return task_ids
+        return [task_ids]
     add_tasks_ros_srv.type=AddTasks
 
 

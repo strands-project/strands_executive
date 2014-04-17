@@ -86,9 +86,10 @@ class DailyRoutine(object):
         if not isinstance(tasks, list):            
             tasks = [tasks]
 
-        for task in tasks:
-            self.routine_tasks += [(task, (daily_start, daily_end))] * times
+        self.routine_tasks += [(tasks, (daily_start, daily_end))] * times
 
+    def get_routine_tasks(self):
+        return self.routine_tasks
 
 
 class DailyRoutineRunner(object):
@@ -98,12 +99,13 @@ class DailyRoutineRunner(object):
             daily_end (datetime.time): The time of day by when all tasks should end, local time.
             pre_start_window (datetime.timedelta): The duration before a task's start that it should be passed to the scheduler. Defaults to 1 hour.
     """
-    def __init__(self, daily_start, daily_end, pre_start_window=timedelta(hours=1)):
+    def __init__(self, daily_start, daily_end, add_tasks_srv, pre_start_window=timedelta(hours=1)):
         super(DailyRoutineRunner, self).__init__()
         self.daily_start = daily_start
         self.daily_end = daily_end
         # the tasks which need to be performed every day, tuples of form (daily_start, daily_end, task)
         self.routine_tasks = []
+        self.add_tasks_srv = add_tasks_srv
         self.pre_schedule_delay = rospy.Duration(pre_start_window.total_seconds())
         self.midnight_thread = Thread(target=self._delay_to_midnight)
         self.midnight_thread.start()
@@ -255,7 +257,7 @@ class DailyRoutineRunner(object):
 
     def _schedule_tasks(self, tasks):
         rospy.loginfo('Sending %s tasks to the scheduler' % (len(tasks)))
-
+        self.add_tasks_srv(tasks)
 
     def _instantiate_for_day(self, start_of_day, daily_start, daily_end, task):
         """ 
