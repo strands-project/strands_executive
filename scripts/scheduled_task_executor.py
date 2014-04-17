@@ -163,8 +163,10 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
             if(self.execution_schedule.wait_for_execution_change(wait_time)):
                 next_task = self.execution_schedule.get_current_task()
                 rospy.loginfo('Next task to execute: %s' % next_task)
-                self.execute_task(next_task)                
-        
+                if next_task:
+                    self.execute_task(next_task)                
+                else:
+                    rospy.loginfo('Next task was None')
 
     # def wait_for_exit(self):
     #     self.scheduling_thread.join()
