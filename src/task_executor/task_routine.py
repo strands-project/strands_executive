@@ -257,7 +257,8 @@ class DailyRoutineRunner(object):
 
     def _schedule_tasks(self, tasks):
         rospy.loginfo('Sending %s tasks to the scheduler' % (len(tasks)))
-        self.add_tasks_srv(tasks)
+        if len(tasks) > 0:
+            self.add_tasks_srv(tasks)
 
     def _instantiate_for_day(self, start_of_day, daily_start, daily_end, task):
         """ 
