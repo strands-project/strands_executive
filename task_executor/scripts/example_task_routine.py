@@ -124,12 +124,12 @@ if __name__ == '__main__':
     routine = task_routine.DailyRoutine(start, end)
     # do this task every day
     routine.repeat_every_day(task)
-    # # and every two hours during the day
-    # routine.repeat_every_hour(task, hours=2)
-    # # once in the morning
-    # routine.repeat_every(task, *morning)
-    # # and twice in the afternoon
-    # routine.repeat_every(task, *afternoon, times=2)
+    # and every two hours during the day
+    routine.repeat_every_hour(task, hours=2)
+    # once in the morning
+    routine.repeat_every(task, *morning)
+    # and twice in the afternoon
+    routine.repeat_every(task, *afternoon, times=2)
 
     # create the object which will talk to the scheduler
     runner = task_routine.DailyRoutineRunner(start, end, add_tasks)
@@ -137,6 +137,6 @@ if __name__ == '__main__':
     runner.add_tasks(routine.get_routine_tasks())
 
     # # Set the task executor is running
-    # set_execution_status(True)
+    set_execution_status(True)
 
     rospy.spin()

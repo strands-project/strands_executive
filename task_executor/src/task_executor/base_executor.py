@@ -93,6 +93,7 @@ class AbstractTaskExecutor(object):
 
         goal = goal_clz(*argument_list)         
 
+        rospy.logdebug('Sending goal to %s' % self.active_task.action)
         client.send_goal(goal, self.task_execution_complete_cb)
         
     def start_task_navigation(self):

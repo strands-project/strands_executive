@@ -18,8 +18,11 @@ class FIFOTaskExecutor(AbstractTaskExecutor):
 
     def add_tasks(self, tasks):
         """ Called with a new task for the executor """
+        rospy.loginfo('Called with %s tasks' % len(tasks))
         for task in tasks:
             self.tasks.put(task)
+        rospy.loginfo('Queued %s tasks' % len(tasks))
+
 
     def run_executor(self):
         r = rospy.Rate(1) # 1hz
