@@ -3,11 +3,18 @@
 import rospy
 import actionlib
 from strands_executive_msgs.msg import Task
+from strands_executive_msgs import task_utils
 from task_executor.msg import *
 from topological_navigation.msg import GotoNodeAction
 from task_executor import task_routine
 from datetime import *
 from threading import Thread
+import ros_datacentre_msgs.srv as dc_srv
+from ros_datacentre_msgs.msg import StringPair
+import ros_datacentre.util as dc_util
+from ros_datacentre.message_store import MessageStoreProxy
+from geometry_msgs.msg import Pose, Point, Quaternion
+from dateutil.tz import tzlocal
 
 
 
@@ -42,6 +49,34 @@ def delay_to_midnight():
         # the set a recurring timer for everynight
         print "MIDNIGHT %s" % datetime.fromtimestamp(rospy.get_rostime().to_sec())
         
+
+def dummy_task():
+    """ 
+    Create an example of a task which we'll copy for other tasks later.
+    This is a good example of creating a task with a variety of arguments.
+    """
+     # need message store to pass objects around
+    msg_store = MessageStoreProxy() 
+
+    # get the pose of a named object
+    pose_name = "my favourite pose"
+
+    # get the pose if it's there
+    message, meta =  msg_store.query_named(pose_name, Pose._type)
+    # if it's not there, add it in
+    if message == None: 
+        message = Pose(Point(0, 1, 2), Quaternion(3, 4,  5, 6))
+        pose_id = msg_store.insert_named(pose_name, message)
+    else:
+        pose_id = meta["_id"]           
+
+    master_task = Task(action='test_task')        
+    task_utils.add_string_argument(master_task, 'hello world')
+    task_utils.add_object_id_argument(master_task, pose_id, Pose)
+    task_utils.add_int_argument(master_task, 24)
+    task_utils.add_float_argument(master_task, 63.678)
+    return master_task
+
         
 
 if __name__ == '__main__':
@@ -52,30 +87,51 @@ if __name__ == '__main__':
     while not rospy.is_shutdown() and rospy.get_rostime().secs == 0:
         pass
 
-    start = time(9,00)
-    midday = time(12,00)
-    end = time(17,00)
+    localtz = tzlocal()
 
-    print start
-    print task_routine.time_to_secs(start)
-    print end
-    print task_routine.time_to_secs(end)
+    start = time(9,00, tzinfo=localtz)
+    ten = time(10,00, tzinfo=localtz)
+    midday = time(12,00, tzinfo=localtz)
+    end = time(17,00, tzinfo=localtz)
+    afternoon = (time(13,00, tzinfo=localtz), end)
 
-    print datetime.today()
-    last_midnight = datetime.fromordinal(datetime.today().toordinal())
-    print task_routine.unix_time(last_midnight)
+    # print start
+    # print task_routine.time_to_secs(start)
+    # print end
+    # print task_routine.time_to_secs(end)
+
+    # print datetime.today()
+    # last_midnight = datetime.fromordinal(datetime.today().toordinal())
+    # print task_routine.unix_time(last_midnight)
 
 
-    # some standard intervals
-    today = (start, end)
-    morning = (start, midday)
-    afternoon = (midday, end)
+    # # some standard intervals
+    # today = (start, end)
+    # morning = (start, midday)
+    # afternoon = (midday, end)
 
-    start_midnight_timer = Thread(target=delay_to_midnight)    
-    start_midnight_timer.start()
+    # start_midnight_timer = Thread(target=delay_to_midnight)    
+    # start_midnight_timer.start()
 
-    rospy.Timer(rospy.Duration(60*60), print_time)
+    # rospy.Timer(rospy.Duration(60*60), print_time)
 
+
+    routine = task_routine.DailyRoutine(start, end)
+
+    task = dummy_task()
+    
+    
+    # all these should except
+    # routine.add_task(task, midday, start)
+    # routine.add_task(task, start, start)
+    # task.expected_duration = 60 * 60 * 12;
+    # routine.add_task(task, start, midday)
+
+    task.expected_duration = rospy.Duration(timedelta(seconds=60).total_seconds());
+
+    routine.add_task(task, *afternoon)
+
+    routine._new_day()
 
     rospy.spin()
 
