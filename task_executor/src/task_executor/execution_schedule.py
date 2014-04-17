@@ -64,12 +64,14 @@ class ExecutionSchedule(object):
             else:     
                 exe_delay = next_task.start_after - now
                 rospy.logdebug('need to delay %s.%s for execution' % (exe_delay.secs, exe_delay.nsecs))
-                self.execution_delay_timer = rospy.Timer(exe_delay, self.execution_delay_timer)
+                self.execution_delay_timer = rospy.Timer(exe_delay, self.execution_delay_cb)
         else:
             self.current_task = None
 
 
     def task_complete(self, task):
+        assert task != None
+        assert self.current_task != None
         assert task.task_id == self.current_task.task_id
         # no time info yet
         self.next_in_schedule()
