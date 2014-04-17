@@ -16,9 +16,10 @@ class FIFOTaskExecutor(AbstractTaskExecutor):
         self.advertise_services()
 
 
-    def add_task(self, task):
+    def add_tasks(self, tasks):
         """ Called with a new task for the executor """
-        self.tasks.put(task)
+        for task in tasks:
+            self.tasks.put(task)
 
     def run_executor(self):
         r = rospy.Rate(1) # 1hz

@@ -24,6 +24,7 @@ add_message_files(
 add_service_files(
   FILES
   AddTask.srv
+  AddTasks.srv
   CancelTask.srv
   SetExecutionStatus.srv 
   GetExecutionStatus.srv
