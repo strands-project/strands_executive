@@ -61,11 +61,15 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
             task.end_before = self.get_default_end_time(task.start_after)
 
 
-    def add_task(self, task):
-        """ Called with a new task for the executor """
-        self.fill_times(task)
-        print task
-        self.unscheduled_tasks.put(task)
+    def add_tasks(self, tasks):
+        """ Called with new tasks for the executor """
+        
+        for task in tasks:
+            self.fill_times(task)
+            # print task
+
+        for task in tasks:
+            self.unscheduled_tasks.put(task)
 
     def task_complete(self, task):
         """ Called when the given task has completed execution """
@@ -159,8 +163,10 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
             if(self.execution_schedule.wait_for_execution_change(wait_time)):
                 next_task = self.execution_schedule.get_current_task()
                 rospy.loginfo('Next task to execute: %s' % next_task)
-                self.execute_task(next_task)                
-        
+                if next_task:
+                    self.execute_task(next_task)                
+                else:
+                    rospy.loginfo('Next task was None')
 
     # def wait_for_exit(self):
     #     self.scheduling_thread.join()
