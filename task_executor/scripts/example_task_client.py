@@ -21,27 +21,7 @@ from topological_navigation.msg import GotoNodeAction
 from copy import deepcopy
 from random import random
 
-class TestTaskAction(object):
-    def __init__(self, expected_action_duration=1, expected_drive_duration=1):
-        self.expected_action_duration = expected_action_duration
-        self.expected_drive_duration = expected_drive_duration
-        self.nav_server = actionlib.SimpleActionServer('topological_navigation', GotoNodeAction, execute_cb = self.nav_callback, auto_start = False)
-        self.nav_server.start() 
-        self.task_server = actionlib.SimpleActionServer('test_task', TestExecutionAction, execute_cb = self.execute, auto_start = False)
-        self.task_server.start() 
-        
 
-    def execute(self, goal):
-        print 'called with goal %s'%goal
-        rospy.sleep(self.expected_action_duration)
-        print 'done here'
-        self.task_server.set_succeeded()
-
-    def nav_callback(self, goal):
-        print 'called with nav goal %s'%goal
-        rospy.sleep(self.expected_drive_duration)
-        print 'done nav'
-        self.nav_server.set_succeeded()
 
 def get_services():
     # get services necessary to do the jon
