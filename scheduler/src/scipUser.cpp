@@ -159,15 +159,38 @@ SCIP_Retcode ScipUser::setTcons(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t
 
 
      SCIP_CONS* con = (SCIP_CONS*)NULL;
-     SCIPsnprintf(con_name, 255, "se_%d", i);
+     SCIPsnprintf(con_name, 255, "s_%d", i);
 
      SCIP_CALL(SCIPcreateConsVarbound 	(scip,
 		&con,
 		con_name,
 		ti,	//variable x
 		g,      //biding variable y
-		d,      //constant
+		0,      //constant
 		s,      //left side of eq
+		SCIP_DEFAULT_INFINITY,	//right side of eq
+		true,   // 	initial,
+		true,    //  	separate,
+		true,  //  	enforce,
+		true,  //  	check,
+		true,  //  	propagate,
+		false, // 	local,
+		false, //  	modifiable,
+		false, //  	dynamic,
+		false,//  	removable,
+		false//  	stickingatnode 
+	) );
+
+     SCIP_CONS* con2 = (SCIP_CONS*)NULL;
+     SCIPsnprintf(con_name, 255, "e_%d", i);
+
+     SCIP_CALL(SCIPcreateConsVarbound 	(scip,
+		&con2,
+		con_name,
+		ti,	//variable x
+		g,      //biding variable y
+		d,      //constant
+		-SCIP_DEFAULT_INFINITY,      //left side of eq
 		e,	//right side of eq
 		true,   // 	initial,
 		true,    //  	separate,
@@ -180,8 +203,27 @@ SCIP_Retcode ScipUser::setTcons(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t
 		false,//  	removable,
 		false//  	stickingatnode 
 	) );
-    SCIP_CALL( SCIPaddCons(scip, con) );
-    t_con[i] = con;	
+
+   //create a conjunction
+    SCIP_CONS* conj;
+    SCIPsnprintf(con_name, 255, "junse_%d", i);
+    SCIP_CONS* arr_jun[2];
+    arr_jun[0] = con;
+    arr_jun[1] = con2;
+    SCIP_CALL(SCIPcreateConsConjunction( scip,
+                &conj,
+		con_name,
+                2,
+                arr_jun,
+                true,
+                true,
+                false,
+                false,
+                false)
+    );
+
+    SCIP_CALL( SCIPaddCons(scip, conj) );
+    t_con[i] = conj;	
    }
   return SCIP_OKAY;
 }
