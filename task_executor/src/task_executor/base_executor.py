@@ -105,12 +105,12 @@ class AbstractTaskExecutor(object):
 
         nav_goal = GotoNodeGoal(target = self.active_task.start_node_id)
         self.nav_client.send_goal(nav_goal, self.navigation_complete_cb)
-        rospy.logdebug("navigating to %s" % nav_goal)
+        rospy.loginfo("navigating to %s" % nav_goal)
 
     def navigation_complete_cb(self, goal_status, result):
         # todo: check goal status to see if we really go there
         # now do the action
-        rospy.logdebug('Navigation to %s completed' % self.active_task.start_node_id)        
+        rospy.loginfo('Navigation to %s completed' % self.active_task.start_node_id)        
         if self.active_task.action != '':                    
             self.start_task_action()
         else:

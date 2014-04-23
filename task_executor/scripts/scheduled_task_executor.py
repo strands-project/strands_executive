@@ -13,7 +13,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
     def __init__(self):
         # init node first, must be done before call to super init for service advertising to work
-        rospy.init_node("task_executor", log_level=rospy.DEBUG)
+        rospy.init_node("task_executor", log_level=rospy.INFO)
 
         # init superclasses
         super( ScheduledTaskExecutor, self ).__init__()
@@ -137,7 +137,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
                 except Empty, e:
                     pass
                 
-                rospy.logdebug('Got a further %s tasks to schedule' % len(unscheduled))
+                rospy.loginfo('Got a further %s tasks to schedule' % len(unscheduled))
 
                 self.execution_schedule.add_new_tasks(unscheduled)
 

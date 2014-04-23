@@ -42,6 +42,7 @@ bool compareTasks ( Task * i,  Task * j) {
 
 bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
          			strands_executive_msgs::GetSchedule::Response &res) {
+  
   ROS_INFO_STREAM("Got a request for a schedule " << req.tasks.size() << " tasks ");
 
   std::vector<Task*> tasks;
