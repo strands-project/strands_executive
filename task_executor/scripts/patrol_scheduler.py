@@ -3,7 +3,7 @@
 import rospy
 
 from strands_executive_msgs.msg import Task
-from strands_executive_msgs.srv import AddTask, SetExecutionStatus
+from strands_executive_msgs.srv import AddTasks, SetExecutionStatus
 from std_msgs.msg import String
 from random import shuffle
 from ros_datacentre.message_store import MessageStoreProxy
@@ -27,16 +27,16 @@ class PatrolScheduler(object):
 		self.waypoints = [n.name for n in nodes]
 		rospy.loginfo('Patrolling the following nodes: %s' % self.waypoints)
 		self.current_waypoint = ''
-		self.add_task_srv = None
+		self.add_tasks_srv = None
 		rospy.Subscriber("/current_node", String, self.current_node_cb)
 		
-		add_task_srv_name = '/task_executor/add_task'
+		add_tasks_srv_name = '/task_executor/add_tasks'
 		set_exe_stat_srv_name = '/task_executor/set_execution_status'
 		rospy.loginfo("Waiting for task_executor service...") 
-		rospy.wait_for_service(add_task_srv_name) 
+		rospy.wait_for_service(add_tasks_srv_name) 
 		rospy.wait_for_service(set_exe_stat_srv_name) 
 		rospy.loginfo("Done") 
-		self.add_task_srv = rospy.ServiceProxy(add_task_srv_name, AddTask) 
+		self.add_tasks_srv = rospy.ServiceProxy(add_tasks_srv_name, AddTasks) 
 		set_execution_status_srv = rospy.ServiceProxy(set_exe_stat_srv_name, SetExecutionStatus)
 		
 		shuffle(self.waypoints) 
@@ -50,8 +50,10 @@ class PatrolScheduler(object):
 
 	def send_tasks(self): 
 		rospy.loginfo("Sending next batch of patrol tasks")
-		for wp in self.waypoints:
-			self.add_task_srv(Task(node_id=wp))
+
+		patrol_tasks = [Task(start_node_id=wp, end_node_id=wp) for wp in self.waypoints]
+
+		self.add_tasks_srv(patrol_tasks)
 	
 
 	def current_node_cb(self, data):

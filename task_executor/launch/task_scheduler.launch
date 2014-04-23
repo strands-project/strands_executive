@@ -1,7 +1,0 @@
-<launch>
-
-  <node pkg="scheduler" type="scheduler_node" name="scheduler" />
-
-  <node pkg="task_executor" type="scheduled_task_executor.py" name="scheduled_task_executor" />
-
-</launch>
