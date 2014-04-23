@@ -73,8 +73,12 @@ class PatrolScheduler(object):
 if __name__ == '__main__':
     rospy.init_node("patrol_scheduler")
     
-    patrol_scheduler = PatrolScheduler()
+    try:
+    	patrol_scheduler = PatrolScheduler()
+    	rospy.spin()
+    except KeyError, e:
+    	rospy.logfatal("It's likely that you haven't set ros_param for topological_map_name. This is normally done by topological navigation.\n KeyError: %s" % (e))
 
-    rospy.spin()
+
 
 
