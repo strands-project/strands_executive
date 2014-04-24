@@ -92,7 +92,8 @@ if __name__ == '__main__':
     rospy.init_node("example_task_client")
 
     # Perform my own actions
-    actual_action_duration = rospy.Duration(1)
+    actual_action_duration = rospy.Duration(10)
+    actual_drive_duration = rospy.Duration(1)
 
     # create a task we will copy later,
     master_task = create_master_task()
@@ -101,10 +102,10 @@ if __name__ == '__main__':
     add_tasks, set_execution_status = get_services()
 
     # now create a bunch of task with different times
-    task_count = 5
+    task_count = 3
     start_of_window = rospy.get_rostime() 
     # max time we will tell teh scheduler any action is expected to run for
-    max_action_duration = actual_action_duration + actual_action_duration   
+    max_action_duration = actual_drive_duration + actual_action_duration + actual_action_duration   
     # a total time window to fit all the tasks in
     end_of_window = start_of_window + rospy.Duration(max_action_duration.secs * (task_count + 1))
 
@@ -119,9 +120,10 @@ if __name__ == '__main__':
         timed_task.start_after = start_of_window
         timed_task.end_before = end_of_window
         # tell the scheduler we might take longer than we think
-        timed_task.expected_duration = actual_action_duration + rospy.Duration(actual_action_duration.secs * random())
+        timed_task.max_duration = actual_action_duration # + rospy.Duration(actual_action_duration.secs * random())
         tasks.append(timed_task)
 
+        start_of_window += max_action_duration
 
     # register task with the scheduler
     task_ids = add_tasks(tasks)
@@ -129,7 +131,7 @@ if __name__ == '__main__':
 
 
     if True:
-        action_server = TestTaskAction(expected_action_duration=actual_action_duration)
+        action_server = TestTaskAction(expected_action_duration=actual_action_duration, expected_drive_duration=actual_drive_duration)
 
 
     # Set the task executor is running
@@ -137,11 +139,11 @@ if __name__ == '__main__':
 
 
 
-    rospy.sleep(actual_action_duration)
+    # rospy.sleep(actual_action_duration)
 
-    # # now create a second bunch of tasks which should not be possible
-    task_ids = add_tasks(tasks)
-    print "Added %s" % task_ids
+    # # # now create a second bunch of tasks which should not be possible
+    # task_ids = add_tasks(tasks)
+    # print "Added %s" % task_ids
 
     print 'spinning'
     rospy.spin()

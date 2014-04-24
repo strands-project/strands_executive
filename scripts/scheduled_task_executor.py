@@ -118,7 +118,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
                 task.end_before = task.end_before + min_window
 
                 assert task.execution_time >= task.start_after
-                assert task.execution_time + task.expected_duration <= task.end_before
+                assert task.execution_time + task.max_duration <= task.end_before
 
                 print 'task %s will start at %s.%s' % (task.task_id, task.execution_time.secs, task.execution_time.nsecs)                        
 
