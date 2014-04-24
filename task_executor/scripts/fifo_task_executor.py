@@ -23,7 +23,6 @@ class FIFOTaskExecutor(AbstractTaskExecutor):
             self.tasks.put(task)
         rospy.loginfo('Queued %s tasks' % len(tasks))
 
-
     def run_executor(self):
         r = rospy.Rate(1) # 1hz
         

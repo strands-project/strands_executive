@@ -11,23 +11,42 @@ int main (int argc, char** argv)
 {   
   string s1("home");
   string s2("office");
-  double start_after = 10;
-  double end_before = 50;
-  Task a(1, start_after, end_before, 4.0, s1, s2);
-  // Task b(2, start_after, end_before, 3.0, s2, s1);
-  
+
+  unsigned int task_count;
+
+  if(argc > 1) {
+    task_count = stoi(argv[1]);
+  }
+  else {
+    task_count = 10;
+  }
+
+  double one_hour = 60 * 60 * 60;
+  double task_duration = one_hour / 2.0;
+
+  double window_start = 0;
+  double window_end = window_start + (task_duration * task_count * task_count);
+
   vector<Task*> tasks;
 
-  tasks.push_back(&a);
-  // tasks.push_back(&b); 
+  for (int i = 0; i < task_count; ++i)
+  {
+    tasks.push_back(new Task(i, window_start, window_end, task_duration, s1, s2));
+  }
+
 
   Scheduler scheduler(&tasks);
   bool worked = scheduler.solve();
 
-  cout<< "Schedule found" << worked << "\n";
-  for(auto & tp : tasks) {
-    cout<< "Is start time "<<tp->getExecTime() << " after start? "
-     << (tp->getExecTime() >= tp->getStart()) << "\n";
+  if(worked)  {
+    cout<< "Schedule found" << worked << "\n";
+    for(auto & tp : tasks) {
+      cout<< "Is start time "<<tp->getExecTime() << " after start? "
+       << (tp->getExecTime() >= tp->getStart()) << "\n";
+    } 
+  }
+  else {
+    cout<< "No schedule found"<< endl;
   }
 
   return 0;

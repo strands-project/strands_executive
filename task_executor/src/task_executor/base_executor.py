@@ -77,7 +77,7 @@ class AbstractTaskExecutor(object):
 
     def start_task_action(self):
 
-        rospy.logdebug('Starting to execute %s' % self.active_task.action)
+        rospy.loginfo('Starting to execute %s' % self.active_task.action)
 
         (action_string, goal_string) = self.get_task_types(self.active_task.action)
         action_clz = dc_util.load_class(dc_util.type_to_class_string(action_string))
@@ -111,7 +111,7 @@ class AbstractTaskExecutor(object):
         # todo: check goal status to see if we really go there
         # now do the action
         rospy.loginfo('Navigation to %s completed' % self.active_task.start_node_id)        
-        if self.active_task.action != '':                    
+        if self.active_task.action != '':                                        
             self.start_task_action()
         else:
             self.task_complete(self.active_task)
@@ -120,6 +120,7 @@ class AbstractTaskExecutor(object):
 
 
     def task_execution_complete_cb(self, goal_status, result):
+        rospy.loginfo('Execution of task %s completed' % self.active_task.task_id)        
         self.task_complete(self.active_task)
         self.active_task = None
         self.active_task_id = Task.NO_TASK

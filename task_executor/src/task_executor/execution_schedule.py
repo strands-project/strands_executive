@@ -31,6 +31,11 @@ class ExecutionSchedule(object):
     	""" Get the tasks which are available to be scheduled. Does not include the task being executed. """
     	return deepcopy(self.tasks)
 
+    def get_execution_queue(self):
+        """ Get the tasks which are queued for execution. """
+        return deepcopy(self.execution_queue)
+
+
     def execute_next_task(self):
         """
         Sets the head of the execution queue to the current task, removes this from schedulable tasks, and notifies the wait_for_execution_change method. 
