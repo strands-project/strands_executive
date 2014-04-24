@@ -10,7 +10,7 @@ import StringIO
 
 from strands_executive_msgs import task_utils
 from strands_executive_msgs.msg import Task
-from strands_executive_msgs.srv import AddTask, SetExecutionStatus
+from strands_executive_msgs.srv import AddTasks, SetExecutionStatus
 # import strands_executive_msgs
 
 import rospy
@@ -22,18 +22,43 @@ from copy import deepcopy
 from random import random
 
 
+class TestTaskAction(object):
+    """ 
+    Creates the action servers the example tasks required.
+    """
+    def __init__(self, expected_action_duration=1, expected_drive_duration=1):
+        self.expected_action_duration = expected_action_duration
+        self.expected_drive_duration = expected_drive_duration
+        self.nav_server = actionlib.SimpleActionServer('topological_navigation', GotoNodeAction, execute_cb = self.nav_callback, auto_start = False)
+        self.nav_server.start() 
+        self.task_server = actionlib.SimpleActionServer('test_task', TestExecutionAction, execute_cb = self.execute, auto_start = False)
+        self.task_server.start() 
+        
+
+    def execute(self, goal):
+        print 'called with goal %s'%goal.some_goal_string
+        rospy.sleep(self.expected_action_duration)
+        self.task_server.set_succeeded()
+        # print 'done here'
+        
+
+    def nav_callback(self, goal):
+        print 'called with nav goal %s'%goal.target
+        rospy.sleep(self.expected_drive_duration)        
+        self.nav_server.set_succeeded()
+        # print 'done nav'
 
 def get_services():
     # get services necessary to do the jon
-    add_task_srv_name = '/task_executor/add_task'
+    add_tasks_srv_name = '/task_executor/add_tasks'
     set_exe_stat_srv_name = '/task_executor/set_execution_status'
     rospy.loginfo("Waiting for task_executor service...")
-    rospy.wait_for_service(add_task_srv_name)
+    rospy.wait_for_service(add_tasks_srv_name)
     rospy.wait_for_service(set_exe_stat_srv_name)
     rospy.loginfo("Done")        
-    add_task_srv = rospy.ServiceProxy(add_task_srv_name, AddTask)
+    add_tasks_srv = rospy.ServiceProxy(add_tasks_srv_name, AddTasks)
     set_execution_status = rospy.ServiceProxy(set_exe_stat_srv_name, SetExecutionStatus)
-    return add_task_srv, set_execution_status
+    return add_tasks_srv, set_execution_status
 
 def create_master_task():
     """ 
@@ -67,15 +92,13 @@ if __name__ == '__main__':
     rospy.init_node("example_task_client")
 
     # Perform my own actions
-    actual_action_duration = rospy.Duration(4)
-    if True:
-        action_server = TestTaskAction(expected_action_duration=actual_action_duration)
+    actual_action_duration = rospy.Duration(1)
 
     # create a task we will copy later,
     master_task = create_master_task()
 
     # get services to call into execution framework
-    add_task, set_execution_status = get_services()
+    add_tasks, set_execution_status = get_services()
 
     # now create a bunch of task with different times
     task_count = 5
@@ -100,16 +123,25 @@ if __name__ == '__main__':
         tasks.append(timed_task)
 
 
-    for task in tasks:
-        # register task with the scheduler
-        task.task_id = add_task(task)
-        print "Added %s" % task.task_id
+    # register task with the scheduler
+    task_ids = add_tasks(tasks)
+    print "Added %s" % task_ids
 
-    print 'calling'
+
+    if True:
+        action_server = TestTaskAction(expected_action_duration=actual_action_duration)
+
 
     # Set the task executor is running
     set_execution_status(True)
 
+
+
+    rospy.sleep(actual_action_duration)
+
+    # # now create a second bunch of tasks which should not be possible
+    task_ids = add_tasks(tasks)
+    print "Added %s" % task_ids
+
     print 'spinning'
     rospy.spin()
-
