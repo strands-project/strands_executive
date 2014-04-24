@@ -17,7 +17,7 @@ import rospy
 import actionlib
 from strands_executive_msgs.msg import Task
 from task_executor.msg import *
-from topological_navigation.msg import GotoNodeAction
+from topological_navigation.msg import GotoNodeAction, GotoNodeResult
 from copy import deepcopy
 from random import random
 
@@ -29,6 +29,7 @@ class TestTaskAction(object):
     def __init__(self, expected_action_duration=1, expected_drive_duration=1):
         self.expected_action_duration = expected_action_duration
         self.expected_drive_duration = expected_drive_duration
+        self.result   =  GotoNodeResult()
         self.nav_server = actionlib.SimpleActionServer('topological_navigation', GotoNodeAction, execute_cb = self.nav_callback, auto_start = False)
         self.nav_server.start() 
         self.task_server = actionlib.SimpleActionServer('test_task', TestExecutionAction, execute_cb = self.execute, auto_start = False)
@@ -37,15 +38,18 @@ class TestTaskAction(object):
 
     def execute(self, goal):
         print 'called with goal %s'%goal.some_goal_string
-        rospy.sleep(self.expected_action_duration)
+        rospy.sleep(self.expected_action_duration)                
         self.task_server.set_succeeded()
+        # self.task_server.set_aborted()
         # print 'done here'
         
 
     def nav_callback(self, goal):
         print 'called with nav goal %s'%goal.target
-        rospy.sleep(self.expected_drive_duration)        
-        self.nav_server.set_succeeded()
+        rospy.sleep(self.expected_drive_duration)  
+        self.result.success=True
+        self.nav_server.set_succeeded(self.result)
+        # self.nav_server.set_aborted(self.result)
         # print 'done nav'
 
 def get_services():
@@ -123,7 +127,8 @@ if __name__ == '__main__':
         timed_task.max_duration = actual_action_duration # + rospy.Duration(actual_action_duration.secs * random())
         tasks.append(timed_task)
 
-        start_of_window += max_action_duration
+        # this provides windows that need execution delays
+        # start_of_window += max_action_duration
 
     # register task with the scheduler
     task_ids = add_tasks(tasks)
