@@ -53,7 +53,7 @@ You should also set the expected duration of the task. This will be used by the 
 
 ```python
 dishes_duration = 60 * 60
-task.expected_duration = rospy.Duration(dishes_duration)
+task.max_duration = rospy.Duration(dishes_duration)
 ```
 
 If your actionlib goal type needs arguments, you must then add them to the task **in the order they are used in your goal type constructor**. You can either add plain string arguments (which are stored in the task itself) or ROS message instances (which are stored in the [ros_datacentre](https://github.com/strands-project/ros_datacentre)). For example, for the following action which is available under [task_executor/action/TestExecution.action](https://github.com/strands-project/strands_executive/blob/hydro-devel/task_executor/action/TestExecution.action)

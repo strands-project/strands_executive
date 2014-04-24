@@ -72,12 +72,12 @@ if __name__ == '__main__':
     # all these should except
     # routine.add_tasks([task], midday, start)
     # routine.add_tasks([task], start, start)
-    # task.expected_duration = 60 * 60 * 12;
+    # task.max_duration = 60 * 60 * 12;
     # routine.add_tasks([task], start, midday)
 
 
     # routine = task_routine.DailyRoutineRunner(start, end)
-    # task.expected_duration = rospy.Duration(timedelta(seconds=60).total_seconds());
+    # task.max_duration = rospy.Duration(timedelta(seconds=60).total_seconds());
     # routine.add_tasks([([task, task], morning), ([task, task], afternoon)])
 
     rospy.spin()

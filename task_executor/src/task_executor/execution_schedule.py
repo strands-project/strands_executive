@@ -62,14 +62,17 @@ class ExecutionSchedule(object):
             now = rospy.get_rostime()
             next_task = self.execution_queue[0]
 
+            rospy.loginfo('start window: %s.%s' % (next_task.start_after.secs, next_task.start_after.nsecs))
+            rospy.loginfo('         now: %s.%s' % (now.secs, now.nsecs))
+            
             # if the start window is open
             if next_task.start_after <= now:
-                rospy.logdebug('start window is open')
+                rospy.loginfo('start window is open')
                 self.execute_next_task()
             else:     
                 exe_delay = next_task.start_after - now
-                rospy.logdebug('need to delay %s.%s for execution' % (exe_delay.secs, exe_delay.nsecs))
-                self.execution_delay_timer = rospy.Timer(exe_delay, self.execution_delay_cb)
+                rospy.loginfo('need to delay %s.%s for execution' % (exe_delay.secs, exe_delay.nsecs))
+                self.execution_delay_timer = rospy.Timer(exe_delay, self.execution_delay_cb, oneshot=True)
         else:
             self.current_task = None
 

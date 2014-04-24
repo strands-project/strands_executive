@@ -52,7 +52,7 @@ class TestEntry():
                     print 'task %s will start at %s.%s' % (task.task_id, task.execution_time.secs, task.execution_time.nsecs)            
 
                     # self.assertTrue(task.execution_time >= task.start_after)
-                    # self.assertTrue(task.execution_time + task.expected_duration <= task.end_before)
+                    # self.assertTrue(task.execution_time + task.max_duration <= task.end_before)
                 
             else:
                 pass
@@ -78,7 +78,7 @@ class TestEntry():
             task.end_node_id=str(task_id)
             task.start_after = start_of_window
             task.end_before = end_of_window
-            task.expected_duration = rospy.Duration(max_duration.secs/2)
+            task.max_duration = rospy.Duration(max_duration.secs/2)
             tasks.append(task)
 
         return tasks
@@ -103,7 +103,7 @@ class TestEntry():
             task.end_node_id=str(task_id)
             task.start_after = start_of_first_window
             task.end_before = end_of_first_window
-            task.expected_duration = rospy.Duration(max_duration.secs * random())
+            task.max_duration = rospy.Duration(max_duration.secs * random())
             tasks.append(task)
 
         window_interval = max_duration
@@ -118,7 +118,7 @@ class TestEntry():
             task.end_node_id=str(task_id)
             task.start_after = start_of_second_window
             task.end_before = end_of_second_window
-            task.expected_duration = rospy.Duration(max_duration.secs * random())
+            task.max_duration = rospy.Duration(max_duration.secs * random())
             tasks.append(task)
 
         self.assertEquals(task_count, len(tasks))
