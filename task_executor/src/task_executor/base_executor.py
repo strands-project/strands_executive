@@ -5,6 +5,7 @@ from strands_executive_msgs.msg import Task
 from strands_executive_msgs.srv import AddTasks, AddTask, SetExecutionStatus, GetExecutionStatus
 import ros_datacentre.util as dc_util
 import actionlib
+from actionlib_msgs.msg import GoalStatus
 from geometry_msgs.msg import Pose, Point, Quaternion
 from ros_datacentre.message_store import MessageStoreProxy
 from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
@@ -27,6 +28,15 @@ class AbstractTaskExecutor(object):
     def task_complete(self, task):
         """ Called when the given task has completed execution """
         pass
+
+    def task_succeeded(self, task):
+        """ Called when the given task has completed execution successfully """
+        self.task_complete(task)
+
+    def task_failed(self, task):
+        """ Called when the given task has completed execution but failed """
+        self.task_complete(task)
+
 
 
     def __init__(self):
@@ -83,8 +93,8 @@ class AbstractTaskExecutor(object):
         action_clz = dc_util.load_class(dc_util.type_to_class_string(action_string))
         goal_clz = dc_util.load_class(dc_util.type_to_class_string(goal_string))
 
-        client = actionlib.SimpleActionClient(self.active_task.action, action_clz)
-        client.wait_for_server()
+        self.action_client = actionlib.SimpleActionClient(self.active_task.action, action_clz)
+        self.action_client.wait_for_server()
 
         argument_list = self.get_arguments(self.active_task.arguments)
 
@@ -94,7 +104,7 @@ class AbstractTaskExecutor(object):
         goal = goal_clz(*argument_list)         
 
         rospy.logdebug('Sending goal to %s' % self.active_task.action)
-        client.send_goal(goal, self.task_execution_complete_cb)
+        self.action_client.send_goal(goal, self.task_execution_complete_cb)
         
     def start_task_navigation(self):
         # handle delayed start up
@@ -110,18 +120,36 @@ class AbstractTaskExecutor(object):
     def navigation_complete_cb(self, goal_status, result):
         # todo: check goal status to see if we really go there
         # now do the action
-        rospy.loginfo('Navigation to %s completed' % self.active_task.start_node_id)        
-        if self.active_task.action != '':                                        
-            self.start_task_action()
+
+        print self.nav_client.get_state()
+        print self.nav_client.get_result()
+
+        if self.nav_client.get_state() == GoalStatus.SUCCEEDED and self.nav_client.get_result().success:
+
+            rospy.loginfo('Navigation to %s succeeded' % self.active_task.start_node_id)        
+
+            if self.active_task.action != '':                                        
+                self.start_task_action()
+            else:
+                self.task_succeeded(self.active_task)
+                self.active_task = None
+                self.active_task_id = Task.NO_TASK
         else:
-            self.task_complete(self.active_task)
+            rospy.loginfo('Navigation to %s failed' % self.active_task.start_node_id)        
+            self.task_failed(self.active_task)
             self.active_task = None
             self.active_task_id = Task.NO_TASK
 
 
+
     def task_execution_complete_cb(self, goal_status, result):
-        rospy.loginfo('Execution of task %s completed' % self.active_task.task_id)        
-        self.task_complete(self.active_task)
+
+        if self.action_client.get_state() == GoalStatus.SUCCEEDED:
+            rospy.loginfo('Execution of task %s succeeded' % self.active_task.task_id)        
+            self.task_succeeded(self.active_task)
+        else:
+            rospy.loginfo('Execution of task %s failed' % self.active_task.task_id)        
+            self.task_failed(self.active_task)
         self.active_task = None
         self.active_task_id = Task.NO_TASK
 
