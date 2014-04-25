@@ -25,8 +25,8 @@ time start_after
 # The task be completed after this time
 time end_before
 
-# The expected duration of the task
-duration expected_duration
+# The maximum duration of the task
+duration max_duration
 
 # The scheduler execution time
 time execution_time

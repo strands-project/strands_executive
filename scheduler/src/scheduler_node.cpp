@@ -27,7 +27,7 @@ Task * createSchedulerTask(const strands_executive_msgs::Task & _task) {
 	Task* t = new Task(_task.task_id,
 						_task.start_after.toSec(),
 						_task.end_before.toSec(),
-						_task.expected_duration.toSec(),
+						_task.max_duration.toSec(),
 						_task.start_node_id,
 						_task.end_node_id);
 
