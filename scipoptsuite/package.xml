@@ -43,8 +43,8 @@
   <build_depend>gmp</build_depend>
   <build_depend>readline</build_depend>
   <build_depend>zlib</build_depend>
-  <build_depend>libgmp-dev</build_depend>
-  <run_depend>gmp</run_depend>
+  <build_depend>libgmp3-dev</build_depend>
+  <run_depend>libgmp3-dev</run_depend>
   <run_depend>readline</run_depend>
   <run_depend>zlib</run_depend>
 
