@@ -61,8 +61,7 @@ SCIP_Retcode ScipUser::fakeVar()
 		SCIP_VARTYPE_INTEGER,
 		true,
 		false,
-		0, 0, 0, 0, 0)); 
-   
+		0, 0, 0, 0, 0));  
    SCIP_CALL(SCIPaddVar(scip, f)); 
    return SCIP_OKAY; 
 }
@@ -161,14 +160,20 @@ SCIP_Retcode ScipUser::setTcons(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t
      SCIP_CONS* con = (SCIP_CONS*)NULL;
      SCIPsnprintf(con_name, 255, "s_%d", i);
 
-     SCIP_CALL(SCIPcreateConsVarbound 	(scip,
+     SCIP_VAR * vars0[1];
+     vars0[0] = ti;
+
+     SCIP_Real vals0[1];
+     vals0[0] = 1.0;
+
+     SCIP_CALL(SCIPcreateConsLinear (scip,
 		&con,
 		con_name,
-		ti,	//variable x
-		g,      //biding variable y
-		0,      //constant
-		s,      //left side of eq
-		SCIP_DEFAULT_INFINITY,	//right side of eq
+		1, //number of variables
+		vars0,//&vars,
+		vals0,
+		s,//  	lhs,
+		SCIP_DEFAULT_INFINITY,//  	rhs,
 		true,   // 	initial,
 		true,    //  	separate,
 		true,  //  	enforce,
@@ -178,20 +183,20 @@ SCIP_Retcode ScipUser::setTcons(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t
 		false, //  	modifiable,
 		false, //  	dynamic,
 		false,//  	removable,
-		false//  	stickingatnode 
+		false//  	stickingatnode
 	) );
 
      SCIP_CONS* con2 = (SCIP_CONS*)NULL;
      SCIPsnprintf(con_name, 255, "e_%d", i);
 
-     SCIP_CALL(SCIPcreateConsVarbound 	(scip,
+    SCIP_CALL(SCIPcreateConsLinear (scip,
 		&con2,
 		con_name,
-		ti,	//variable x
-		g,      //biding variable y
-		d,      //constant
-		-SCIP_DEFAULT_INFINITY,      //left side of eq
-		e,	//right side of eq
+		1, //number of variables
+		vars0,//&vars,
+		vals0,
+		-SCIP_DEFAULT_INFINITY,//  	lhs,
+		e-d,//  	rhs,
 		true,   // 	initial,
 		true,    //  	separate,
 		true,  //  	enforce,
@@ -201,7 +206,7 @@ SCIP_Retcode ScipUser::setTcons(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t
 		false, //  	modifiable,
 		false, //  	dynamic,
 		false,//  	removable,
-		false//  	stickingatnode 
+		false//  	stickingatnode
 	) );
 
    //create a conjunction
@@ -228,188 +233,6 @@ SCIP_Retcode ScipUser::setTcons(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t
   return SCIP_OKAY;
 }
 
-SCIP_Retcode ScipUser::setLeftCons(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t_var, int i, int j, SCIP_VAR * g, SCIP_CONS* con)
-{
-/* add constraint ti + di + dist - tj <= 0 if preij == 1*/
-     char con_name[255];   
-     SCIP_VAR* ti;
-     SCIP_VAR* tj;
-
-     
-     ti = t_var->at(i);
-     tj = t_var->at(j);
-
-     //creating a constraint ti + di + dist - tj <= 0     
-     SCIP_Real d = tasksToS->at(i)->getDuration();
-     SCIP_Real dist = DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
-
-     SCIP_Real vals[4]; //array of values
-     vals[0] = 1;
-     vals[1] = d;
-     vals[2] = dist;
-     vals[3] = -1;  
-     
-     SCIP_VAR * vars[4]; //array of variables
-     vars[0] = ti;
-     vars[1] = g;
-     vars[2] = g;
-     vars[3] = tj; 
- 
-     SCIPsnprintf(con_name, 255, "tddt_%d%d", i,j);
-
-     SCIP_CALL(SCIPcreateConsLinear 	(scip,
-		&con,
-		con_name,
-		4, //number of variables
-		vars,//&vars,
-		vals,
-		-SCIP_DEFAULT_INFINITY,//  	lhs,
-		0.0,//  	rhs,
-		true,   // 	initial,
-		true,    //  	separate,
-		true,  //  	enforce,
-		true,  //  	check,
-		true,  //  	propagate,
-		false, // 	local,
-		false, //  	modifiable,
-		false, //  	dynamic,
-		false,//  	removable,
-		false//  	stickingatnode
-	) );
-  return SCIP_OKAY;
-}
-
-SCIP_Retcode ScipUser::setRightCons(int i, int j, int k, double v, SCIP_CONS* con2)
-{
- //creating a constraint preij == 1
-
-     char con_name[255];   
-     SCIP_VAR * vars2[1];
-     vars2[0] = pre_var->at(k);
-
-     SCIP_Real vals2[1];
-     vals2[0] = 1.0;
-
-     SCIPsnprintf(con_name, 255, "pre_%d%d", i,j);
-     SCIP_CALL(SCIPcreateConsLinear 	(scip,
-		&con2,
-		con_name,
-		1, //number of variables
-		vars2,//&vars,
-		vals2,
-		v,//  	lhs,
-		v,//  	rhs,
-		true,   // 	initial,
-		true,    //  	separate,
-		true,  //  	enforce,
-		true,  //  	check,
-		true,  //  	propagate,
-		false, // 	local,
-		false, //  	modifiable,
-		false, //  	dynamic,
-		false,//  	removable,
-		false//  	stickingatnode
-	) );
-
-  return SCIP_OKAY;
-}
-
-SCIP_Retcode ScipUser::setConjCons(int i, int j, SCIP_CONS * first, SCIP_CONS * second, SCIP_CONS * final)
-{
-  //create a conjunction
-  char con_name[255];   
-  SCIPsnprintf(con_name, 255, "jun_%d%d", i,j);
-  SCIP_CONS* arr_jun[2];
-  arr_jun[0] = first;
-  arr_jun[1] = second;
-  SCIP_CALL(SCIPcreateConsConjunction( scip,
-                &final,
-		con_name,
-                2,
-                arr_jun,
-                true,
-                true,
-                false,
-                false,
-                false)
-    );
-  return SCIP_OKAY;
-}
-
-SCIP_Retcode ScipUser::setFinalCons(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t_var, SCIP_VAR * g, vector<vector<int>> * pairs)
-{
-  SCIP_Retcode err;
-  char con_name[255];  
-
-  SCIP_CONS* conL1 = new SCIP_CONS();
-  SCIP_CONS* conR1 = new SCIP_CONS();
-  SCIP_CONS* conF1 = new SCIP_CONS();
-
-  SCIP_CONS* conL2 = new SCIP_CONS();
-  SCIP_CONS* conR2 = new SCIP_CONS();
-  SCIP_CONS* conF2 = new SCIP_CONS();
-
-  SCIP_CONS* confinal = new SCIP_CONS();
-
-  int i=0;
-  int j=1;
-  int k=0;
-  //create (ti+di+dist-tj)*preij <= 0
-  err = setLeftCons(tasksToS, t_var, i, j, g, conL1);
-  if (err != SCIP_OKAY)
-    return err; 
-
-  err = setRightCons(i, j, k, 1.0, conR1);
-  if (err != SCIP_OKAY)
-    return err;
-
-  err = setConjCons(i, j, conL1, conR1, conF1);
-  if (err != SCIP_OKAY)
-    return err;
-
-  //create (tj+dj+dist-ti)*(1-preij) <= 0
-  err = setLeftCons(tasksToS, t_var, j, i, g, conL2);
-  if (err != SCIP_OKAY)
-    return err; 
-
-  err = setRightCons(j, i, k, 0.0, conR2);
-  if (err != SCIP_OKAY)
-    return err;
-
-  err = setConjCons(j, i, conL2, conR2, conF2);
-  if (err != SCIP_OKAY)
-    return err;
-
-  //finally, create disjunction of these two conditions
-  
-  SCIPsnprintf(con_name, 255, "final_%d%d",i,j);
-  SCIP_CONS* arr_final[2];
-  arr_final[0] = conF1;
-  arr_final[1] = conF2;
-  SCIP_CALL(SCIPcreateConsDisjunction(scip,
-		&confinal,
-		con_name,
-		2,
-		arr_final,
-		NULL, //SCIP_CONS *
-		true,
-		true,//  	enforce,
-		true, //  	check,
-		false,//  	local,
-		false,// 	modifiable,
-		false//  	dynamic 
-	)) ;	
-  if (err != SCIP_OKAY)
-    return err;
-
-
-  //add disjunction to the problem
-  //SCIP_CALL( SCIPaddCons(scip, conR1) );
-  if (err != SCIP_OKAY)
-    return err;
-
-  return SCIP_OKAY;
-}
 
 SCIP_Retcode ScipUser::setFinalCons_long(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t_var, SCIP_VAR * g, vector<vector<int>> * pairs)
 {
@@ -420,6 +243,7 @@ SCIP_Retcode ScipUser::setFinalCons_long(vector<Task*> * tasksToS, vector<SCIP_V
      int i = p.at(0);
      int j = p.at(1);
      int k = p.at(2);
+     int type = p.at(3);
 
      SCIP_VAR* ti;
      SCIP_VAR* tj;
@@ -427,34 +251,36 @@ SCIP_Retcode ScipUser::setFinalCons_long(vector<Task*> * tasksToS, vector<SCIP_V
      ti = t_var->at(i);
      tj = t_var->at(j);
 
-     //creating a constraint ti + di + dist - tj <= 0     
-     SCIP_Real d = tasksToS->at(i)->getDuration();
-     SCIP_Real dist = DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
-
-     SCIP_Real vals[4]; //array of values
-     vals[0] = 1;
-     vals[1] = d;
-     vals[2] = dist;
-     vals[3] = -1;  
-     
-     SCIP_VAR * vars[4];
-     vars[0] = ti;
-     vars[1] = g;
-     vars[2] = g;
-     vars[3] = tj; 
- 
-
      SCIP_CONS* con;
-     SCIPsnprintf(con_name, 255, "tddt_%d%d", i,j);
+     SCIP_CONS* con2;
+    
+     if((type==1)||(type==2)) //task i should precede j, or both combinations are possible
+     {   
+       //creating a constraint ti + di + dist - tj <= 0     
+       SCIP_Real d = tasksToS->at(i)->getDuration();
+       SCIP_Real dist = DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
 
-     SCIP_CALL(SCIPcreateConsLinear 	(scip,
+       SCIP_Real vals[2]; //array of values
+       vals[0] = 1;
+       vals[1] = -1; 
+
+       double rhs = -d-dist; 
+     
+       SCIP_VAR * vars[2];
+       vars[0] = ti;
+       vars[1] = tj; 
+ 
+       
+       SCIPsnprintf(con_name, 255, "tddt_%d%d", i,j);
+
+       SCIP_CALL(SCIPcreateConsLinear 	(scip,
 		&con,
 		con_name,
-		4, //number of variables
+		2, //number of variables
 		vars,//&vars,
 		vals,
 		-SCIP_DEFAULT_INFINITY,//  	lhs,
-		0.0,//  	rhs,
+		rhs,//  	rhs,
 		true,   // 	initial,
 		true,    //  	separate,
 		true,  //  	enforce,
@@ -466,85 +292,34 @@ SCIP_Retcode ScipUser::setFinalCons_long(vector<Task*> * tasksToS, vector<SCIP_V
 		false,//  	removable,
 		false//  	stickingatnode
 	) );
+     }
+     if((type==0)||(type==2)) //task j precede task i, or both combinations are possible
+     {
+       //creating a constraint tj + dj + dist - ti <= 0
 
-//creating a constraint preij == 1
-     SCIP_VAR * vars2[1];
-     vars2[0] = pre_var->at(k);
+       SCIP_Real dj = tasksToS->at(j)->getDuration();
+       SCIP_Real distj = DistWrapper::dist(tasksToS->at(j)->getEndPos(),tasksToS->at(i)->getStartPos());; 
 
-     SCIP_Real vals2[1];
-     vals2[0] = 1.0;
+       SCIP_Real vals3[2]; //array of values
+       vals3[0] = 1;
+       vals3[1] = -1;  
+     
+       double rhs2 = -dj-distj;
+       SCIP_VAR * vars3[2];
+       vars3[0] = tj;
+       vars3[1] = ti; 
 
-     SCIP_CONS* con2;
-     SCIPsnprintf(con_name, 255, "pre_%d%d", i,j);
+ 
+       SCIPsnprintf(con_name, 255, "tddt_%d%d",j,i);
 
-     SCIP_CALL(SCIPcreateConsLinear 	(scip,
+       SCIP_CALL(SCIPcreateConsLinear 	(scip,
 		&con2,
 		con_name,
-		1, //number of variables
-		vars2,//&vars,
-		vals2,
-		1.0,//  	lhs,
-		1.0,//  	rhs,
-		true,   // 	initial,
-		true,    //  	separate,
-		true,  //  	enforce,
-		true,  //  	check,
-		true,  //  	propagate,
-		false, // 	local,
-		false, //  	modifiable,
-		false, //  	dynamic,
-		false,//  	removable,
-		false//  	stickingatnode
-	) );
-
-
-   
-//create a conjunction
-   SCIP_CONS* conj;
-    SCIPsnprintf(con_name, 255, "jun_%d%d", i,j);
-    SCIP_CONS* arr_jun[2];
-    arr_jun[0] = con;
-    arr_jun[1] = con2;
-   SCIP_CALL(SCIPcreateConsConjunction( scip,
-                &conj,
-		con_name,
-                2,
-                arr_jun,
-                true,
-                true,
-                false,
-                false,
-                false)
-    );
-
-    //creating a constraint tj + dj + dist - ti <= 0
-
-      SCIP_Real dj = tasksToS->at(j)->getDuration();
-     SCIP_Real distj = DistWrapper::dist(tasksToS->at(j)->getEndPos(),tasksToS->at(i)->getStartPos());; //TODO: call dist function
-
-     SCIP_Real vals3[4]; //array of values
-     vals3[0] = 1;
-     vals3[1] = dj;
-     vals3[2] = distj;
-     vals3[3] = -1;  
-     
-     SCIP_VAR * vars3[4];
-     vars3[0] = tj;
-     vars3[1] = g;
-     vars3[2] = g;
-     vars3[3] = ti; 
-
-     SCIP_CONS* con3;
-     SCIPsnprintf(con_name, 255, "tddt_%d%d",j,i);
-
-     SCIP_CALL(SCIPcreateConsLinear 	(scip,
-		&con3,
-		con_name,
-		4, //number of variables
+		2, //number of variables
 		vars3,//&vars,
 		vals3,
 		-SCIP_DEFAULT_INFINITY,//  	lhs,
-		0.0,//  	rhs,
+		rhs2,//  	rhs,
 		true,   // 	initial,
 		true,    //  	separate,
 		true,  //  	enforce,
@@ -556,62 +331,26 @@ SCIP_Retcode ScipUser::setFinalCons_long(vector<Task*> * tasksToS, vector<SCIP_V
 		false,//  	removable,
 		false//  	stickingatnode
 	) );
-
-//creating a constraint preij == 0
-     SCIP_VAR * vars4[1];
-     vars4[0] = pre_var->at(k);
-
-     SCIP_Real vals4[1];
-     vals4[0] = 1.0;
-
-     SCIP_CONS* con4;
-     SCIPsnprintf(con_name, 255, "pre_%d%d",j,i);
-
-     SCIP_CALL(SCIPcreateConsLinear 	(scip,
-		&con4,
-		con_name,
-		1, //number of variables
-		&vars4[0],//&vars,
-		&vals4[0],
-		0.0,//  	lhs,
-		0.0,//  	rhs,
-		true,   // 	initial,
-		true,    //  	separate,
-		true,  //  	enforce,
-		true,  //  	check,
-		true,  //  	propagate,
-		false, // 	local,
-		false, //  	modifiable,
-		false, //  	dynamic,
-		false,//  	removable,
-		false//  	stickingatnode
-	) );
-
-    //create a conjunction
-    SCIP_CONS* conj2;
-    SCIPsnprintf(con_name, 255, "jun_%d%d",j,i);
-    SCIP_CONS* arr_jun2[2];
-    arr_jun2[0] = con3;
-    arr_jun2[1] = con4;
-    SCIP_CALL(SCIPcreateConsConjunction( scip,
-                &conj2,
-		con_name,
-                2,
-                arr_jun2,
-                true,
-                true,
-                false,
-                false,
-                false)
-    );
-
-    //create a disjunction
-    SCIP_CONS* confinal;
-    SCIPsnprintf(con_name, 255, "final_%d%d",i,j);
-    SCIP_CONS* arr_final[2];
-    arr_final[0] = conj;
-    arr_final[1] = conj2;
-    SCIP_CALL(SCIPcreateConsDisjunction(scip,
+    }
+    if(type==1)
+    {
+      SCIP_CALL( SCIPaddCons(scip, con));
+      SCIP_CALL( SCIPreleaseCons(scip, &con));
+    }
+    if(type==0)
+    {
+      SCIP_CALL( SCIPaddCons(scip, con2));
+      SCIP_CALL( SCIPreleaseCons(scip, &con2));
+    }
+    if(type==2)
+    {
+      //create a disjunction
+      SCIP_CONS* confinal;
+      SCIPsnprintf(con_name, 255, "final_%d%d",i,j);
+      SCIP_CONS* arr_final[2];
+      arr_final[0] = con;
+      arr_final[1] = con2;
+      SCIP_CALL(SCIPcreateConsDisjunction(scip,
 		&confinal,
 		con_name,
 		2,
@@ -624,7 +363,11 @@ SCIP_Retcode ScipUser::setFinalCons_long(vector<Task*> * tasksToS, vector<SCIP_V
 		false,// 	modifiable,
 		false//  	dynamic 
 	)) ;	
-    SCIP_CALL( SCIPaddCons(scip, confinal) );
+      SCIP_CALL( SCIPaddCons(scip, confinal) ); 
+      SCIP_CALL( SCIPreleaseCons(scip, &con));
+      SCIP_CALL( SCIPreleaseCons(scip, &con2));
+      SCIP_CALL( SCIPreleaseCons(scip, &confinal));
+    }
   }
   return SCIP_OKAY;
 }
@@ -636,7 +379,7 @@ SCIP_Retcode ScipUser::scipSolve(vector<Task*> * tasksToS, SCIP_VAR * vars[], bo
   SCIP_Real vals[num_tasks]; //array to save execution times
 
   SCIP_CALL( SCIPsolve(scip) );
-  SCIP_CALL( SCIPprintBestSol(scip, NULL, FALSE) );
+  //SCIP_CALL( SCIPprintBestSol(scip, NULL, FALSE) );
   SCIP_SOL* sol = SCIPgetBestSol(scip);
   
   if(sol == NULL)
