@@ -63,11 +63,11 @@ add_action_files(
   Wait.action
 )
 
-## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   actionlib_msgs
-# )
+# Generate added messages and services with any dependencies listed here
+generate_messages(
+  DEPENDENCIES
+  actionlib_msgs
+)
 
 ###################################
 ## catkin specific configuration ##
