@@ -85,6 +85,14 @@ class AbstractTaskExecutor(object):
             self.active_task_id = Task.NO_TASK
 
 
+    def cancel_active_task(self, event):
+        """ Cancel any active nav or task action """
+        rospy.logwarn("Cancelling task that has overrun %s" % self.active_task)
+        if self.nav_client.get_state() == GoalStatus.ACTIVE:
+            self.nav_client.cancel_goal()
+        if self.action_client.get_state() == GoalStatus.ACTIVE:
+            self.action_client.cancel_goal()
+
     def start_task_action(self):
 
         rospy.loginfo('Starting to execute %s' % self.active_task.action)
@@ -104,8 +112,12 @@ class AbstractTaskExecutor(object):
         goal = goal_clz(*argument_list)         
 
         rospy.logdebug('Sending goal to %s' % self.active_task.action)
-        self.action_client.send_goal(goal, self.task_execution_complete_cb)
+        self.action_client.send_goal(goal, self.task_execution_complete_cb) 
         
+        wiggle_room = rospy.Duration(5)
+        # start a timer to kill off tasks that overrun
+        self.timeout_timer = rospy.Timer(self.active_task.max_duration + wiggle_room, self.cancel_active_task, oneshot=True)
+
     def start_task_navigation(self):
         # handle delayed start up
         if self.nav_client == None:
@@ -118,11 +130,9 @@ class AbstractTaskExecutor(object):
         rospy.loginfo("navigating to %s" % nav_goal)
 
     def navigation_complete_cb(self, goal_status, result):
-        # todo: check goal status to see if we really go there
-        # now do the action
 
-        print self.nav_client.get_state()
-        print self.nav_client.get_result()
+        # print self.nav_client.get_state()
+        # print self.nav_client.get_result()
 
         if self.nav_client.get_state() == GoalStatus.SUCCEEDED and self.nav_client.get_result().success:
 
@@ -150,6 +160,7 @@ class AbstractTaskExecutor(object):
         else:
             rospy.loginfo('Execution of task %s failed' % self.active_task.task_id)        
             self.task_failed(self.active_task)
+        self.timeout_timer.shutdown()
         self.active_task = None
         self.active_task_id = Task.NO_TASK
 
