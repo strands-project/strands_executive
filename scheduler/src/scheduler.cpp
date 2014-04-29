@@ -4,6 +4,7 @@
 #include "distWrapper.h"
 #include <iostream> //TODO: delete
 #include "scipUser.h"
+#include <math.h>  
 /* scip includes */
 #include "objscip/objscip.h"
 #include "objscip/objscipdefplugins.h"
@@ -30,15 +31,15 @@ int Scheduler::getNumTasks()
   return numTasks;
 }
 
-vector< vector<int> > Scheduler::getPairs()
+vector<vector<int>> Scheduler::getPairs()
 {
   return pairs; //TODO: think if this is good, maybe return reference to it?
 }
 
 void Scheduler::setPairs()
 {
-  vector< vector<int> >::iterator it;
-  vector<int> opair(3);  //one pair, always containing two integers + order of pair, when setted by preVar method
+  vector<vector<int>>::iterator it;
+  vector<int> opairs(4);  //one pair, always containing two integers + order of pair, when setted by preVar method + the type of pair
 
   //setting pairs based on the fact if their windows are overlapping. Thus we need to decide if i precede j, or j precede i
   for (int i=0; i<numTasks; i++)
@@ -46,19 +47,87 @@ void Scheduler::setPairs()
     for (int j=i+1; j<numTasks; j++)
     {
       double ei = tasksToS->at(i)->getEnd();
+      double si = tasksToS->at(i)->getStart();
+      double ej = tasksToS->at(j)->getEnd();
       double sj = tasksToS->at(j)->getStart();
-      double dist = DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
+      //double dist = DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
 
-      if(ei+dist >sj)
+      //I before J, or I after J there is no overlapp and we dont want to add the pair.
+      //for other cases, we would like to add some constraint
+      if(ei>sj)
       {
         //the combination of tasks is possible
-        opair[0] = i;//tasksToS->at(i)->getID();
-        opair[1] = j;//tasksToS->at(j)->getID();
-        opair[2] = -1; // this will be set in preVar method
+        opairs[0] = i;//tasksToS->at(i)->getID();
+        opairs[1] = j;//tasksToS->at(j)->getID();
+        opairs[2] = -1; // this will be set in preVar method
+        opairs[3] = -1;
+
+        //i overlaps j
+        if((si<sj)&&(ei<ej))
+        {
+          opairs[3] = 1;
+        }
+        
+        //i starts j, equal
+        else if(si==sj)
+        {
+          if(ei<ej) //i starts j
+          {
+            opairs[3]=1;
+          }
+          
+          else if (ei==ej)//equals
+          {
+            opairs[3]=1; //this should be 2, but if intervals are same and we are not using any priority, it makes no sense
+                         //to chose ordering, thus fixing it for task i precedes task j
+          }
+        }
+       //j during i
+        else if((si<sj)&&(ei>ej))
+        {
+           opairs[3]=2;
+        }
+        //i finish j
+        else if((ei == ej)&&(si<sj))
+        {
+          opairs[3]=1;
+        }
         it = pairs.begin() + numPairs;
-        pairs.insert(it,opair);
+        pairs.insert(it,opairs);
         numPairs++;
+        //cout << opairs[0] << ";" << opairs[1] << opairs[3] << "\n";
       }
+      if(ej>si)
+      {
+        //j overlaps i
+        if((sj<si)&&(ej<ei))
+        {
+          opairs[3] = 0;
+        }
+        
+        else if((si==sj)&&(ej < ei)) //i imeets j
+        {
+          opairs[3]=0;
+        }
+       //i during j
+        else if((sj<si)&&(ej>ei))
+        {
+          opairs[3]=2;
+        }
+        else if((ei == ej)&&(sj<si))
+        {
+          opairs[3]=0;
+        }
+        it = pairs.begin() + numPairs;
+        pairs.insert(it,opairs);
+        numPairs++;
+        //cout << opairs[0] << ";" << opairs[1] << opairs[3] << "\n";
+      }
+      
+
+     // if(ei+dist >sj)
+      //{     
+      //}
     }
   }
 }
@@ -106,7 +175,7 @@ int Scheduler::setPreVar(ScipUser * solver)
   //setting pre variables, first testing now and conditions
   //if task now exist, we need to set pre variables first
 
-  i = findTaskNow();
+  /*i = findTaskNow();
   if(i != -1)
   {
     unsigned int tid = tasksToS->at(i)->getID();
@@ -147,7 +216,7 @@ int Scheduler::setPreVar(ScipUser * solver)
         if(!nowSet[k]) //if pair doesnt exist in pairs, we need to set it
         {
            nowSet[k] = true;
-           vector< vector<int> >::iterator it;
+           vector<vector<int>>::iterator it;
            it = pairs.begin()+numPairs;
            vector<int> opair(3);
            //to have pair always with smaller number first
@@ -244,7 +313,7 @@ int Scheduler::setPreVar(ScipUser * solver)
         if(!preSet[k])
         {
            preSet[k] = true;
-           vector< vector<int> >::iterator it;
+           vector<vector<int>>::iterator it;
            it = pairs.begin()+numPairs;
            vector<int> opair(3);
 
@@ -277,7 +346,7 @@ int Scheduler::setPreVar(ScipUser * solver)
         }
       }
     }
-  }
+  }*/
 
   //set the rest of pairs
   for (j=0; j<(int)pairs.size();j++)
@@ -306,13 +375,12 @@ bool Scheduler::solve()
   err = solver->getEr();
   if (err != SCIP_OKAY)
     return -1;
-
-  err = solver->fakeVar();
+ //postaru
+ err = solver->fakeVar();
   if (err != SCIP_OKAY)
     return -1;
 
   SCIP_VAR * g = solver->getF();
-
 
 
 //creating a vector for variables
@@ -342,6 +410,8 @@ bool Scheduler::solve()
     array_tvar[i] = t_var->at(i);
 
   bool * worked = new bool();
+
+//----------------------- 
 
   err = solver->scipSolve(tasksToS, array_tvar, worked);
    if (err != SCIP_OKAY)

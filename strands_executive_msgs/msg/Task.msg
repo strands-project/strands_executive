@@ -5,6 +5,10 @@ uint64 NO_TASK=0
 string FLOAT_TYPE="____float____"
 # Constant for int type argument
 string INT_TYPE="____int____"
+# Constant for ros time type argument
+string TIME_TYPE="____time____"
+# Constant for ros duration type argument
+string DURATION_TYPE="____duration____"
 
 
 # This holds the id of the task. This will be assigned by the framework, and doesn't need to be provided.

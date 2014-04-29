@@ -23,33 +23,8 @@ from random import random
 from dateutil.tz import *
 from datetime import *
 from task_executor import task_routine
+from task_executor.utils import TestTaskAction
 
-
-
-class TestTaskAction(object):
-    """ 
-    Creates the action servers the example tasks required.
-    """
-    def __init__(self, expected_action_duration=1, expected_drive_duration=1):
-        self.expected_action_duration = expected_action_duration
-        self.expected_drive_duration = expected_drive_duration
-        self.nav_server = actionlib.SimpleActionServer('topological_navigation', GotoNodeAction, execute_cb = self.nav_callback, auto_start = False)
-        self.nav_server.start() 
-        self.task_server = actionlib.SimpleActionServer('test_task', TestExecutionAction, execute_cb = self.execute, auto_start = False)
-        self.task_server.start() 
-        
-
-    def execute(self, goal):
-        print 'called with goal %s'%goal
-        rospy.sleep(self.expected_action_duration)
-        print 'done here'
-        self.task_server.set_succeeded()
-
-    def nav_callback(self, goal):
-        print 'called with nav goal %s'%goal
-        rospy.sleep(self.expected_drive_duration)
-        print 'done nav'
-        self.nav_server.set_succeeded()
 
 def get_services():
     # get services necessary to do the jon
@@ -63,7 +38,13 @@ def get_services():
     set_execution_status = rospy.ServiceProxy(set_exe_stat_srv_name, SetExecutionStatus)
     return add_tasks_srv, set_execution_status
 
-def create_master_task():
+def create_wait_task(max_duration):
+    master_task = Task(action='wait_action', max_duration=max_duration)
+    task_utils.add_time_argument(master_task, rospy.Time())
+    task_utils.add_duration_argument(master_task, max_duration)
+    return master_task
+
+def create_master_task(max_duration):
     """ 
     Create an example of a task which we'll copy for other tasks later.
     This is a good example of creating a task with a variety of arguments.
@@ -83,7 +64,7 @@ def create_master_task():
     else:
         pose_id = meta["_id"]           
 
-    master_task = Task(action='test_task')        
+    master_task = Task(action='test_task', max_duration=max_duration)        
     task_utils.add_string_argument(master_task, 'hello world')
     task_utils.add_object_id_argument(master_task, pose_id, Pose)
     task_utils.add_int_argument(master_task, 24)
@@ -99,13 +80,14 @@ if __name__ == '__main__':
 
 
     # Perform my own actions
-    actual_action_duration = rospy.Duration(4)
-    if True:
+    actual_action_duration = rospy.Duration(10)
+    if False:
         action_server = TestTaskAction(expected_action_duration=actual_action_duration)
 
 
     # create a task we will copy later
-    task = create_master_task()
+    # task = create_master_task(actual_action_duration)
+    task = create_wait_task(actual_action_duration)
 
     # get services to call into execution framework
     add_tasks, set_execution_status = get_services()
@@ -114,8 +96,8 @@ if __name__ == '__main__':
     # some useful times
     localtz = tzlocal()
     # the time the robot will be active
-    start = time(8,30, tzinfo=localtz)
-    end = time(17,00, tzinfo=localtz)
+    start = time(9,00, tzinfo=localtz)
+    end = time(23,00, tzinfo=localtz)
     midday = time(12,00, tzinfo=localtz)
 
     morning = (start, midday)
@@ -123,13 +105,15 @@ if __name__ == '__main__':
 
     routine = task_routine.DailyRoutine(start, end)
     # do this task every day
-    routine.repeat_every_day(task)
+    # routine.repeat_every_day(task)
     # and every two hours during the day
-    routine.repeat_every_hour(task, hours=2)
+    # routine.repeat_every_hour(task, hours=2)
     # once in the morning
-    routine.repeat_every(task, *morning)
+    # routine.repeat_every(task, *morning)
     # and twice in the afternoon
-    routine.repeat_every(task, *afternoon, times=2)
+    # routine.repeat_every(task, *afternoon, times=2)
+
+    routine.repeat_every_hour(task, times=30)
 
     # create the object which will talk to the scheduler
     runner = task_routine.DailyRoutineRunner(start, end, add_tasks)
