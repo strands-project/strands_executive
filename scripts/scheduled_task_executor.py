@@ -95,6 +95,19 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         self.execution_schedule.set_schedule([demanded_task])
 
 
+        # wait until the demanded task has been taken off for execution, otherwise we run into problems with get_schedulable_tasks
+        while self.execution_schedule.get_execution_queue_length() > 0:
+            rospy.sleep(0.1)
+            # rospy.loginfo('SLEEP')
+
+
+        # now try to put the other tasks back in
+        if self.try_schedule(previously_scheduled):
+            rospy.loginfo('Was able to reinstate tasks after demand')
+            if self.try_schedule([currently_active_task]):
+                rospy.loginfo('Was also able to reinstate previously active task after demand')
+        else:
+            rospy.loginfo('Was NOT able to reinstate tasks after demand')
 
 
     def call_scheduler(self, tasks):
@@ -120,7 +133,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
                 assert task.execution_time >= task.start_after
                 assert task.execution_time + task.max_duration <= task.end_before
 
-                print 'task %s will start at %s.%s' % (task.task_id, task.execution_time.secs, task.execution_time.nsecs)                        
+                # print 'task %s will start at %s.%s' % (task.task_id, task.execution_time.secs, task.execution_time.nsecs)                        
 
             tasks.sort(key=attrgetter('execution_time'))
             return True
@@ -148,8 +161,11 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
     def bound_tasks_by_start_window(self, tasks, start_after):
         bounded_tasks = []
         for task in tasks:
+            # if it's still executable after the bound
             if start_after + task.max_duration <= task.end_before:
-                task.start_after = start_after
+                # if we need to push it back to the bound
+                if start_after > task.start_after:
+                    task.start_after = start_after
                 bounded_tasks.append(task)                            
 
         return bounded_tasks

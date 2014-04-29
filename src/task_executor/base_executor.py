@@ -225,7 +225,8 @@ class AbstractTaskExecutor(object):
         self.task_counter += 1
 
         # stop anything else
-        self.cancel_active_task(None)
+        if self.active_task:
+            self.cancel_active_task(None)
 
         # and inform implementation to let it take action
         self.task_demanded(req.task, self.active_task)                        
@@ -258,6 +259,10 @@ class AbstractTaskExecutor(object):
             return int(string_pair.second)
         elif string_pair.first == Task.FLOAT_TYPE:
             return float(string_pair.second)     
+        elif string_pair.first == Task.TIME_TYPE:
+            return rospy.Time.from_sec(float(string_pair.second))
+        elif string_pair.first == Task.DURATION_TYPE:
+            return rospy.Duration.from_sec(float(string_pair.second))
         else:
             msg = self.msg_store.query_id(string_pair.second, string_pair.first)[0]
             # print msg
