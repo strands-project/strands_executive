@@ -3,6 +3,26 @@
 
 Executive control code for STRANDS robots. The basic unit of behaviour is a *task* as defined by `strands_executive_msgs/Task`. To get the robot to execute a task an appropriate instance of the `Task` message must be sent to the task executor framework. Currently only the `fifo_task_executor.py` exists, which executes tasks in a FIFO manner, but later on a scheduler will be added.
 
+## Running scheduled patrols
+
+To test the executive framework you can try running the robot around the topological map. To do this, first get your basic 2D navigation setup running (in simulation or reality). Next, build a [topological map](https://github.com/strands-project/strands_navigation/tree/hydro-devel/topological_navigation). Then (assuming you have no special transitions in your map), run the [monitored navigation](https://github.com/strands-project/strands_navigation/tree/hydro-devel/monitored_navigation) plus the topological navigation:
+
+```bash
+roslaunch monitored_navigation monitored_nav.launch
+roslaunch topological_navigation topological_navigation.launch map:=<topological_map_name> node_by_node:=false
+```
+
+Then you can start the executive framework:
+
+```bash
+roslaunch task_executor task-scheduler.launch
+```
+
+With this up and running you can start the robot running continuous patrols using:
+
+```bash
+rorun task_executor continuous_patrolling.py
+```
 
 ## Creating a Task
 
@@ -33,7 +53,7 @@ You should also set the expected duration of the task. This will be used by the 
 
 ```python
 dishes_duration = 60 * 60
-task.expected_duration = rospy.Duration(dishes_duration)
+task.max_duration = rospy.Duration(dishes_duration)
 ```
 
 If your actionlib goal type needs arguments, you must then add them to the task **in the order they are used in your goal type constructor**. You can either add plain string arguments (which are stored in the task itself) or ROS message instances (which are stored in the [ros_datacentre](https://github.com/strands-project/ros_datacentre)). For example, for the following action which is available under [task_executor/action/TestExecution.action](https://github.com/strands-project/strands_executive/blob/hydro-devel/task_executor/action/TestExecution.action)

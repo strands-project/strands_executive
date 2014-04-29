@@ -147,8 +147,8 @@ class DailyRoutineRunner(object):
         start_secs = time_to_secs(daily_start)
         if end_secs <= start_secs:
             raise RoutineException('Task window is negative: %s to %s' % (daily_start, daily_end))
-        if end_secs - start_secs < task.expected_duration.secs:
-            raise RoutineException('Task window is not large enough for task: %s to %s for task of duration %s' % (daily_start, daily_end, timedelta(seconds=task.expected_duration)))
+        if end_secs - start_secs < task.max_duration.secs:
+            raise RoutineException('Task window is not large enough for task: %s to %s for task of duration %s' % (daily_start, daily_end, timedelta(seconds=task.max_duration)))
 
 
     """
@@ -283,15 +283,15 @@ class DailyRoutineRunner(object):
 
         for task in tasks:
 
-            # print task.expected_duration.secs
+            # print task.max_duration.secs
             # print task.start_after.secs
             # print task.end_before.secs
             # print (now).secs
-            # print (now + task.expected_duration).secs
+            # print (now + task.max_duration).secs
 
 
             # check we're not too late
-            if now + task.expected_duration > task.end_before:
+            if now + task.max_duration > task.end_before:
                 # 
                 if throw:
                     raise RoutineException('%s is too late to schedule task %s' % (now.secs, task))
