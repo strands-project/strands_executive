@@ -2,7 +2,7 @@
 
 import rospy
 from strands_executive_msgs.msg import Task
-from strands_executive_msgs.srv import AddTasks, AddTask, SetExecutionStatus, GetExecutionStatus
+from strands_executive_msgs.srv import *
 import ros_datacentre.util as dc_util
 import actionlib
 from actionlib_msgs.msg import GoalStatus
@@ -38,6 +38,9 @@ class AbstractTaskExecutor(object):
         self.task_complete(task)
 
 
+    def task_demanded(self, previously_active_task):
+        """ Called when a task is demanded. self.active_task is the demanded task (and is being executed) and previously_active_task was the task that was being executed (which could be None) """
+        pass
 
     def __init__(self):
         self.task_counter = 1
@@ -88,9 +91,9 @@ class AbstractTaskExecutor(object):
     def cancel_active_task(self, event):
         """ Cancel any active nav or task action """
         rospy.logwarn("Cancelling task that has overrun %s" % self.active_task)
-        if self.nav_client.get_state() == GoalStatus.ACTIVE:
+        if self.nav_client and self.nav_client.get_state() == GoalStatus.ACTIVE:
             self.nav_client.cancel_goal()
-        if self.action_client.get_state() == GoalStatus.ACTIVE:
+        if self.action_client and self.action_client.get_state() == GoalStatus.ACTIVE:
             self.action_client.cancel_goal()
 
     def start_task_action(self):
@@ -191,6 +194,27 @@ class AbstractTaskExecutor(object):
         return [task_ids]
     add_tasks_ros_srv.type=AddTasks
 
+    def demand_task_ros_srv(self, req):
+        """
+        Demand a the task from the execution framework.
+        """
+        req.task.task_id = self.task_counter
+        self.task_counter += 1
+
+        # stop anything else
+        self.cancel_active_task(None)
+
+        # save what /was/ executing (if any)
+        previously_active_task = self.active_task
+
+        # trigger demended execution
+        self.execute_task(req.task)
+
+        # and inform implementation to let it take action
+        self.task_demanded(previously_active_task)                        
+
+        return req.task.task_id
+    demand_task_ros_srv.type=DemandTask
 
 
     def get_execution_status_ros_srv(self, req):

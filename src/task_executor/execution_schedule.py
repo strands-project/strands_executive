@@ -35,17 +35,18 @@ class ExecutionSchedule(object):
         """ Get the tasks which are queued for execution. """
         return deepcopy(self.execution_queue)
 
+    def clear_execution_queue(self):
+        """ Removes all tasks from the execution queue. """
+        self.execution_queue.clear()
 
     def execute_next_task(self):
         """
-        Sets the head of the execution queue to the current task, removes this from schedulable tasks, and notifies the wait_for_execution_change method. 
+        Pops the head of the execution queue to the current task, removes this from schedulable tasks, and notifies the wait_for_execution_change method. 
         """
         if len(self.execution_queue) > 0:
             self.current_task = self.execution_queue.popleft()
             # remove current task from schedulable tasks
-            print len(self.tasks)
             self.tasks = [t for t in self.tasks if t.task_id != self.current_task.task_id]            
-            print len(self.tasks)
             self.execution_change.set()
         else:
             self.current_task = None
@@ -94,12 +95,12 @@ class ExecutionSchedule(object):
     	# check that the tasks that were scheduled are the ones we're waiting on
 
     	if len(scheduled_tasks) != len(self.tasks):
-    		rospy.loginfo('Number of scheduled tasks mismatch')
+    		rospy.logwarn('Number of scheduled tasks mismatch')
     		return False
 
     	for scheduled in scheduled_tasks:
     		if not any(t.task_id == scheduled.task_id for t in self.tasks):
-    			rospy.loginfo('Trying to scheduled a missed task')
+    			rospy.logwarn('Trying to scheduled a missed task')
     			return False
 
     	# now clear out the execution queue so that the new schedule comes into effect after current execution completes
