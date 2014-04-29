@@ -22,6 +22,7 @@ class ExecutionSchedule(object):
     	self.execution_change = Event()
     	self.execution_queue = deque()
     	self.tasks = []        
+        self.execution_delay_timer = None
 
     def add_new_tasks(self, tasks):
     	""" Add new tasks to be scheduled. """
@@ -60,6 +61,7 @@ class ExecutionSchedule(object):
 
     def execution_delay_cb(self, event):
         rospy.logdebug('timer for execution delay fired')
+        self.execution_delay_timer = None
         self.next_in_schedule()
 
     def next_in_schedule(self):
@@ -80,6 +82,7 @@ class ExecutionSchedule(object):
             else:     
                 exe_delay = next_task.start_after - now
                 rospy.loginfo('need to delay %s.%s for execution' % (exe_delay.secs, exe_delay.nsecs))
+                self.current_task = None
                 self.execution_delay_timer = rospy.Timer(exe_delay, self.execution_delay_cb, oneshot=True)
         else:
             self.current_task = None
@@ -116,7 +119,11 @@ class ExecutionSchedule(object):
     	
         # if nothing is executing, make sure something starts
         if self.current_task == None:
-            self.next_in_schedule()            
+            # nothing may be executing becuase we're waiting for delayed execution
+            if self.execution_delay_timer != None:
+                self.execution_delay_timer.shutdown()
+            self.next_in_schedule()
+
 
 
 
