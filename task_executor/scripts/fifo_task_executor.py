@@ -23,6 +23,11 @@ class FIFOTaskExecutor(AbstractTaskExecutor):
             self.tasks.put(task)
         rospy.loginfo('Queued %s tasks' % len(tasks))
 
+    def task_demanded(self, previously_active_task):
+        """ Called when a task is demanded. self.active_task is the demanded task (and is being executed) and previously_active_task was the task that was being executed (which could be None) """
+        if previously_active_task:
+            self.add_tasks([previously_active_task])
+
     def run_executor(self):
         r = rospy.Rate(1) # 1hz
         

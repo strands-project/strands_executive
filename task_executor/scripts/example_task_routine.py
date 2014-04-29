@@ -38,7 +38,7 @@ def get_services():
     set_execution_status = rospy.ServiceProxy(set_exe_stat_srv_name, SetExecutionStatus)
     return add_tasks_srv, set_execution_status
 
-def create_master_task():
+def create_master_task(max_duration):
     """ 
     Create an example of a task which we'll copy for other tasks later.
     This is a good example of creating a task with a variety of arguments.
@@ -58,7 +58,7 @@ def create_master_task():
     else:
         pose_id = meta["_id"]           
 
-    master_task = Task(action='test_task')        
+    master_task = Task(action='test_task', max_duration=max_duration)        
     task_utils.add_string_argument(master_task, 'hello world')
     task_utils.add_object_id_argument(master_task, pose_id, Pose)
     task_utils.add_int_argument(master_task, 24)
@@ -74,13 +74,13 @@ if __name__ == '__main__':
 
 
     # Perform my own actions
-    actual_action_duration = rospy.Duration(4)
+    actual_action_duration = rospy.Duration(60)
     if True:
         action_server = TestTaskAction(expected_action_duration=actual_action_duration)
 
 
     # create a task we will copy later
-    task = create_master_task()
+    task = create_master_task(actual_action_duration)
 
     # get services to call into execution framework
     add_tasks, set_execution_status = get_services()
@@ -89,8 +89,8 @@ if __name__ == '__main__':
     # some useful times
     localtz = tzlocal()
     # the time the robot will be active
-    start = time(8,30, tzinfo=localtz)
-    end = time(17,00, tzinfo=localtz)
+    start = time(9,00, tzinfo=localtz)
+    end = time(23,00, tzinfo=localtz)
     midday = time(12,00, tzinfo=localtz)
 
     morning = (start, midday)
@@ -98,13 +98,15 @@ if __name__ == '__main__':
 
     routine = task_routine.DailyRoutine(start, end)
     # do this task every day
-    routine.repeat_every_day(task)
+    # routine.repeat_every_day(task)
     # and every two hours during the day
-    routine.repeat_every_hour(task, hours=2)
+    # routine.repeat_every_hour(task, hours=2)
     # once in the morning
-    routine.repeat_every(task, *morning)
+    # routine.repeat_every(task, *morning)
     # and twice in the afternoon
-    routine.repeat_every(task, *afternoon, times=2)
+    # routine.repeat_every(task, *afternoon, times=2)
+
+    routine.repeat_every_hour(task, times=1)
 
     # create the object which will talk to the scheduler
     runner = task_routine.DailyRoutineRunner(start, end, add_tasks)

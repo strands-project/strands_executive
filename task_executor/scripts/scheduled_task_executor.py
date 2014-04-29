@@ -76,7 +76,16 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
     def task_complete(self, task):
         """ Called when the given task has completed execution """
         # pass signal to schedule
-        self.execution_schedule.task_complete(task)
+        self.execution_schedule.task_complete(task) 
+
+    def task_demanded(self, previously_active_task):
+        """ Called when a task is demanded. self.active_task is the demanded task (and is being executed) and previously_active_task was the task that was being executed (which could be None) """
+
+        # clear all tasks that were queued for execution, this does not remove them as schedulable tasks
+        self.execution_queue.clear_execution_queue()
+
+
+
 
 
     def call_scheduler(self, tasks):
@@ -85,22 +94,6 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         Calls scheduler. Reorders the list of tasks in execution order with their execution times set. 
         
         """
-        # scheduler seems to need time to start at zero
-        min_window = rospy.Time(rospy.get_rostime().secs * 2)
-        for task in tasks:
-            if task.start_after < min_window:
-                min_window = task.start_after
-
-        # turn this time into a duration (since epoch)
-        min_window = rospy.Duration(min_window.secs, min_window.nsecs)
-        
-
-        # subtrack min window from all win values
-        for task in tasks:
-            task.start_after = task.start_after - min_window
-            task.end_before = task.end_before - min_window
-
-
         resp = self.schedule_srv(tasks)
 
         if len(resp.task_order) > 0:
@@ -113,9 +106,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
             # set start times inside of tasks
             for task in tasks:
                 # add min_window back on to starting times
-                task.execution_time = task_times[task.task_id] + min_window
-                task.start_after = task.start_after + min_window
-                task.end_before = task.end_before + min_window
+                task.execution_time = task_times[task.task_id] 
 
                 assert task.execution_time >= task.start_after
                 assert task.execution_time + task.max_duration <= task.end_before
@@ -146,6 +137,26 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         self.schedule_publisher.publish(exe_status)
 
 
+    def try_schedule(self, additional_tasks):
+        # the tasks to try and schedule
+        to_schedule = []
+        # add in the schedulable tasks we already have
+        to_schedule.extend(self.execution_schedule.get_schedulable_tasks())
+        # and the ones we have just been given
+        to_schedule.extend(additional_tasks)
+
+        # reorder tasks and add execution information
+        if self.call_scheduler(to_schedule):
+            # if this was successful, add new tasks into execution schedule
+            self.execution_schedule.add_new_tasks(additional_tasks)
+            # put scheduled tasks back into execution. this will trigger a change in execution if necessary
+            self.execution_schedule.set_schedule(to_schedule)
+            rospy.loginfo('Added %s tasks into the schedule' % len(additional_tasks))
+            return True
+        else:
+            rospy.logwarn('Discarding %s unschedulable tasks' % len(additional_tasks))
+            return False
+
     def schedule_tasks(self):
         loopSecs = 5
         
@@ -164,17 +175,11 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
                 
                 rospy.loginfo('Got a further %s tasks to schedule' % len(unscheduled))
 
-                self.execution_schedule.add_new_tasks(unscheduled)
-
-                tasks = self.execution_schedule.get_schedulable_tasks()
-
-                # reorder tasks and add execution information
-                if self.call_scheduler(tasks):
-                    # put scheduled tasks back into execution. this will trigger a change in execution if necessary
-                    self.execution_schedule.set_schedule(tasks)
+                self.try_schedule(unscheduled)                
 
             except Empty, e:
-                rospy.logdebug('No new tasks to schedule')
+                # rospy.logdebug('No new tasks to schedule')
+                pass
 
             self.publish_schedule()
 

@@ -113,7 +113,7 @@ if __name__ == '__main__':
     print "Added %s" % task_ids
 
 
-    if True:
+    if False:
         action_server = TestTaskAction(expected_action_duration=actual_action_duration, expected_drive_duration=actual_drive_duration)
 
 
