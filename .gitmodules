@@ -1,0 +1,3 @@
+[submodule "mdp_plan_exec/prism-robots"]
+	path = mdp_plan_exec/prism-robots
+	url = https://github.com/BFALacerda/prism-robots
