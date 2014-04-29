@@ -7,6 +7,7 @@ import rospy
 
 from ros_datacentre.message_store import MessageStoreProxy
 from strands_navigation_msgs.msg import TopologicalNode
+from strands_navigation_msgs.msg import NavStatistics
 
 class Mdp(object):
     
@@ -80,21 +81,7 @@ class Mdp(object):
     def set_initial_state(initial_state):
         self.initial_state=initial_state
         
-    def set_policy(self,policy_file):
-        self.policy=[None]*self.n_states
-        print self.n_states
-        f=open(policy_file,'r')
-        f.readline()
-        for line in f:
-            line=line.split(' ')
-            print line
-            self.policy[int(line[0])]=line[3].strip('\n')
-        print self.policy    
-        f.close()    
-            
-        
-        
-        
+ 
     
 
 class TopMapMdp(Mdp):
@@ -104,7 +91,7 @@ class TopMapMdp(Mdp):
         
         self.initial_state=0
         
-        top_nodes=self.read_top_map(top_map_name)
+        top_nodes=self.read_top_map()
         
         self.n_states=len(top_nodes)
         self.state_names=[None]*self.n_states
@@ -157,13 +144,13 @@ class TopMapMdp(Mdp):
         
         
 
-    def read_top_map(self,point_set):
+    def read_top_map(self):
 
 
         msg_store = MessageStoreProxy()
     
         query_meta = {}
-        query_meta["pointset"] = point_set
+        query_meta["pointset"] =self.top_map
         available = len(msg_store.query(TopologicalNode._type, {}, query_meta)) > 0
 
 
@@ -174,13 +161,67 @@ class TopMapMdp(Mdp):
     
         else :
             query_meta = {}
-            query_meta["pointset"] = point_set
+            query_meta["pointset"] = self.top_map
             message_list = msg_store.query(TopologicalNode._type, {}, query_meta)
     
         return message_list
 
 
         
+    def update_nav_statistics(self):
+        msg_store = MessageStoreProxy()
+    
+        query_meta = {}
+        query_meta["pointset"] = self.top_map
+        print self.top_map
+        message_list = msg_store.query(NavStatistics._type, {}, query_meta)
+        n_data=len(message_list)
+        n_unprocessed_data=n_data
+        #for entry in message_list:
+            #print entry
+        
+        
+        for i in range(0,self.n_actions):
+            current_action=self.actions[i]
+            if 'goto' in current_action:
+                action_index=self.actions.index(current_action)
+                current_action=current_action.split('_')
+                source_index=self.state_names.index(current_action[1])
+                j=0
+                n_total_data=0
+                expected_time=0
+                total_outcomes_count=0
+                outcomes_count=[0]*self.n_states
+                while j<n_unprocessed_data:
+                    entry=message_list[j]
+                    print  current_action, entry[0].origin, entry[0].target
+                    if current_action[1]==entry[0].origin and current_action[2]==entry[0].target:
+                        n_total_data=n_total_data+1
+                        expected_time=expected_time+float(entry[0].operation_time)-float(entry[0].time_to_waypoint)
+                        outcomes_count[self.state_names.index(entry[0].final_node)]+=1
+                        total_outcomes_count=total_outcomes_count+1
+                        del message_list[j]
+                        n_unprocessed_data=n_unprocessed_data-1
+                    else:
+                        j=j+1
+                    print n_total_data, expected_time,outcomes_count
+                if n_total_data==0:
+                    rospy.logwarn("No data for edge between waypoints"+current_action[1] + " and " + current_action[2] + ". Assuming it to be 2 min. Expected time between nodes will not be correct.")
+                    self.rewards[source_index][action_index]=120
+                else:
+                    self.rewards[source_index][action_index]=expected_time/total_outcomes_count
+                    transition=None
+                    for j in range(0,self.n_states):
+                        count=outcomes_count[j]
+                        if count > 0:
+                            print count, total_outcomes_count
+                            probability=float(count)/float(total_outcomes_count)
+                            if transition is None:
+                                transition=[[j, probability]]
+                            else:
+                                transition.append([j,probability])
+                    if transition is not None:
+                        self.transitions[source_index][action_index]=transition
         
         
     
@@ -321,7 +362,19 @@ class ProductMdp(Mdp):
     
 
 
-            
+    def set_policy(self,policy_file):
+        print "ALTERAR PARA USAR O .STA"
+        self.policy=[None]*self.n_states
+        print self.n_states
+        f=open(policy_file,'r')
+        f.readline()
+        for line in f:
+            line=line.split(' ')
+            print line
+            self.policy[int(line[0])]=line[3].strip('\n')
+        print self.policy    
+        f.close()    
+                    
             
 #if __name__ == '__main__':
     

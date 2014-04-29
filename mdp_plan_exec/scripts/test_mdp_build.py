@@ -17,6 +17,8 @@ if __name__ == '__main__':
     rospy.init_node('test_client')
     
 
-    top_map_mdp=TopMapMdp('cs_lg_topological')
+    top_map_mdp=TopMapMdp('top_floor_simple')
+    
+    #top_map_mdp.set_policy('/home/bruno/tmp/prism/all_day/adv.tra')
+    top_map_mdp.update_nav_statistics()
     top_map_mdp.write_prism_model('/home/bruno/Desktop/teste.prism')
-    top_map_mdp.set_policy('/home/bruno/tmp/prism/all_day/adv.tra')
