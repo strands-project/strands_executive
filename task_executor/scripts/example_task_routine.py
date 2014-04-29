@@ -38,6 +38,12 @@ def get_services():
     set_execution_status = rospy.ServiceProxy(set_exe_stat_srv_name, SetExecutionStatus)
     return add_tasks_srv, set_execution_status
 
+def create_wait_task(max_duration):
+    master_task = Task(action='wait_action', max_duration=max_duration)
+    task_utils.add_time_argument(master_task, rospy.Time())
+    task_utils.add_duration_argument(master_task, max_duration)
+    return master_task
+
 def create_master_task(max_duration):
     """ 
     Create an example of a task which we'll copy for other tasks later.
@@ -74,13 +80,14 @@ if __name__ == '__main__':
 
 
     # Perform my own actions
-    actual_action_duration = rospy.Duration(60)
-    if True:
+    actual_action_duration = rospy.Duration(10)
+    if False:
         action_server = TestTaskAction(expected_action_duration=actual_action_duration)
 
 
     # create a task we will copy later
-    task = create_master_task(actual_action_duration)
+    # task = create_master_task(actual_action_duration)
+    task = create_wait_task(actual_action_duration)
 
     # get services to call into execution framework
     add_tasks, set_execution_status = get_services()
@@ -106,7 +113,7 @@ if __name__ == '__main__':
     # and twice in the afternoon
     # routine.repeat_every(task, *afternoon, times=2)
 
-    routine.repeat_every_hour(task, times=1)
+    routine.repeat_every_hour(task, times=30)
 
     # create the object which will talk to the scheduler
     runner = task_routine.DailyRoutineRunner(start, end, add_tasks)
