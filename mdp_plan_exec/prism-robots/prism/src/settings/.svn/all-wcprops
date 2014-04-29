@@ -1,0 +1,311 @@
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings
+END
+MultipleLineStringEditor.java
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/MultipleLineStringEditor.java
+END
+ChoiceEditor.java
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/ChoiceEditor.java
+END
+DoubleRenderer.java
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/DoubleRenderer.java
+END
+FontColorSetting.java
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/FontColorSetting.java
+END
+IntegerEditor.java
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/IntegerEditor.java
+END
+ColorRenderer.java
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/ColorRenderer.java
+END
+DoubleSetting.java
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/DoubleSetting.java
+END
+FontColorConstraint.java
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/FontColorConstraint.java
+END
+StringConstraint.java
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/StringConstraint.java
+END
+ColorSetting.java
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/ColorSetting.java
+END
+FileSetting.java
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/FileSetting.java
+END
+BooleanSetting.java
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/BooleanSetting.java
+END
+Setting.java
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/Setting.java
+END
+FileSelector.java
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/FileSelector.java
+END
+DoubleEditor.java
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/DoubleEditor.java
+END
+SettingConstraint.java
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/SettingConstraint.java
+END
+BooleanConstraint.java
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/BooleanConstraint.java
+END
+package-info.java
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/package-info.java
+END
+ColorEditor.java
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/ColorEditor.java
+END
+SettingTable.java
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/SettingTable.java
+END
+FontChooser.java
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/FontChooser.java
+END
+IntegerSetting.java
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/IntegerSetting.java
+END
+TableResizer.java
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/TableResizer.java
+END
+FontColorRenderer.java
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/FontColorRenderer.java
+END
+DoubleRangeConstraint.java
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/DoubleRangeConstraint.java
+END
+SettingException.java
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/SettingException.java
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/Makefile
+END
+DefaultSettingOwner.java
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/DefaultSettingOwner.java
+END
+RangeConstraint.java
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/RangeConstraint.java
+END
+SettingDisplay.java
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/SettingDisplay.java
+END
+SettingRenderer.java
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/SettingRenderer.java
+END
+FileRenderer.java
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/FileRenderer.java
+END
+BooleanRenderer.java
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/BooleanRenderer.java
+END
+NumericConstraint.java
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/NumericConstraint.java
+END
+SettingTable.form
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/SettingTable.form
+END
+SingleLineStringRenderer.java
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/SingleLineStringRenderer.java
+END
+FontChooser.form
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/FontChooser.form
+END
+FontColorEditor.java
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/FontColorEditor.java
+END
+SingleLineStringSetting.java
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/SingleLineStringSetting.java
+END
+FontColorPair.java
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/FontColorPair.java
+END
+ChoiceRenderer.java
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/ChoiceRenderer.java
+END
+MultipleLineStringRenderer.java
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/MultipleLineStringRenderer.java
+END
+ColorConstraint.java
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/ColorConstraint.java
+END
+IntegerRenderer.java
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/IntegerRenderer.java
+END
+SettingEditor.java
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/SettingEditor.java
+END
+FileEditor.java
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/FileEditor.java
+END
+BooleanEditor.java
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/BooleanEditor.java
+END
+SingleLineStringEditor.java
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/SingleLineStringEditor.java
+END
+ChoiceSetting.java
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/ChoiceSetting.java
+END
+MultipleLineStringSetting.java
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/MultipleLineStringSetting.java
+END
+SettingOwner.java
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/settings/SettingOwner.java
+END

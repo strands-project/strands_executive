@@ -1,0 +1,71 @@
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/dd
+END
+dd_basics.cc
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/dd/dd_basics.cc
+END
+dd_matrix.cc
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/dd/dd_matrix.cc
+END
+dd_term.cc
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/dd/dd_term.cc
+END
+dd_abstr.cc
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/dd/dd_abstr.cc
+END
+dd_info.cc
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/dd/dd_info.cc
+END
+dd_vars.cc
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/dd/dd_vars.cc
+END
+dd_cudd.cc
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/dd/dd_cudd.cc
+END
+dd_test.cc
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/dd/dd_test.cc
+END
+dd.cc
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/dd/dd.cc
+END
+dd_export.cc
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/dd/dd_export.cc
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/dd/Makefile
+END

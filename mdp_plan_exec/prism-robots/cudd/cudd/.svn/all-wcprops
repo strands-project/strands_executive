@@ -1,0 +1,407 @@
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd
+END
+cuddAddApply.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddAddApply.c
+END
+cuddEssent.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddEssent.c
+END
+cuddCof.c
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddCof.c
+END
+cuddSubsetSP.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddSubsetSP.c
+END
+cuddLinear.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddLinear.c
+END
+cuddZddReord.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddZddReord.c
+END
+cuddZddUtil.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddZddUtil.c
+END
+cuddLCache.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddLCache.c
+END
+cuddBddCorr.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddBddCorr.c
+END
+cuddMatMult.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddMatMult.c
+END
+cuddZddSymm.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddZddSymm.c
+END
+cuddTable.c
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddTable.c
+END
+cuddClip.c
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddClip.c
+END
+cuddZddCount.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddZddCount.c
+END
+cuddAddIte.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddAddIte.c
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/Makefile
+END
+cuddZddGroup.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddZddGroup.c
+END
+cuddAnneal.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddAnneal.c
+END
+cuddApa.c
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddApa.c
+END
+cuddExact.c
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddExact.c
+END
+cuddAddInv.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddAddInv.c
+END
+cuddDecomp.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddDecomp.c
+END
+cuddGenetic.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddGenetic.c
+END
+cuddBddAbs.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddBddAbs.c
+END
+testcudd.c
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/testcudd.c
+END
+cuddZddFuncs.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddZddFuncs.c
+END
+cuddZddLin.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddZddLin.c
+END
+cuddZddSetop.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddZddSetop.c
+END
+cuddGroup.c
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddGroup.c
+END
+cuddInt.h
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddInt.h
+END
+cuddGenCof.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddGenCof.c
+END
+cuddCache.c
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddCache.c
+END
+r7x8.1.mat
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/r7x8.1.mat
+END
+cuddWindow.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddWindow.c
+END
+cuddInteract.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddInteract.c
+END
+cuddApprox.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddApprox.c
+END
+cuddZddIsop.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddZddIsop.c
+END
+cuddRef.c
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddRef.c
+END
+cuddCheck.c
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddCheck.c
+END
+cuddAddAbs.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddAddAbs.c
+END
+cuddSubsetHB.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddSubsetHB.c
+END
+cuddPriority.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddPriority.c
+END
+cudd.h
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cudd.h
+END
+cuddZddPort.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddZddPort.c
+END
+cuddSat.c
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddSat.c
+END
+cuddLevelQ.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddLevelQ.c
+END
+cuddAndAbs.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddAndAbs.c
+END
+cuddSymmetry.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddSymmetry.c
+END
+cuddAddFind.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddAddFind.c
+END
+cuddBridge.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddBridge.c
+END
+r7x8.1.out
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/r7x8.1.out
+END
+cuddHarwell.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddHarwell.c
+END
+cuddSign.c
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddSign.c
+END
+cuddReorder.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddReorder.c
+END
+cuddInit.c
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddInit.c
+END
+cuddCompose.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddCompose.c
+END
+cuddAPI.c
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddAPI.c
+END
+cuddRead.c
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddRead.c
+END
+cuddUtil.c
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddUtil.c
+END
+cuddExport.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddExport.c
+END
+cuddAddNeg.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddAddNeg.c
+END
+cuddAddWalsh.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddAddWalsh.c
+END
+cuddSolve.c
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddSolve.c
+END
+cuddSplit.c
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddSplit.c
+END
+cuddBddIte.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddBddIte.c
+END
+cuddLiteral.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddLiteral.c
+END
+cuddZddMisc.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/cudd/cuddZddMisc.c
+END

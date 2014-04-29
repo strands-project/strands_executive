@@ -1,0 +1,59 @@
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism-examples/pta/firewire/abst
+END
+time.pctl
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism-examples/pta/firewire/abst/time.pctl
+END
+.models
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism-examples/pta/firewire/abst/.models
+END
+.props
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism-examples/pta/firewire/abst/.props
+END
+firewire.nm
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism-examples/pta/firewire/abst/firewire.nm
+END
+deadline.pctl
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism-examples/pta/firewire/abst/deadline.pctl
+END
+auto
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism-examples/pta/firewire/abst/auto
+END
+deadline-max.pctl
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism-examples/pta/firewire/abst/deadline-max.pctl
+END
+eventually.pctl
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism-examples/pta/firewire/abst/eventually.pctl
+END
+.args
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism-examples/pta/firewire/abst/.args
+END

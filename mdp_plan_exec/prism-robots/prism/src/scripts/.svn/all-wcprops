@@ -1,0 +1,17 @@
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/scripts
+END
+printversion.sh
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/scripts/printversion.sh
+END
+findjavac.sh
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/scripts/findjavac.sh
+END

@@ -1,0 +1,137 @@
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp
+END
+README.testdddmp
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/README.testdddmp
+END
+README.dddmp
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/README.dddmp
+END
+dddmpDbg.c
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/dddmpDbg.c
+END
+dddmpNodeAdd.c
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/dddmpNodeAdd.c
+END
+RELEASE_NOTES
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/RELEASE_NOTES
+END
+dddmpNodeBdd.c
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/dddmpNodeBdd.c
+END
+dddmpInt.h
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/dddmpInt.h
+END
+dddmpStoreAdd.c
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/dddmpStoreAdd.c
+END
+dddmpLoadCnf.c
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/dddmpLoadCnf.c
+END
+dddmpStoreBdd.c
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/dddmpStoreBdd.c
+END
+dddmpDdNodeBdd.c
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/dddmpDdNodeBdd.c
+END
+dddmpStoreMisc.c
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/dddmpStoreMisc.c
+END
+dddmpNodeCnf.c
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/dddmpNodeCnf.c
+END
+dddmpUtil.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/dddmpUtil.c
+END
+testdddmp.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/testdddmp.c
+END
+dddmpLoad.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/dddmpLoad.c
+END
+dddmpConvert.c
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/dddmpConvert.c
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/Makefile
+END
+dddmpStoreCnf.c
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/dddmpStoreCnf.c
+END
+dddmpDdNodeCnf.c
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/dddmpDdNodeCnf.c
+END
+dddmpBinary.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/dddmpBinary.c
+END
+dddmp.h
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/cudd/dddmp/dddmp.h
+END

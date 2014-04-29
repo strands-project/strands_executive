@@ -1,0 +1,65 @@
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/ext/lp_solve_5.5_java/src/java/lpsolve
+END
+build
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/ext/lp_solve_5.5_java/src/java/lpsolve/build
+END
+VersionInfo.java
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/ext/lp_solve_5.5_java/src/java/lpsolve/VersionInfo.java
+END
+LpSolveException.java
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/ext/lp_solve_5.5_java/src/java/lpsolve/LpSolveException.java
+END
+LpSolve.java
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/ext/lp_solve_5.5_java/src/java/lpsolve/LpSolve.java
+END
+build.bat
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/ext/lp_solve_5.5_java/src/java/lpsolve/build.bat
+END
+LogListener.java
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/ext/lp_solve_5.5_java/src/java/lpsolve/LogListener.java
+END
+BbListener.java
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/ext/lp_solve_5.5_java/src/java/lpsolve/BbListener.java
+END
+MsgListener.java
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/ext/lp_solve_5.5_java/src/java/lpsolve/MsgListener.java
+END
+AbortListener.java
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/ext/lp_solve_5.5_java/src/java/lpsolve/AbortListener.java
+END
+package.html
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/ext/lp_solve_5.5_java/src/java/lpsolve/package.html
+END

@@ -1,0 +1,47 @@
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism-examples/pta/repudiation/malicious
+END
+.models
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism-examples/pta/repudiation/malicious/.models
+END
+.props
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism-examples/pta/repudiation/malicious/.props
+END
+deadline.pctl
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism-examples/pta/repudiation/malicious/deadline.pctl
+END
+auto
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism-examples/pta/repudiation/malicious/auto
+END
+eventually.pctl
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism-examples/pta/repudiation/malicious/eventually.pctl
+END
+.args
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism-examples/pta/repudiation/malicious/.args
+END
+repudiation.nm
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism-examples/pta/repudiation/malicious/repudiation.nm
+END

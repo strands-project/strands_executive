@@ -1,0 +1,191 @@
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties
+END
+ConstantLine.java
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/ConstantLine.java
+END
+GraphConstantPickerList.java
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GraphConstantPickerList.java
+END
+GraphConstantLine.form
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GraphConstantLine.form
+END
+GUIPropertyResultDialog.java
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GUIPropertyResultDialog.java
+END
+GUIMultiProperties.java
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GUIMultiProperties.java
+END
+ConstantLine.form
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/ConstantLine.form
+END
+ConstantPickerList.java
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/ConstantPickerList.java
+END
+GUIExperimentPicker.java
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GUIExperimentPicker.java
+END
+package-info.java
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/package-info.java
+END
+GraphConstantHeader.java
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GraphConstantHeader.java
+END
+GUIPropertyResultDialog.form
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GUIPropertyResultDialog.form
+END
+GUIPropertiesList.java
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GUIPropertiesList.java
+END
+GUIConstant.java
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GUIConstant.java
+END
+GUIPropertyEditor.java
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GUIPropertyEditor.java
+END
+ConstantHeader.java
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/ConstantHeader.java
+END
+GUIPropertiesEvent.java
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GUIPropertiesEvent.java
+END
+GUIGraphHandler.java
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GUIGraphHandler.java
+END
+GUIGraphPicker.java
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GUIGraphPicker.java
+END
+GUIExperimentPicker.form
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GUIExperimentPicker.form
+END
+GraphConstantHeader.form
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GraphConstantHeader.form
+END
+GUIResultsTable.java
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GUIResultsTable.java
+END
+GUIPropLabelList.java
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GUIPropLabelList.java
+END
+GUIPropertyEditor.form
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GUIPropertyEditor.form
+END
+GraphConstantLine.java
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GraphConstantLine.java
+END
+ConstantHeader.form
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/ConstantHeader.form
+END
+GUILabel.java
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GUILabel.java
+END
+GUIExperiment.java
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GUIExperiment.java
+END
+GUIGraphPicker.form
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GUIGraphPicker.form
+END
+GUIProperty.java
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GUIProperty.java
+END
+GUIPropConstantList.java
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GUIPropConstantList.java
+END
+GUIExperimentTable.java
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/userinterface/properties/GUIExperimentTable.java
+END

@@ -1,0 +1,18 @@
+K 10
+svn:ignore
+V 42
+obj
+classes
+.classpath
+.project
+.settings
+
+K 13
+svn:mergeinfo
+V 28
+/prism/trunk/prism:7722-7725
+K 15
+tsvn:logminsize
+V 1
+1
+END

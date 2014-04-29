@@ -1,0 +1,847 @@
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  SIGSEGV (0xb) at pc=0x00007ff244214c04, pid=17190, tid=140678513809152
+#
+# JRE version: 6.0_30-b30
+# Java VM: OpenJDK 64-Bit Server VM (23.25-b01 mixed mode linux-amd64 compressed oops)
+# Problematic frame:
+# C  [libc.so.6+0x6fc04]  fwrite+0x34
+#
+# Failed to write core dump. Core dumps have been disabled. To enable core dumping, try "ulimit -c unlimited" before starting Java again
+#
+# If you would like to submit a bug report, please include
+# instructions how to reproduce the bug and visit:
+#   https://bugs.launchpad.net/ubuntu/+source/openjdk-6/
+# The crash happened outside the Java Virtual Machine in native code.
+# See problematic frame for where to report the bug.
+#
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x00007ff23c00a000):  JavaThread "main" [_thread_in_native, id=17191, stack(0x00007ff244c7d000,0x00007ff244d7e000)]
+
+siginfo:si_signo=SIGSEGV: si_errno=0, si_code=1 (SEGV_MAPERR), si_addr=0x0000000000000000
+
+Registers:
+RAX=0x0000000000000001, RBX=0x0000000000000000, RCX=0x0000000000000000, RDX=0x0000000000000001
+RSP=0x00007ff244d7c080, RBP=0x0000000000000001, RSI=0x0000000000000001, RDI=0x00007ff23c526cd0
+R8 =0x00007ff23c526cd0, R9 =0x0000000000000001, R10=0x00007ff23c526cd1, R11=0x0000000000000027
+R12=0x0000000000000001, R13=0x0000000000000001, R14=0x00007ff244d7c170, R15=0x00007ff23c00a000
+RIP=0x00007ff244214c04, EFLAGS=0x0000000000010202, CSGSFS=0x0000000000000033, ERR=0x0000000000000004
+  TRAPNO=0x000000000000000e
+
+Top of Stack: (sp=0x00007ff244d7c080)
+0x00007ff244d7c080:   00007ff244d7c160 00007ff23c00a1d8
+0x00007ff244d7c090:   00007ff23c526cd0 00007ff244d7c160
+0x00007ff244d7c0a0:   0000000000000000 00007ff22928695d
+0x00007ff244d7c0b0:   00007ff244d7c278 00000000d5cac3a8
+0x00007ff244d7c0c0:   00007ff244d7c140 0000000000000000
+0x00007ff244d7c0d0:   00000000d5cac3a8 00007ff239011790
+0x00007ff244d7c0e0:   00007ff244d7c278 00007ff244d7c228
+0x00007ff244d7c0f0:   00007ff244d7c228 00007ff23901c443
+0x00007ff244d7c100:   00007ff244d7c100 0000000000000000
+0x00007ff244d7c110:   00007ff244d7c170 00000000d5cacf58
+0x00007ff244d7c120:   0000000000000000 00000000d5cac3a8
+0x00007ff244d7c130:   0000000000000000 00007ff244d7c160
+0x00007ff244d7c140:   00007ff244d7c1b8 00007ff239005e9a
+0x00007ff244d7c150:   00000000f55ccf78 00007ff23900e598
+0x00007ff244d7c160:   00000000f57fb780 0000000000000000
+0x00007ff244d7c170:   00007ff239005410 00007ff244d7c178
+0x00007ff244d7c180:   00000000d5c7879d 00007ff244d7c1d0
+0x00007ff244d7c190:   00000000d5ca9c50 0000000000000000
+0x00007ff244d7c1a0:   00000000d5c787a8 00007ff244d7c160
+0x00007ff244d7c1b0:   00007ff244d7c1c8 00007ff244d7c218
+0x00007ff244d7c1c0:   00007ff239005e9a 00000000f57fb780
+0x00007ff244d7c1d0:   00000000f65a54a8 00007ff244d7c1d8
+0x00007ff244d7c1e0:   00000000d5c785da 00007ff244d7c230
+0x00007ff244d7c1f0:   00000000d5ca9c50 0000000000000000
+0x00007ff244d7c200:   00000000d5c785e8 00007ff244d7c1c8
+0x00007ff244d7c210:   00007ff244d7c228 00007ff244d7c278
+0x00007ff244d7c220:   00007ff239005e9a 00000000f57fb780
+0x00007ff244d7c230:   00000000f65a54a8 00007ff244d7c238
+0x00007ff244d7c240:   00000000d66a5a16 00007ff244d7c2a8
+0x00007ff244d7c250:   00000000d66a7780 0000000000000000
+0x00007ff244d7c260:   00000000d66a5a98 00007ff244d7c228
+0x00007ff244d7c270:   00007ff244d7c298 00007ff244d7c2f0 
+
+Instructions: (pc=0x00007ff244214c04)
+0x00007ff244214be4:   24 e8 4c 89 64 24 f0 48 83 ec 28 49 89 f8 49 89
+0x00007ff244214bf4:   f4 48 89 d5 48 89 cb 4d 85 ed 0f 84 ec 00 00 00
+0x00007ff244214c04:   8b 01 25 00 80 00 00 75 48 48 8b 91 88 00 00 00
+0x00007ff244214c14:   64 4c 8b 0c 25 10 00 00 00 4c 3b 4a 08 74 2e be 
+
+Register to memory mapping:
+
+RAX=0x0000000000000001 is an unknown value
+RBX=0x0000000000000000 is an unknown value
+RCX=0x0000000000000000 is an unknown value
+RDX=0x0000000000000001 is an unknown value
+RSP=0x00007ff244d7c080 is pointing into the stack for thread: 0x00007ff23c00a000
+RBP=0x0000000000000001 is an unknown value
+RSI=0x0000000000000001 is an unknown value
+RDI=0x00007ff23c526cd0 is an unknown value
+R8 =0x00007ff23c526cd0 is an unknown value
+R9 =0x0000000000000001 is an unknown value
+R10=0x00007ff23c526cd1 is an unknown value
+R11=0x0000000000000027 is an unknown value
+R12=0x0000000000000001 is an unknown value
+R13=0x0000000000000001 is an unknown value
+R14=0x00007ff244d7c170 is pointing into the stack for thread: 0x00007ff23c00a000
+R15=0x00007ff23c00a000 is a thread
+
+
+Stack: [0x00007ff244c7d000,0x00007ff244d7e000],  sp=0x00007ff244d7c080,  free space=1020k
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+C  [libc.so.6+0x6fc04]  fwrite+0x34
+
+Java frames: (J=compiled Java code, j=interpreted, Vv=VM code)
+j  prism.PrismNative.PN_PrintToFile(JLjava/lang/String;)V+0
+j  prism.PrismFileLog.printToLog(Ljava/lang/String;)V+5
+j  prism.PrismFileLog.print(Ljava/lang/String;)V+2
+j  prism.ProbModel.exportStates(ILprism/PrismLog;)V+14
+j  prism.NondetModelChecker.checkRewardCoSafeLTL(Lparser/ast/Expression;Ljdd/JDDNode;Ljdd/JDDNode;Z)Lprism/StateValues;+547
+j  prism.NondetModelChecker.checkRewardPathFormula(Lparser/ast/Expression;Ljdd/JDDNode;Ljdd/JDDNode;Z)Lprism/StateValues;+44
+j  prism.NondetModelChecker.checkExpressionReward(Lparser/ast/ExpressionReward;)Lprism/StateValues;+647
+j  prism.NondetModelChecker.checkExpression(Lparser/ast/Expression;)Lprism/StateValues;+31
+j  prism.StateModelChecker.checkExpressionFilter(Lparser/ast/ExpressionFilter;)Lprism/StateValues;+302
+j  prism.StateModelChecker.checkExpression(Lparser/ast/Expression;)Lprism/StateValues;+295
+j  prism.NonProbModelChecker.checkExpression(Lparser/ast/Expression;)Lprism/StateValues;+46
+j  prism.NondetModelChecker.checkExpression(Lparser/ast/Expression;)Lprism/StateValues;+83
+j  prism.StateModelChecker.check(Lparser/ast/Expression;)Lprism/Result;+173
+j  prism.Prism.modelCheck(Lparser/ast/PropertiesFile;Lparser/ast/Property;)Lprism/Result;+365
+j  prism.PrismManager.callPrism(Ljava/lang/String;Ljava/lang/String;Z)Lprism/Result;+177
+j  prism.PrismManager.main([Ljava/lang/String;)V+405
+v  ~StubRoutines::call_stub
+
+---------------  P R O C E S S  ---------------
+
+Java Threads: ( => current thread )
+  0x00007ff23c3ea800 JavaThread "Image Fetcher 0" daemon [_thread_blocked, id=17211, stack(0x00007ff2284b8000,0x00007ff2285b9000)]
+  0x00007ff23c2b3800 JavaThread "Java2D Disposer" daemon [_thread_blocked, id=17208, stack(0x00007ff2287bb000,0x00007ff2288bc000)]
+  0x00007ff23c104000 JavaThread "Low Memory Detector" daemon [_thread_blocked, id=17206, stack(0x00007ff2297e1000,0x00007ff2298e2000)]
+  0x00007ff23c101800 JavaThread "C2 CompilerThread1" daemon [_thread_blocked, id=17205, stack(0x00007ff2298e2000,0x00007ff2299e3000)]
+  0x00007ff23c0fe800 JavaThread "C2 CompilerThread0" daemon [_thread_blocked, id=17204, stack(0x00007ff2299e3000,0x00007ff229ae4000)]
+  0x00007ff23c0fc800 JavaThread "Signal Dispatcher" daemon [_thread_blocked, id=17203, stack(0x00007ff229ae4000,0x00007ff229be5000)]
+  0x00007ff23c0ad800 JavaThread "Finalizer" daemon [_thread_blocked, id=17202, stack(0x00007ff22a2c8000,0x00007ff22a3c9000)]
+  0x00007ff23c0ab800 JavaThread "Reference Handler" daemon [_thread_blocked, id=17201, stack(0x00007ff22a3c9000,0x00007ff22a4ca000)]
+=>0x00007ff23c00a000 JavaThread "main" [_thread_in_native, id=17191, stack(0x00007ff244c7d000,0x00007ff244d7e000)]
+
+Other Threads:
+  0x00007ff23c09c800 VMThread [stack: 0x00007ff22a4ca000,0x00007ff22a5cb000] [id=17200]
+  0x00007ff23c10e800 WatcherThread [stack: 0x00007ff2296e0000,0x00007ff2297e1000] [id=17207]
+
+VM state:not at safepoint (normal execution)
+
+VM Mutex/Monitor currently owned by a thread: None
+
+Heap
+ PSYoungGen      total 36736K, used 17074K [0x00000000f5560000, 0x00000000f7e50000, 0x0000000100000000)
+  eden space 31552K, 54% used [0x00000000f5560000,0x00000000f660c998,0x00000000f7430000)
+  from space 5184K, 0% used [0x00000000f7940000,0x00000000f7940000,0x00000000f7e50000)
+  to   space 5184K, 0% used [0x00000000f7430000,0x00000000f7430000,0x00000000f7940000)
+ ParOldGen       total 83968K, used 0K [0x00000000e0000000, 0x00000000e5200000, 0x00000000f5560000)
+  object space 83968K, 0% used [0x00000000e0000000,0x00000000e0000000,0x00000000e5200000)
+ PSPermGen       total 21248K, used 13658K [0x00000000d5a00000, 0x00000000d6ec0000, 0x00000000e0000000)
+  object space 21248K, 64% used [0x00000000d5a00000,0x00000000d6756a60,0x00000000d6ec0000)
+
+Card table byte_map: [0x00007ff2418fb000,0x00007ff241a4f000] byte_map_base: 0x00007ff24124e000
+
+Polling page: 0x00007ff244daa000
+
+Code Cache  [0x00007ff239000000, 0x00007ff239270000, 0x00007ff23c000000)
+ total_blobs=526 nmethods=85 adapters=394 free_code_cache=48413Kb largest_free_block=49555584
+
+Compilation events (10 events):
+Event: 2.486 Thread 0x00007ff23c101800   81  s          java.util.Vector::indexOf (67 bytes)
+Event: 2.495 Thread 0x00007ff23c101800 nmethod 81 0x00007ff2390a7610 code [0x00007ff2390a7780, 0x00007ff2390a80f8]
+Event: 2.503 Thread 0x00007ff23c0fe800   82  s          java.util.Vector::indexOf (67 bytes)
+Event: 2.507 Thread 0x00007ff23c101800   83             sun.net.www.ParseUtil::encodePath (336 bytes)
+Event: 2.509 Thread 0x00007ff23c0fe800 nmethod 82 0x00007ff2390a6950 code [0x00007ff2390a6ac0, 0x00007ff2390a7438]
+Event: 2.512 Thread 0x00007ff23c0fe800   84             java.nio.Buffer::position (43 bytes)
+Event: 2.512 Thread 0x00007ff23c0fe800 nmethod 84 0x00007ff2390a6710 code [0x00007ff2390a6840, 0x00007ff2390a68b8]
+Event: 2.517 Thread 0x00007ff23c0fe800   85             java.nio.charset.CoderResult::isUnderflow (13 bytes)
+Event: 2.517 Thread 0x00007ff23c0fe800 nmethod 85 0x00007ff2390a6510 code [0x00007ff2390a6640, 0x00007ff2390a6698]
+Event: 2.523 Thread 0x00007ff23c101800 nmethod 83 0x00007ff2390b1fd0 code [0x00007ff2390b2220, 0x00007ff2390b3238]
+
+GC Heap History (0 events):
+No events
+
+Deoptimization events (6 events):
+Event: 2.482 Thread 0x00007ff23c00a000 Uncommon trap -122 fr.pc 0x00007ff23909c3f0
+Event: 2.501 Thread 0x00007ff23c00a000 Uncommon trap -58 fr.pc 0x00007ff2390a8078
+Event: 2.501 Thread 0x00007ff23c00a000 Uncommon trap -58 fr.pc 0x00007ff2390a8078
+Event: 2.501 Thread 0x00007ff23c00a000 Uncommon trap -58 fr.pc 0x00007ff2390a8078
+Event: 2.501 Thread 0x00007ff23c00a000 Uncommon trap -58 fr.pc 0x00007ff2390a8078
+Event: 2.515 Thread 0x00007ff23c00a000 Uncommon trap -83 fr.pc 0x00007ff2390a7418
+
+Internal exceptions (10 events):
+Event: 2.536 Thread 0x00007ff23c00a000 Threw 0x00000000f6561df0 at /build/buildd/openjdk-6-6b30-1.13.1/build/openjdk/hotspot/src/share/vm/classfile/systemDictionary.cpp:1
+Event: 2.536 Thread 0x00007ff23c00a000 Threw 0x00000000f6562120 at /build/buildd/openjdk-6-6b30-1.13.1/build/openjdk/hotspot/src/share/vm/prims/jvm.cpp:1235
+Event: 2.537 Thread 0x00007ff23c00a000 Threw 0x00000000f6566578 at /build/buildd/openjdk-6-6b30-1.13.1/build/openjdk/hotspot/src/share/vm/classfile/systemDictionary.cpp:1
+Event: 2.537 Thread 0x00007ff23c00a000 Threw 0x00000000f65668a0 at /build/buildd/openjdk-6-6b30-1.13.1/build/openjdk/hotspot/src/share/vm/prims/jvm.cpp:1235
+Event: 2.537 Thread 0x00007ff23c00a000 Threw 0x00000000f656b088 at /build/buildd/openjdk-6-6b30-1.13.1/build/openjdk/hotspot/src/share/vm/classfile/systemDictionary.cpp:1
+Event: 2.537 Thread 0x00007ff23c00a000 Threw 0x00000000f656b3a0 at /build/buildd/openjdk-6-6b30-1.13.1/build/openjdk/hotspot/src/share/vm/prims/jvm.cpp:1235
+Event: 2.538 Thread 0x00007ff23c00a000 Threw 0x00000000f656f380 at /build/buildd/openjdk-6-6b30-1.13.1/build/openjdk/hotspot/src/share/vm/classfile/systemDictionary.cpp:1
+Event: 2.538 Thread 0x00007ff23c00a000 Threw 0x00000000f656f6d8 at /build/buildd/openjdk-6-6b30-1.13.1/build/openjdk/hotspot/src/share/vm/prims/jvm.cpp:1235
+Event: 2.566 Thread 0x00007ff23c00a000 Threw 0x00000000f6576b28 at /build/buildd/openjdk-6-6b30-1.13.1/build/openjdk/hotspot/src/share/vm/classfile/systemDictionary.cpp:1
+Event: 2.567 Thread 0x00007ff23c00a000 Threw 0x00000000f6576e40 at /build/buildd/openjdk-6-6b30-1.13.1/build/openjdk/hotspot/src/share/vm/prims/jvm.cpp:1235
+
+Events (10 events):
+Event: 2.537 loading class 0x00007ff23c4d1070
+Event: 2.537 loading class 0x00007ff23c4d1070 done
+Event: 2.537 loading class 0x00007ff23c4d10a0
+Event: 2.537 loading class 0x00007ff23c4d10a0 done
+Event: 2.538 loading class 0x00007ff23c4db060
+Event: 2.538 loading class 0x00007ff23c4db060 done
+Event: 2.566 loading class 0x00007ff23c4770c0
+Event: 2.566 loading class 0x00007ff23c4770c0 done
+Event: 2.571 loading class 0x00007ff23c3bca40
+Event: 2.571 loading class 0x00007ff23c3bca40 done
+
+
+Dynamic libraries:
+00400000-00409000 r-xp 00000000 08:07 2265135                            /usr/lib/jvm/java-6-openjdk-amd64/jre/bin/java
+00608000-00609000 r--p 00008000 08:07 2265135                            /usr/lib/jvm/java-6-openjdk-amd64/jre/bin/java
+00609000-0060a000 rw-p 00009000 08:07 2265135                            /usr/lib/jvm/java-6-openjdk-amd64/jre/bin/java
+024e5000-02506000 rw-p 00000000 00:00 0                                  [heap]
+d5a00000-d6ec0000 rw-p 00000000 00:00 0 
+d6ec0000-e0000000 rw-p 00000000 00:00 0 
+e0000000-e5200000 rw-p 00000000 00:00 0 
+e5200000-f5560000 rw-p 00000000 00:00 0 
+f5560000-f7e50000 rw-p 00000000 00:00 0 
+f7e50000-100000000 rw-p 00000000 00:00 0 
+7ff1cc000000-7ff1cc021000 rw-p 00000000 00:00 0 
+7ff1cc021000-7ff1d0000000 ---p 00000000 00:00 0 
+7ff1d4000000-7ff1d4021000 rw-p 00000000 00:00 0 
+7ff1d4021000-7ff1d8000000 ---p 00000000 00:00 0 
+7ff1d8000000-7ff1d8055000 rw-p 00000000 00:00 0 
+7ff1d8055000-7ff1dc000000 ---p 00000000 00:00 0 
+7ff1dc000000-7ff1dc021000 rw-p 00000000 00:00 0 
+7ff1dc021000-7ff1e0000000 ---p 00000000 00:00 0 
+7ff1e0000000-7ff1e0021000 rw-p 00000000 00:00 0 
+7ff1e0021000-7ff1e4000000 ---p 00000000 00:00 0 
+7ff1e4000000-7ff1e4021000 rw-p 00000000 00:00 0 
+7ff1e4021000-7ff1e8000000 ---p 00000000 00:00 0 
+7ff1e8000000-7ff1e8021000 rw-p 00000000 00:00 0 
+7ff1e8021000-7ff1ec000000 ---p 00000000 00:00 0 
+7ff1ec000000-7ff1ec818000 rw-p 00000000 00:00 0 
+7ff1ec818000-7ff1f0000000 ---p 00000000 00:00 0 
+7ff1f0000000-7ff1f0422000 rw-p 00000000 00:00 0 
+7ff1f0422000-7ff1f4000000 ---p 00000000 00:00 0 
+7ff1f4000000-7ff1f4021000 rw-p 00000000 00:00 0 
+7ff1f4021000-7ff1f8000000 ---p 00000000 00:00 0 
+7ff1f8000000-7ff1f8021000 rw-p 00000000 00:00 0 
+7ff1f8021000-7ff1fc000000 ---p 00000000 00:00 0 
+7ff1fc000000-7ff1fc021000 rw-p 00000000 00:00 0 
+7ff1fc021000-7ff200000000 ---p 00000000 00:00 0 
+7ff200000000-7ff200021000 rw-p 00000000 00:00 0 
+7ff200021000-7ff204000000 ---p 00000000 00:00 0 
+7ff204000000-7ff204021000 rw-p 00000000 00:00 0 
+7ff204021000-7ff208000000 ---p 00000000 00:00 0 
+7ff20c000000-7ff20c021000 rw-p 00000000 00:00 0 
+7ff20c021000-7ff210000000 ---p 00000000 00:00 0 
+7ff214000000-7ff214021000 rw-p 00000000 00:00 0 
+7ff214021000-7ff218000000 ---p 00000000 00:00 0 
+7ff21c000000-7ff21c021000 rw-p 00000000 00:00 0 
+7ff21c021000-7ff220000000 ---p 00000000 00:00 0 
+7ff221c40000-7ff221c5d000 r-xp 00000000 08:08 2625415                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libprismhybrid.so
+7ff221c5d000-7ff221e5c000 ---p 0001d000 08:08 2625415                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libprismhybrid.so
+7ff221e5c000-7ff221e5d000 r--p 0001c000 08:08 2625415                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libprismhybrid.so
+7ff221e5d000-7ff221e5e000 rw-p 0001d000 08:08 2625415                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libprismhybrid.so
+7ff221e5e000-7ff221ef8000 r-xp 00000000 08:08 2623780                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/liblpsolve55.so
+7ff221ef8000-7ff2220f8000 ---p 0009a000 08:08 2623780                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/liblpsolve55.so
+7ff2220f8000-7ff2220fa000 r--p 0009a000 08:08 2623780                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/liblpsolve55.so
+7ff2220fa000-7ff2220fb000 rw-p 0009c000 08:08 2623780                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/liblpsolve55.so
+7ff2220fb000-7ff222101000 r-xp 00000000 08:08 2624025                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libdv.so
+7ff222101000-7ff222300000 ---p 00006000 08:08 2624025                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libdv.so
+7ff222300000-7ff222301000 r--p 00005000 08:08 2624025                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libdv.so
+7ff222301000-7ff222302000 rw-p 00006000 08:08 2624025                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libdv.so
+7ff222302000-7ff222304000 r-xp 00000000 08:08 2624016                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libodd.so
+7ff222304000-7ff222503000 ---p 00002000 08:08 2624016                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libodd.so
+7ff222503000-7ff222504000 r--p 00001000 08:08 2624016                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libodd.so
+7ff222504000-7ff222505000 rw-p 00002000 08:08 2624016                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libodd.so
+7ff222505000-7ff222534000 r-xp 00000000 08:08 2625395                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libprismsparse.so
+7ff222534000-7ff222733000 ---p 0002f000 08:08 2625395                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libprismsparse.so
+7ff222733000-7ff222734000 r--p 0002e000 08:08 2625395                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libprismsparse.so
+7ff222734000-7ff222735000 rw-p 0002f000 08:08 2625395                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libprismsparse.so
+7ff222735000-7ff222740000 r-xp 00000000 08:08 2625354                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libprismmtbdd.so
+7ff222740000-7ff22293f000 ---p 0000b000 08:08 2625354                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libprismmtbdd.so
+7ff22293f000-7ff222940000 r--p 0000a000 08:08 2625354                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libprismmtbdd.so
+7ff222940000-7ff222941000 rw-p 0000b000 08:08 2625354                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libprismmtbdd.so
+7ff222941000-7ff223b84000 rw-p 00000000 00:00 0 
+7ff223b84000-7ff223bf7000 r-xp 00000000 08:08 2623999                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libdd.so
+7ff223bf7000-7ff223df6000 ---p 00073000 08:08 2623999                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libdd.so
+7ff223df6000-7ff223df7000 r--p 00072000 08:08 2623999                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libdd.so
+7ff223df7000-7ff223df8000 rw-p 00073000 08:08 2623999                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libdd.so
+7ff223df8000-7ff223df9000 rw-p 00000000 00:00 0 
+7ff223df9000-7ff223dff000 r-xp 00000000 08:08 2624010                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libjdd.so
+7ff223dff000-7ff223ffe000 ---p 00006000 08:08 2624010                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libjdd.so
+7ff223ffe000-7ff223fff000 r--p 00005000 08:08 2624010                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libjdd.so
+7ff223fff000-7ff224000000 rw-p 00006000 08:08 2624010                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libjdd.so
+7ff224000000-7ff224021000 rw-p 00000000 00:00 0 
+7ff224021000-7ff228000000 ---p 00000000 00:00 0 
+7ff2281ae000-7ff2281b1000 ---p 00000000 00:00 0 
+7ff2281b1000-7ff2282af000 rw-p 00000000 00:00 0 
+7ff2282af000-7ff2282b7000 r-xp 00000000 08:07 2236031                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libnio.so
+7ff2282b7000-7ff2284b6000 ---p 00008000 08:07 2236031                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libnio.so
+7ff2284b6000-7ff2284b7000 r--p 00007000 08:07 2236031                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libnio.so
+7ff2284b7000-7ff2284b8000 rw-p 00008000 08:07 2236031                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libnio.so
+7ff2284b8000-7ff2284bb000 ---p 00000000 00:00 0 
+7ff2284bb000-7ff2285b9000 rw-p 00000000 00:00 0                          [stack:17211]
+7ff2285b9000-7ff2285bc000 ---p 00000000 00:00 0 
+7ff2285bc000-7ff2286ba000 rw-p 00000000 00:00 0 
+7ff2286ba000-7ff2286bd000 ---p 00000000 00:00 0 
+7ff2286bd000-7ff2287bb000 rw-p 00000000 00:00 0 
+7ff2287bb000-7ff2287be000 ---p 00000000 00:00 0 
+7ff2287be000-7ff2288bc000 rw-p 00000000 00:00 0                          [stack:17208]
+7ff2288bc000-7ff228952000 r-xp 00000000 08:07 2104784                    /usr/lib/x86_64-linux-gnu/libfreetype.so.6.8.0
+7ff228952000-7ff228b51000 ---p 00096000 08:07 2104784                    /usr/lib/x86_64-linux-gnu/libfreetype.so.6.8.0
+7ff228b51000-7ff228b57000 r--p 00095000 08:07 2104784                    /usr/lib/x86_64-linux-gnu/libfreetype.so.6.8.0
+7ff228b57000-7ff228b58000 rw-p 0009b000 08:07 2104784                    /usr/lib/x86_64-linux-gnu/libfreetype.so.6.8.0
+7ff228b58000-7ff228ba7000 r-xp 00000000 08:07 2236019                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libfontmanager.so
+7ff228ba7000-7ff228da7000 ---p 0004f000 08:07 2236019                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libfontmanager.so
+7ff228da7000-7ff228da9000 r--p 0004f000 08:07 2236019                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libfontmanager.so
+7ff228da9000-7ff228daa000 rw-p 00051000 08:07 2236019                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libfontmanager.so
+7ff228daa000-7ff228dab000 rw-p 00000000 00:00 0 
+7ff228dab000-7ff228db1000 r-xp 00000000 08:07 2236025                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/headless/libmawt.so
+7ff228db1000-7ff228fb0000 ---p 00006000 08:07 2236025                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/headless/libmawt.so
+7ff228fb0000-7ff228fb1000 r--p 00005000 08:07 2236025                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/headless/libmawt.so
+7ff228fb1000-7ff228fb2000 rw-p 00006000 08:07 2236025                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/headless/libmawt.so
+7ff228fb2000-7ff229054000 r-xp 00000000 08:07 2265124                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libawt.so
+7ff229054000-7ff229253000 ---p 000a2000 08:07 2265124                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libawt.so
+7ff229253000-7ff229254000 r--p 000a1000 08:07 2265124                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libawt.so
+7ff229254000-7ff22925f000 rw-p 000a2000 08:07 2265124                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libawt.so
+7ff22925f000-7ff229284000 rw-p 00000000 00:00 0 
+7ff229284000-7ff229288000 r-xp 00000000 08:08 2625326                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libprism.so
+7ff229288000-7ff229487000 ---p 00004000 08:08 2625326                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libprism.so
+7ff229487000-7ff229488000 r--p 00003000 08:08 2625326                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libprism.so
+7ff229488000-7ff229489000 rw-p 00004000 08:08 2625326                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/libprism.so
+7ff229489000-7ff2294ba000 rw-p 00000000 00:00 0 
+7ff2294ba000-7ff2294cf000 r-xp 00000000 08:07 2233923                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libnet.so
+7ff2294cf000-7ff2296cf000 ---p 00015000 08:07 2233923                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libnet.so
+7ff2296cf000-7ff2296d0000 r--p 00015000 08:07 2233923                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libnet.so
+7ff2296d0000-7ff2296d1000 rw-p 00016000 08:07 2233923                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libnet.so
+7ff2296d1000-7ff2296d3000 r--s 0000f000 08:07 2265104                    /usr/lib/jvm/java-6-openjdk-common/jre/lib/ext/pulse-java.jar
+7ff2296d3000-7ff2296d5000 r--s 00001000 08:07 2265103                    /usr/lib/jvm/java-6-openjdk-common/jre/lib/ext/dnsns.jar
+7ff2296d5000-7ff2296d8000 r--s 00077000 08:07 2265105                    /usr/lib/jvm/java-6-openjdk-common/jre/lib/ext/localedata.jar
+7ff2296d8000-7ff2296d9000 r--s 00007000 08:07 2370769                    /usr/share/java/java-atk-wrapper.jar
+7ff2296d9000-7ff2296dc000 r--s 00031000 08:07 2265102                    /usr/lib/jvm/java-6-openjdk-common/jre/lib/ext/sunjce_provider.jar
+7ff2296dc000-7ff2296e0000 r--s 00039000 08:07 2265101                    /usr/lib/jvm/java-6-openjdk-common/jre/lib/ext/sunpkcs11.jar
+7ff2296e0000-7ff2296e1000 ---p 00000000 00:00 0 
+7ff2296e1000-7ff2297e1000 rw-p 00000000 00:00 0                          [stack:17207]
+7ff2297e1000-7ff2297e4000 ---p 00000000 00:00 0 
+7ff2297e4000-7ff2298e2000 rw-p 00000000 00:00 0                          [stack:17206]
+7ff2298e2000-7ff2298e5000 ---p 00000000 00:00 0 
+7ff2298e5000-7ff2299e3000 rw-p 00000000 00:00 0                          [stack:17205]
+7ff2299e3000-7ff2299e6000 ---p 00000000 00:00 0 
+7ff2299e6000-7ff229ae4000 rw-p 00000000 00:00 0                          [stack:17204]
+7ff229ae4000-7ff229ae7000 ---p 00000000 00:00 0 
+7ff229ae7000-7ff229be5000 rw-p 00000000 00:00 0                          [stack:17203]
+7ff229be5000-7ff22a2c8000 r--p 00000000 08:07 2103873                    /usr/lib/locale/locale-archive
+7ff22a2c8000-7ff22a2cb000 ---p 00000000 00:00 0 
+7ff22a2cb000-7ff22a3c9000 rw-p 00000000 00:00 0                          [stack:17202]
+7ff22a3c9000-7ff22a3cc000 ---p 00000000 00:00 0 
+7ff22a3cc000-7ff22a4ca000 rw-p 00000000 00:00 0                          [stack:17201]
+7ff22a4ca000-7ff22a4cb000 ---p 00000000 00:00 0 
+7ff22a4cb000-7ff22c000000 rw-p 00000000 00:00 0                          [stack:17200]
+7ff22c000000-7ff22c021000 rw-p 00000000 00:00 0 
+7ff22c021000-7ff230000000 ---p 00000000 00:00 0 
+7ff230000000-7ff230021000 rw-p 00000000 00:00 0 
+7ff230021000-7ff234000000 ---p 00000000 00:00 0 
+7ff234000000-7ff234021000 rw-p 00000000 00:00 0 
+7ff234021000-7ff238000000 ---p 00000000 00:00 0 
+7ff238047000-7ff238048000 rw-p 00000000 00:00 0 
+7ff238048000-7ff23804f000 r--s 00053000 08:07 2265100                    /usr/lib/jvm/java-6-openjdk-common/jre/lib/resources.jar
+7ff23804f000-7ff238050000 r--s 00000000 08:07 5767251                    /var/cache/fontconfig/c05880de57d1f5e948fdfacc138775d9-le64.cache-3
+7ff238050000-7ff238059000 r--s 00000000 08:07 5767246                    /var/cache/fontconfig/945677eb7aeaf62f1d50efc3fb3ec7d8-le64.cache-3
+7ff238059000-7ff23805b000 r--s 00000000 08:07 5767247                    /var/cache/fontconfig/99e8ed0e538f840c565b6ed5dad60d56-le64.cache-3
+7ff23805b000-7ff23805f000 r--s 00000000 08:07 5767233                    /var/cache/fontconfig/2cd17615ca594fa2959ae173292e504c-le64.cache-3
+7ff23805f000-7ff238060000 r--s 00000000 08:07 5767258                    /var/cache/fontconfig/e7071f4a29fa870f4323321c154eba04-le64.cache-3
+7ff238060000-7ff238063000 r--s 00000000 08:07 5777002                    /var/cache/fontconfig/b5ea634b0fb353b8ea17632d1f9ef766-le64.cache-3
+7ff238063000-7ff238064000 r--s 00000000 08:07 5767231                    /var/cache/fontconfig/0d8c3b2ac0904cb8a57a757ad11a4a08-le64.cache-3
+7ff238064000-7ff23806a000 r--s 00000000 08:07 5767248                    /var/cache/fontconfig/a755afe4a08bf5b97852ceb7400b47bc-le64.cache-3
+7ff23806a000-7ff238073000 r--s 00000000 08:07 5777068                    /var/cache/fontconfig/6d41288fd70b0be22e8c3a91e032eec0-le64.cache-3
+7ff238073000-7ff238083000 r--s 00000000 08:07 5767230                    /var/cache/fontconfig/04aabc0a78ac019cf9454389977116d2-le64.cache-3
+7ff238083000-7ff238084000 r--s 00000000 08:07 5775397                    /var/cache/fontconfig/b95bc8ffbebda2bbdae4265e45b8178d-le64.cache-3
+7ff238084000-7ff238087000 r--s 00000000 08:07 5767236                    /var/cache/fontconfig/385c0604a188198f04d133e54aba7fe7-le64.cache-3
+7ff238087000-7ff238088000 r--s 00000000 08:07 5775389                    /var/cache/fontconfig/9c956a7723ca69a44b382d9179c9802f-le64.cache-3
+7ff238088000-7ff238089000 r--s 00000000 08:07 5775387                    /var/cache/fontconfig/5d1cca7074f29429a8d18692746c2426-le64.cache-3
+7ff238089000-7ff23808a000 r--s 00000000 08:07 5771378                    /var/cache/fontconfig/4794a0821666d79190d59a36cb4f44b5-le64.cache-3
+7ff23808a000-7ff23808b000 r--s 00000000 08:07 5775384                    /var/cache/fontconfig/9eae20f1ff8cc0a7d125749e875856bd-le64.cache-3
+7ff23808b000-7ff23808d000 r--s 00000000 08:07 5775383                    /var/cache/fontconfig/bf2c1853a9e9b00bb02fe2e9bcf1e201-le64.cache-3
+7ff23808d000-7ff238090000 r--s 00000000 08:07 5767245                    /var/cache/fontconfig/8801497958630a81b71ace7c5f9b32a8-le64.cache-3
+7ff238090000-7ff238095000 r--s 00000000 08:07 5767234                    /var/cache/fontconfig/3047814df9a2f067bd2d96a2b9c36e5a-le64.cache-3
+7ff238095000-7ff238096000 r--s 00000000 08:07 5767239                    /var/cache/fontconfig/56cf4f4769d0f4abc89a4895d7bd3ae1-le64.cache-3
+7ff238096000-7ff238097000 r--s 00000000 08:07 5767250                    /var/cache/fontconfig/b9d506c9ac06c20b433354fa67a72993-le64.cache-3
+7ff238097000-7ff23809c000 r--s 00000000 08:07 5767249                    /var/cache/fontconfig/b47c4e1ecd0709278f4910c18777a504-le64.cache-3
+7ff23809c000-7ff23809e000 r--s 00000000 08:07 5775382                    /var/cache/fontconfig/4b14b093aebc79c320de5e86ae1d3314-le64.cache-3
+7ff23809e000-7ff23809f000 r--s 00000000 08:07 5775381                    /var/cache/fontconfig/8aec10f4cc8391dcef22ca549f1e4354-le64.cache-3
+7ff23809f000-7ff2380af000 r--s 00000000 08:07 5767254                    /var/cache/fontconfig/d52a8644073d54c13679302ca1180695-le64.cache-3
+7ff2380af000-7ff2380c9000 r--s 00000000 08:07 5769551                    /var/cache/fontconfig/e13b20fdb08344e0e664864cc2ede53d-le64.cache-3
+7ff2380c9000-7ff239000000 rw-p 00000000 00:00 0 
+7ff239000000-7ff239270000 rwxp 00000000 00:00 0 
+7ff239270000-7ff23cd7e000 rw-p 00000000 00:00 0 
+7ff23cd7e000-7ff240000000 ---p 00000000 00:00 0 
+7ff240000000-7ff240001000 r--s 00000000 08:07 5775379                    /var/cache/fontconfig/ac2cf712d852da827a87a9baf682f5b9-le64.cache-3
+7ff240001000-7ff240003000 r--s 00000000 08:07 5775377                    /var/cache/fontconfig/65f976e5259cbe6dc7697b8648396239-le64.cache-3
+7ff240003000-7ff240004000 r--s 00000000 08:07 5775375                    /var/cache/fontconfig/845c20fd2c4814bcec78e05d37a63ccc-le64.cache-3
+7ff240004000-7ff240005000 r--s 00000000 08:07 5775373                    /var/cache/fontconfig/e7de81b01590fb7e12b38e274e17d0db-le64.cache-3
+7ff240005000-7ff240009000 r--s 00000000 08:07 5775370                    /var/cache/fontconfig/7ef2298fde41cc6eeb7af42e48b7d293-le64.cache-3
+7ff240009000-7ff24000a000 r--s 00000000 08:07 5767251                    /var/cache/fontconfig/c05880de57d1f5e948fdfacc138775d9-le64.cache-3
+7ff24000a000-7ff240013000 r--s 00000000 08:07 5767246                    /var/cache/fontconfig/945677eb7aeaf62f1d50efc3fb3ec7d8-le64.cache-3
+7ff240013000-7ff240015000 r--s 00000000 08:07 5767247                    /var/cache/fontconfig/99e8ed0e538f840c565b6ed5dad60d56-le64.cache-3
+7ff240015000-7ff240019000 r--s 00000000 08:07 5767233                    /var/cache/fontconfig/2cd17615ca594fa2959ae173292e504c-le64.cache-3
+7ff240019000-7ff24001a000 r--s 00000000 08:07 5767258                    /var/cache/fontconfig/e7071f4a29fa870f4323321c154eba04-le64.cache-3
+7ff24001a000-7ff24001d000 r--s 00000000 08:07 5777002                    /var/cache/fontconfig/b5ea634b0fb353b8ea17632d1f9ef766-le64.cache-3
+7ff24001d000-7ff24001e000 r--s 00000000 08:07 5767231                    /var/cache/fontconfig/0d8c3b2ac0904cb8a57a757ad11a4a08-le64.cache-3
+7ff24001e000-7ff240024000 r--s 00000000 08:07 5767248                    /var/cache/fontconfig/a755afe4a08bf5b97852ceb7400b47bc-le64.cache-3
+7ff240024000-7ff24002d000 r--s 00000000 08:07 5777068                    /var/cache/fontconfig/6d41288fd70b0be22e8c3a91e032eec0-le64.cache-3
+7ff24002d000-7ff24003d000 r--s 00000000 08:07 5767230                    /var/cache/fontconfig/04aabc0a78ac019cf9454389977116d2-le64.cache-3
+7ff24003d000-7ff24003e000 r--s 00000000 08:07 5775397                    /var/cache/fontconfig/b95bc8ffbebda2bbdae4265e45b8178d-le64.cache-3
+7ff24003e000-7ff240041000 r--s 00000000 08:07 5767236                    /var/cache/fontconfig/385c0604a188198f04d133e54aba7fe7-le64.cache-3
+7ff240041000-7ff240042000 r--s 00000000 08:07 5775389                    /var/cache/fontconfig/9c956a7723ca69a44b382d9179c9802f-le64.cache-3
+7ff240042000-7ff240043000 r--s 00000000 08:07 5775387                    /var/cache/fontconfig/5d1cca7074f29429a8d18692746c2426-le64.cache-3
+7ff240043000-7ff240044000 r--s 00000000 08:07 5771378                    /var/cache/fontconfig/4794a0821666d79190d59a36cb4f44b5-le64.cache-3
+7ff240044000-7ff240045000 r--s 00000000 08:07 5775384                    /var/cache/fontconfig/9eae20f1ff8cc0a7d125749e875856bd-le64.cache-3
+7ff240045000-7ff240047000 r--s 00000000 08:07 5775383                    /var/cache/fontconfig/bf2c1853a9e9b00bb02fe2e9bcf1e201-le64.cache-3
+7ff240047000-7ff24004a000 r--s 00000000 08:07 5767245                    /var/cache/fontconfig/8801497958630a81b71ace7c5f9b32a8-le64.cache-3
+7ff24004a000-7ff24004f000 r--s 00000000 08:07 5767234                    /var/cache/fontconfig/3047814df9a2f067bd2d96a2b9c36e5a-le64.cache-3
+7ff24004f000-7ff240050000 r--s 00000000 08:07 5767239                    /var/cache/fontconfig/56cf4f4769d0f4abc89a4895d7bd3ae1-le64.cache-3
+7ff240050000-7ff240051000 r--s 00000000 08:07 5767250                    /var/cache/fontconfig/b9d506c9ac06c20b433354fa67a72993-le64.cache-3
+7ff240051000-7ff240056000 r--s 00000000 08:07 5767249                    /var/cache/fontconfig/b47c4e1ecd0709278f4910c18777a504-le64.cache-3
+7ff240056000-7ff240058000 r--s 00000000 08:07 5775382                    /var/cache/fontconfig/4b14b093aebc79c320de5e86ae1d3314-le64.cache-3
+7ff240058000-7ff240059000 r--s 00000000 08:07 5775381                    /var/cache/fontconfig/8aec10f4cc8391dcef22ca549f1e4354-le64.cache-3
+7ff240059000-7ff240069000 r--s 00000000 08:07 5767254                    /var/cache/fontconfig/d52a8644073d54c13679302ca1180695-le64.cache-3
+7ff240069000-7ff240083000 r--s 00000000 08:07 5769551                    /var/cache/fontconfig/e13b20fdb08344e0e664864cc2ede53d-le64.cache-3
+7ff240083000-7ff240084000 r--s 00009000 08:08 2623785                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/epsgraphics.jar
+7ff240084000-7ff240086000 r--s 00006000 08:08 2623813                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/lpsolve55j.jar
+7ff240086000-7ff240093000 r--s 00077000 08:08 2623781                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/colt.jar
+7ff240093000-7ff2400b0000 r--s 002ca000 08:08 2623786                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/jas-2013137.jar
+7ff2400b0000-7ff2408eb000 rw-p 00000000 00:00 0 
+7ff2408eb000-7ff240a81000 r--s 01a09000 08:07 2265129                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/rt.jar
+7ff240a81000-7ff240ff5000 rw-p 00000000 00:00 0 
+7ff240ff5000-7ff240ff6000 ---p 00000000 00:00 0 
+7ff240ff6000-7ff2410f6000 rw-p 00000000 00:00 0                          [stack:17199]
+7ff2410f6000-7ff2410f7000 ---p 00000000 00:00 0 
+7ff2410f7000-7ff2411f7000 rw-p 00000000 00:00 0                          [stack:17198]
+7ff2411f7000-7ff2411f8000 ---p 00000000 00:00 0 
+7ff2411f8000-7ff2412f8000 rw-p 00000000 00:00 0                          [stack:17197]
+7ff2412f8000-7ff2412f9000 ---p 00000000 00:00 0 
+7ff2412f9000-7ff2413f9000 rw-p 00000000 00:00 0                          [stack:17196]
+7ff2413f9000-7ff2413fa000 ---p 00000000 00:00 0 
+7ff2413fa000-7ff2414fa000 rw-p 00000000 00:00 0                          [stack:17195]
+7ff2414fa000-7ff2414fb000 ---p 00000000 00:00 0 
+7ff2414fb000-7ff2415fb000 rw-p 00000000 00:00 0                          [stack:17194]
+7ff2415fb000-7ff2415fc000 ---p 00000000 00:00 0 
+7ff2415fc000-7ff2416fc000 rw-p 00000000 00:00 0                          [stack:17193]
+7ff2416fc000-7ff2416fd000 ---p 00000000 00:00 0 
+7ff2416fd000-7ff241808000 rw-p 00000000 00:00 0                          [stack:17192]
+7ff241808000-7ff241850000 rw-p 00000000 00:00 0 
+7ff241850000-7ff241879000 rw-p 00000000 00:00 0 
+7ff241879000-7ff2418fb000 rw-p 00000000 00:00 0 
+7ff2418fb000-7ff241906000 rw-p 00000000 00:00 0 
+7ff241906000-7ff24194e000 rw-p 00000000 00:00 0 
+7ff24194e000-7ff241977000 rw-p 00000000 00:00 0 
+7ff241977000-7ff2419f8000 rw-p 00000000 00:00 0 
+7ff2419f8000-7ff241a0e000 rw-p 00000000 00:00 0 
+7ff241a0e000-7ff241a4e000 rw-p 00000000 00:00 0 
+7ff241a4e000-7ff241a4f000 rw-p 00000000 00:00 0 
+7ff241a4f000-7ff241a56000 r-xp 00000000 08:07 2233913                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libzip.so
+7ff241a56000-7ff241c55000 ---p 00007000 08:07 2233913                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libzip.so
+7ff241c55000-7ff241c56000 r--p 00006000 08:07 2233913                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libzip.so
+7ff241c56000-7ff241c57000 rw-p 00007000 08:07 2233913                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libzip.so
+7ff241c57000-7ff241c63000 r-xp 00000000 08:07 1319772                    /lib/x86_64-linux-gnu/libnss_files-2.15.so
+7ff241c63000-7ff241e62000 ---p 0000c000 08:07 1319772                    /lib/x86_64-linux-gnu/libnss_files-2.15.so
+7ff241e62000-7ff241e63000 r--p 0000b000 08:07 1319772                    /lib/x86_64-linux-gnu/libnss_files-2.15.so
+7ff241e63000-7ff241e64000 rw-p 0000c000 08:07 1319772                    /lib/x86_64-linux-gnu/libnss_files-2.15.so
+7ff241e64000-7ff241e6e000 r-xp 00000000 08:07 1319776                    /lib/x86_64-linux-gnu/libnss_nis-2.15.so
+7ff241e6e000-7ff24206e000 ---p 0000a000 08:07 1319776                    /lib/x86_64-linux-gnu/libnss_nis-2.15.so
+7ff24206e000-7ff24206f000 r--p 0000a000 08:07 1319776                    /lib/x86_64-linux-gnu/libnss_nis-2.15.so
+7ff24206f000-7ff242070000 rw-p 0000b000 08:07 1319776                    /lib/x86_64-linux-gnu/libnss_nis-2.15.so
+7ff242070000-7ff242087000 r-xp 00000000 08:07 1319788                    /lib/x86_64-linux-gnu/libnsl-2.15.so
+7ff242087000-7ff242286000 ---p 00017000 08:07 1319788                    /lib/x86_64-linux-gnu/libnsl-2.15.so
+7ff242286000-7ff242287000 r--p 00016000 08:07 1319788                    /lib/x86_64-linux-gnu/libnsl-2.15.so
+7ff242287000-7ff242288000 rw-p 00017000 08:07 1319788                    /lib/x86_64-linux-gnu/libnsl-2.15.so
+7ff242288000-7ff24228a000 rw-p 00000000 00:00 0 
+7ff24228a000-7ff242292000 r-xp 00000000 08:07 1319770                    /lib/x86_64-linux-gnu/libnss_compat-2.15.so
+7ff242292000-7ff242491000 ---p 00008000 08:07 1319770                    /lib/x86_64-linux-gnu/libnss_compat-2.15.so
+7ff242491000-7ff242492000 r--p 00007000 08:07 1319770                    /lib/x86_64-linux-gnu/libnss_compat-2.15.so
+7ff242492000-7ff242493000 rw-p 00008000 08:07 1319770                    /lib/x86_64-linux-gnu/libnss_compat-2.15.so
+7ff242493000-7ff2424c0000 r-xp 00000000 08:07 2232258                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libjava.so
+7ff2424c0000-7ff2426bf000 ---p 0002d000 08:07 2232258                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libjava.so
+7ff2426bf000-7ff2426c0000 r--p 0002c000 08:07 2232258                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libjava.so
+7ff2426c0000-7ff2426c3000 rw-p 0002d000 08:07 2232258                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libjava.so
+7ff2426c3000-7ff2426d1000 r-xp 00000000 08:07 2233933                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libverify.so
+7ff2426d1000-7ff2428d0000 ---p 0000e000 08:07 2233933                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libverify.so
+7ff2428d0000-7ff2428d2000 r--p 0000d000 08:07 2233933                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libverify.so
+7ff2428d2000-7ff2428d3000 rw-p 0000f000 08:07 2233933                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/libverify.so
+7ff2428d3000-7ff2428da000 r-xp 00000000 08:07 1319775                    /lib/x86_64-linux-gnu/librt-2.15.so
+7ff2428da000-7ff242ad9000 ---p 00007000 08:07 1319775                    /lib/x86_64-linux-gnu/librt-2.15.so
+7ff242ad9000-7ff242ada000 r--p 00006000 08:07 1319775                    /lib/x86_64-linux-gnu/librt-2.15.so
+7ff242ada000-7ff242adb000 rw-p 00007000 08:07 1319775                    /lib/x86_64-linux-gnu/librt-2.15.so
+7ff242adb000-7ff242af0000 r-xp 00000000 08:07 1314394                    /lib/x86_64-linux-gnu/libgcc_s.so.1
+7ff242af0000-7ff242cef000 ---p 00015000 08:07 1314394                    /lib/x86_64-linux-gnu/libgcc_s.so.1
+7ff242cef000-7ff242cf0000 r--p 00014000 08:07 1314394                    /lib/x86_64-linux-gnu/libgcc_s.so.1
+7ff242cf0000-7ff242cf1000 rw-p 00015000 08:07 1314394                    /lib/x86_64-linux-gnu/libgcc_s.so.1
+7ff242cf1000-7ff242dec000 r-xp 00000000 08:07 1319779                    /lib/x86_64-linux-gnu/libm-2.15.so
+7ff242dec000-7ff242feb000 ---p 000fb000 08:07 1319779                    /lib/x86_64-linux-gnu/libm-2.15.so
+7ff242feb000-7ff242fec000 r--p 000fa000 08:07 1319779                    /lib/x86_64-linux-gnu/libm-2.15.so
+7ff242fec000-7ff242fed000 rw-p 000fb000 08:07 1319779                    /lib/x86_64-linux-gnu/libm-2.15.so
+7ff242fed000-7ff2430cf000 r-xp 00000000 08:07 2105124                    /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.16
+7ff2430cf000-7ff2432ce000 ---p 000e2000 08:07 2105124                    /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.16
+7ff2432ce000-7ff2432d6000 r--p 000e1000 08:07 2105124                    /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.16
+7ff2432d6000-7ff2432d8000 rw-p 000e9000 08:07 2105124                    /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.16
+7ff2432d8000-7ff2432ed000 rw-p 00000000 00:00 0 
+7ff2432ed000-7ff243cc2000 r-xp 00000000 08:07 2236029                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/server/libjvm.so
+7ff243cc2000-7ff243ec2000 ---p 009d5000 08:07 2236029                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/server/libjvm.so
+7ff243ec2000-7ff243f41000 r--p 009d5000 08:07 2236029                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/server/libjvm.so
+7ff243f41000-7ff243f64000 rw-p 00a54000 08:07 2236029                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/server/libjvm.so
+7ff243f64000-7ff243f8e000 rw-p 00000000 00:00 0 
+7ff243f8e000-7ff243fa4000 r-xp 00000000 08:07 1314484                    /lib/x86_64-linux-gnu/libz.so.1.2.3.4
+7ff243fa4000-7ff2441a3000 ---p 00016000 08:07 1314484                    /lib/x86_64-linux-gnu/libz.so.1.2.3.4
+7ff2441a3000-7ff2441a4000 r--p 00015000 08:07 1314484                    /lib/x86_64-linux-gnu/libz.so.1.2.3.4
+7ff2441a4000-7ff2441a5000 rw-p 00016000 08:07 1314484                    /lib/x86_64-linux-gnu/libz.so.1.2.3.4
+7ff2441a5000-7ff24435a000 r-xp 00000000 08:07 1319768                    /lib/x86_64-linux-gnu/libc-2.15.so
+7ff24435a000-7ff24455a000 ---p 001b5000 08:07 1319768                    /lib/x86_64-linux-gnu/libc-2.15.so
+7ff24455a000-7ff24455e000 r--p 001b5000 08:07 1319768                    /lib/x86_64-linux-gnu/libc-2.15.so
+7ff24455e000-7ff244560000 rw-p 001b9000 08:07 1319768                    /lib/x86_64-linux-gnu/libc-2.15.so
+7ff244560000-7ff244565000 rw-p 00000000 00:00 0 
+7ff244565000-7ff244567000 r-xp 00000000 08:07 1319783                    /lib/x86_64-linux-gnu/libdl-2.15.so
+7ff244567000-7ff244767000 ---p 00002000 08:07 1319783                    /lib/x86_64-linux-gnu/libdl-2.15.so
+7ff244767000-7ff244768000 r--p 00002000 08:07 1319783                    /lib/x86_64-linux-gnu/libdl-2.15.so
+7ff244768000-7ff244769000 rw-p 00003000 08:07 1319783                    /lib/x86_64-linux-gnu/libdl-2.15.so
+7ff244769000-7ff24476d000 r-xp 00000000 08:07 2265121                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/jli/libjli.so
+7ff24476d000-7ff24496c000 ---p 00004000 08:07 2265121                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/jli/libjli.so
+7ff24496c000-7ff24496d000 r--p 00003000 08:07 2265121                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/jli/libjli.so
+7ff24496d000-7ff24496e000 rw-p 00004000 08:07 2265121                    /usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/jli/libjli.so
+7ff24496e000-7ff244986000 r-xp 00000000 08:07 1319777                    /lib/x86_64-linux-gnu/libpthread-2.15.so
+7ff244986000-7ff244b85000 ---p 00018000 08:07 1319777                    /lib/x86_64-linux-gnu/libpthread-2.15.so
+7ff244b85000-7ff244b86000 r--p 00017000 08:07 1319777                    /lib/x86_64-linux-gnu/libpthread-2.15.so
+7ff244b86000-7ff244b87000 rw-p 00018000 08:07 1319777                    /lib/x86_64-linux-gnu/libpthread-2.15.so
+7ff244b87000-7ff244b8b000 rw-p 00000000 00:00 0 
+7ff244b8b000-7ff244bad000 r-xp 00000000 08:07 1319780                    /lib/x86_64-linux-gnu/ld-2.15.so
+7ff244bad000-7ff244baf000 r--s 00000000 08:07 5775371                    /var/cache/fontconfig/67709b7835c0f764c1135060c9575660-le64.cache-3
+7ff244baf000-7ff244bb0000 r--s 00000000 08:07 5775379                    /var/cache/fontconfig/ac2cf712d852da827a87a9baf682f5b9-le64.cache-3
+7ff244bb0000-7ff244bb2000 r--s 00000000 08:07 5775377                    /var/cache/fontconfig/65f976e5259cbe6dc7697b8648396239-le64.cache-3
+7ff244bb2000-7ff244bb3000 r--s 00000000 08:07 5775375                    /var/cache/fontconfig/845c20fd2c4814bcec78e05d37a63ccc-le64.cache-3
+7ff244bb3000-7ff244bb7000 r--s 00000000 08:07 5775370                    /var/cache/fontconfig/7ef2298fde41cc6eeb7af42e48b7d293-le64.cache-3
+7ff244bb7000-7ff244bbd000 r--s 00046000 08:08 2623784                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/jcommon.jar
+7ff244bbd000-7ff244bc7000 rw-p 00000000 00:00 0 
+7ff244bc7000-7ff244c7d000 rw-p 00000000 00:00 0 
+7ff244c7d000-7ff244c80000 ---p 00000000 00:00 0 
+7ff244c80000-7ff244d83000 rw-p 00000000 00:00 0                          [stack:17191]
+7ff244d83000-7ff244d84000 r--s 00000000 08:07 5775373                    /var/cache/fontconfig/e7de81b01590fb7e12b38e274e17d0db-le64.cache-3
+7ff244d84000-7ff244d86000 r--s 00000000 08:07 5775371                    /var/cache/fontconfig/67709b7835c0f764c1135060c9575660-le64.cache-3
+7ff244d86000-7ff244d97000 r--s 0014c000 08:08 2623782                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/jfreechart.jar
+7ff244d97000-7ff244d9e000 r--s 0004f000 08:08 2623783                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/log4j.jar
+7ff244d9e000-7ff244da1000 r--s 00015000 08:08 2623812                    /home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib/pepa.zip
+7ff244da1000-7ff244da9000 rw-s 00000000 08:07 3935715                    /tmp/hsperfdata_bruno/17190
+7ff244da9000-7ff244daa000 rw-p 00000000 00:00 0 
+7ff244daa000-7ff244dab000 r--p 00000000 00:00 0 
+7ff244dab000-7ff244dad000 rw-p 00000000 00:00 0 
+7ff244dad000-7ff244dae000 r--p 00022000 08:07 1319780                    /lib/x86_64-linux-gnu/ld-2.15.so
+7ff244dae000-7ff244db0000 rw-p 00023000 08:07 1319780                    /lib/x86_64-linux-gnu/ld-2.15.so
+7fff26747000-7fff26769000 rw-p 00000000 00:00 0                          [stack]
+7fff267ff000-7fff26800000 r-xp 00000000 00:00 0                          [vdso]
+ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+
+VM Arguments:
+jvm_args: -Xmx512m -Djava.awt.headless=true -Djava.library.path=/home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib 
+java_command: prism.PrismManager ../prism-examples/polling/poll2.sm ../prism-examples/polling/poll3.sm
+Launcher Type: SUN_STANDARD
+
+Environment Variables:
+PATH=/home/bruno/devel_ws/devel/bin:/opt/strands/strands_ws/devel/bin:/opt/ros/hydro/bin:/usr/lib/lightdm/lightdm:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/opt/strands/bin
+LD_LIBRARY_PATH=/usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64/server:/usr/lib/jvm/java-6-openjdk-amd64/jre/lib/amd64:/usr/lib/jvm/java-6-openjdk-amd64/jre/../lib/amd64:/home/bruno/devel_ws/src/policy_generator/prism_ros_bridge/prism/prism-robots/prism/lib:/home/bruno/devel_ws/devel/lib:/opt/strands/strands_ws/devel/lib:/opt/ros/hydro/lib
+SHELL=/bin/bash
+DISPLAY=:0
+
+Signal Handlers:
+SIGSEGV: [libjvm.so+0x83cff0], sa_mask[0]=0x7ffbfeff, sa_flags=0x10000004
+SIGBUS: [libjvm.so+0x83cff0], sa_mask[0]=0x7ffbfeff, sa_flags=0x10000004
+SIGFPE: [libjvm.so+0x6dde00], sa_mask[0]=0x7ffbfeff, sa_flags=0x10000004
+SIGPIPE: [libjvm.so+0x6dde00], sa_mask[0]=0x7ffbfeff, sa_flags=0x10000004
+SIGXFSZ: [libjvm.so+0x6dde00], sa_mask[0]=0x7ffbfeff, sa_flags=0x10000004
+SIGILL: [libjvm.so+0x6dde00], sa_mask[0]=0x7ffbfeff, sa_flags=0x10000004
+SIGUSR1: SIG_DFL, sa_mask[0]=0x00000000, sa_flags=0x00000000
+SIGUSR2: [libjvm.so+0x6de240], sa_mask[0]=0x00000000, sa_flags=0x10000004
+SIGHUP: [libjvm.so+0x6de380], sa_mask[0]=0x7ffbfeff, sa_flags=0x10000004
+SIGINT: [libjvm.so+0x6de380], sa_mask[0]=0x7ffbfeff, sa_flags=0x10000004
+SIGTERM: [libjvm.so+0x6de380], sa_mask[0]=0x7ffbfeff, sa_flags=0x10000004
+SIGQUIT: [libjvm.so+0x6de380], sa_mask[0]=0x7ffbfeff, sa_flags=0x10000004
+
+
+---------------  S Y S T E M  ---------------
+
+OS:Ubuntu 12.04 (precise)
+uname:Linux 3.5.0-48-generic #72~precise1-Ubuntu SMP Tue Mar 11 20:09:08 UTC 2014 x86_64
+libc:glibc 2.15 NPTL 2.15 
+rlimit: STACK 8192k, CORE 0k, NPROC 62136, NOFILE 4096, AS infinity
+load average:0.32 0.37 0.53
+
+/proc/meminfo:
+MemTotal:        8052808 kB
+MemFree:         2563448 kB
+Buffers:          568868 kB
+Cached:          2780564 kB
+SwapCached:            0 kB
+Active:          2483860 kB
+Inactive:        2500148 kB
+Active(anon):    1784080 kB
+Inactive(anon):   256984 kB
+Active(file):     699780 kB
+Inactive(file):  2243164 kB
+Unevictable:          16 kB
+Mlocked:              16 kB
+SwapTotal:       2097148 kB
+SwapFree:        2097148 kB
+Dirty:               368 kB
+Writeback:             0 kB
+AnonPages:       1635052 kB
+Mapped:           259068 kB
+Shmem:            406492 kB
+Slab:             344500 kB
+SReclaimable:     305676 kB
+SUnreclaim:        38824 kB
+KernelStack:        5272 kB
+PageTables:        48072 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:     6123552 kB
+Committed_AS:    5786460 kB
+VmallocTotal:   34359738367 kB
+VmallocUsed:      835688 kB
+VmallocChunk:   34358864700 kB
+HardwareCorrupted:     0 kB
+AnonHugePages:         0 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+DirectMap4k:       79872 kB
+DirectMap2M:     8216576 kB
+
+
+CPU:total 8 (4 cores per cpu, 2 threads per core) family 6 model 58 stepping 9, cmov, cx8, fxsr, mmx, sse, sse2, sse3, ssse3, sse4.1, sse4.2, popcnt, avx, ht, tsc, tscinvbit, tscinv
+
+/proc/cpuinfo:
+processor	: 0
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 58
+model name	: Intel(R) Core(TM) i7-3632QM CPU @ 2.20GHz
+stepping	: 9
+microcode	: 0x15
+cpu MHz		: 1200.000
+cache size	: 6144 KB
+physical id	: 0
+siblings	: 8
+core id		: 0
+cpu cores	: 4
+apicid		: 0
+initial apicid	: 0
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm ida arat epb xsaveopt pln pts dtherm tpr_shadow vnmi flexpriority ept vpid fsgsbase smep erms
+bogomips	: 4390.34
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 36 bits physical, 48 bits virtual
+power management:
+
+processor	: 1
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 58
+model name	: Intel(R) Core(TM) i7-3632QM CPU @ 2.20GHz
+stepping	: 9
+microcode	: 0x15
+cpu MHz		: 1200.000
+cache size	: 6144 KB
+physical id	: 0
+siblings	: 8
+core id		: 0
+cpu cores	: 4
+apicid		: 1
+initial apicid	: 1
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm ida arat epb xsaveopt pln pts dtherm tpr_shadow vnmi flexpriority ept vpid fsgsbase smep erms
+bogomips	: 4390.34
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 36 bits physical, 48 bits virtual
+power management:
+
+processor	: 2
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 58
+model name	: Intel(R) Core(TM) i7-3632QM CPU @ 2.20GHz
+stepping	: 9
+microcode	: 0x15
+cpu MHz		: 1200.000
+cache size	: 6144 KB
+physical id	: 0
+siblings	: 8
+core id		: 1
+cpu cores	: 4
+apicid		: 2
+initial apicid	: 2
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm ida arat epb xsaveopt pln pts dtherm tpr_shadow vnmi flexpriority ept vpid fsgsbase smep erms
+bogomips	: 4390.34
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 36 bits physical, 48 bits virtual
+power management:
+
+processor	: 3
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 58
+model name	: Intel(R) Core(TM) i7-3632QM CPU @ 2.20GHz
+stepping	: 9
+microcode	: 0x15
+cpu MHz		: 2201.000
+cache size	: 6144 KB
+physical id	: 0
+siblings	: 8
+core id		: 1
+cpu cores	: 4
+apicid		: 3
+initial apicid	: 3
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm ida arat epb xsaveopt pln pts dtherm tpr_shadow vnmi flexpriority ept vpid fsgsbase smep erms
+bogomips	: 4390.34
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 36 bits physical, 48 bits virtual
+power management:
+
+processor	: 4
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 58
+model name	: Intel(R) Core(TM) i7-3632QM CPU @ 2.20GHz
+stepping	: 9
+microcode	: 0x15
+cpu MHz		: 2201.000
+cache size	: 6144 KB
+physical id	: 0
+siblings	: 8
+core id		: 2
+cpu cores	: 4
+apicid		: 4
+initial apicid	: 4
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm ida arat epb xsaveopt pln pts dtherm tpr_shadow vnmi flexpriority ept vpid fsgsbase smep erms
+bogomips	: 4390.34
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 36 bits physical, 48 bits virtual
+power management:
+
+processor	: 5
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 58
+model name	: Intel(R) Core(TM) i7-3632QM CPU @ 2.20GHz
+stepping	: 9
+microcode	: 0x15
+cpu MHz		: 1200.000
+cache size	: 6144 KB
+physical id	: 0
+siblings	: 8
+core id		: 2
+cpu cores	: 4
+apicid		: 5
+initial apicid	: 5
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm ida arat epb xsaveopt pln pts dtherm tpr_shadow vnmi flexpriority ept vpid fsgsbase smep erms
+bogomips	: 4390.34
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 36 bits physical, 48 bits virtual
+power management:
+
+processor	: 6
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 58
+model name	: Intel(R) Core(TM) i7-3632QM CPU @ 2.20GHz
+stepping	: 9
+microcode	: 0x15
+cpu MHz		: 2201.000
+cache size	: 6144 KB
+physical id	: 0
+siblings	: 8
+core id		: 3
+cpu cores	: 4
+apicid		: 6
+initial apicid	: 6
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm ida arat epb xsaveopt pln pts dtherm tpr_shadow vnmi flexpriority ept vpid fsgsbase smep erms
+bogomips	: 4390.34
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 36 bits physical, 48 bits virtual
+power management:
+
+processor	: 7
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 58
+model name	: Intel(R) Core(TM) i7-3632QM CPU @ 2.20GHz
+stepping	: 9
+microcode	: 0x15
+cpu MHz		: 2201.000
+cache size	: 6144 KB
+physical id	: 0
+siblings	: 8
+core id		: 3
+cpu cores	: 4
+apicid		: 7
+initial apicid	: 7
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm ida arat epb xsaveopt pln pts dtherm tpr_shadow vnmi flexpriority ept vpid fsgsbase smep erms
+bogomips	: 4390.34
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 36 bits physical, 48 bits virtual
+power management:
+
+
+
+Memory: 4k page, physical 8052808k(2563448k free), swap 2097148k(2097148k free)
+
+vm_info: OpenJDK 64-Bit Server VM (23.25-b01) for linux-amd64 JRE (1.6.0_30-b30), built on Mar 26 2014 14:14:35 by "buildd" with gcc 4.6.3
+
+time: Mon Apr 21 13:44:30 2014
+elapsed time: 2 seconds
+

@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/odd
+END
+package-info.java
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/odd/package-info.java
+END
+ODDUtils.java
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/odd/ODDUtils.java
+END
+odd.cc
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/odd/odd.cc
+END
+ODDUtils.cc
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/odd/ODDUtils.cc
+END
+ODDNode.java
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/odd/ODDNode.java
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/odd/Makefile
+END

@@ -1,0 +1,7 @@
+string start_id
+string ltl_task
+string time_of_day
+
+---
+
+bool succeess

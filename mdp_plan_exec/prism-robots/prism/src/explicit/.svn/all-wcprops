@@ -1,0 +1,341 @@
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit
+END
+CTMCSimple.java
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/CTMCSimple.java
+END
+StateValues.java
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/StateValues.java
+END
+Utils.java
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/Utils.java
+END
+LTLModelChecker.java
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/LTLModelChecker.java
+END
+DTMCSimple.java
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/DTMCSimple.java
+END
+ModelExplicit.java
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/ModelExplicit.java
+END
+ConstructModel.java
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/ConstructModel.java
+END
+PrismSTPGAbstractRefine.java
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/PrismSTPGAbstractRefine.java
+END
+CTMDP.java
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/CTMDP.java
+END
+ModelSimple.java
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/ModelSimple.java
+END
+DTMCEmbeddedSimple.java
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/DTMCEmbeddedSimple.java
+END
+CTMDPModelChecker.java
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/CTMDPModelChecker.java
+END
+DTMCFromMDPMemorylessAdversary.java
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/DTMCFromMDPMemorylessAdversary.java
+END
+Distribution.java
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/Distribution.java
+END
+MDP.java
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/MDP.java
+END
+QuantAbstractRefineExample.java
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/QuantAbstractRefineExample.java
+END
+NondetModelSimple.java
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/NondetModelSimple.java
+END
+NonProbModelChecker.java
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/NonProbModelChecker.java
+END
+STPGAbstrSimple.java
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/STPGAbstrSimple.java
+END
+ModelCheckerResult.java
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/ModelCheckerResult.java
+END
+package-info.java
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/package-info.java
+END
+MDPModelChecker.java
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/MDPModelChecker.java
+END
+CTMC.java
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/CTMC.java
+END
+DTMC.java
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/DTMC.java
+END
+SCCComputer.java
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/SCCComputer.java
+END
+SCCComputerTarjan.java
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/SCCComputerTarjan.java
+END
+DistributionSet.java
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/DistributionSet.java
+END
+IndexedSet.java
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/IndexedSet.java
+END
+CTMCModelChecker.java
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/CTMCModelChecker.java
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/Makefile
+END
+DTMCModelChecker.java
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/DTMCModelChecker.java
+END
+MDPSparse.java
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/MDPSparse.java
+END
+Bisimulation.java
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/Bisimulation.java
+END
+Model.java
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/Model.java
+END
+FastAdaptiveUniformisation.java
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/FastAdaptiveUniformisation.java
+END
+DTMCFromMDPAndMDStrategy.java
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/DTMCFromMDPAndMDStrategy.java
+END
+FoxGlynn.java
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/FoxGlynn.java
+END
+QuantAbstractRefine.java
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/QuantAbstractRefine.java
+END
+StateStorage.java
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/StateStorage.java
+END
+ECComputer.java
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/ECComputer.java
+END
+DTMCUniformisedSimple.java
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/DTMCUniformisedSimple.java
+END
+BirthProcess.java
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/BirthProcess.java
+END
+FastAdaptiveUniformisationModelChecker.java
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/FastAdaptiveUniformisationModelChecker.java
+END
+NondetModel.java
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/NondetModel.java
+END
+ProbModelChecker.java
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/ProbModelChecker.java
+END
+ECComputerDefault.java
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/ECComputerDefault.java
+END
+STPG.java
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/STPG.java
+END
+CTMDPSimple.java
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/CTMDPSimple.java
+END
+ModelExplorer.java
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/ModelExplorer.java
+END
+MDPExplicit.java
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/MDPExplicit.java
+END
+SubNondetModel.java
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/SubNondetModel.java
+END
+STPGModelChecker.java
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/STPGModelChecker.java
+END
+StateModelChecker.java
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/StateModelChecker.java
+END
+DTMCExplicit.java
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/DTMCExplicit.java
+END
+MDPSimple.java
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/MDPSimple.java
+END
+PrismExplicit.java
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/prism/!svn/ver/7722/prism/branches/prism-robots/prism/src/explicit/PrismExplicit.java
+END
