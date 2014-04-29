@@ -38,7 +38,7 @@ class AbstractTaskExecutor(object):
         self.task_complete(task)
 
 
-    def task_demanded(self, previously_active_task):
+    def task_demanded(self, demanded_task, currently_active_task):
         """ Called when a task is demanded. self.active_task is the demanded task (and is being executed) and previously_active_task was the task that was being executed (which could be None) """
         pass
 
@@ -49,7 +49,8 @@ class AbstractTaskExecutor(object):
         self.active_task = None
         self.active_task_id = Task.NO_TASK
         self.nav_client = None
-
+        self.action_client = None
+        self.active_task_completes_by = rospy.get_rostime()
         
 
     def advertise_services(self):
@@ -75,9 +76,19 @@ class AbstractTaskExecutor(object):
         raise RuntimeError('No action associated with topic: %s'% action_name)
 
 
+    def expected_navigation_duration(self, task):        
+        return rospy.Duration(60)
+
+    def get_active_task_completion_time(self):
+        return self.active_task_completes_by
+
     def execute_task(self, task):
         self.active_task = task
         self.active_task_id = task.task_id               
+
+        total_task_duration = self.expected_navigation_duration(task) + task.max_duration
+        self.active_task_completes_by = rospy.get_rostime() + total_task_duration
+
         if self.active_task.start_node_id != '':                    
             self.start_task_navigation()
         elif self.active_task.action != '':                    
@@ -90,36 +101,48 @@ class AbstractTaskExecutor(object):
 
     def cancel_active_task(self, event):
         """ Cancel any active nav or task action """
-        rospy.logwarn("Cancelling task that has overrun %s" % self.active_task)
+        if event:
+            rospy.logwarn("Cancelling task that has overrun %s" % self.active_task)
+        else:
+            rospy.logwarn("Cancelling task %s" % self.active_task)
         if self.nav_client and self.nav_client.get_state() == GoalStatus.ACTIVE:
             self.nav_client.cancel_goal()
         if self.action_client and self.action_client.get_state() == GoalStatus.ACTIVE:
+            self.timeout_timer.shutdown()
             self.action_client.cancel_goal()
+
 
     def start_task_action(self):
 
-        rospy.loginfo('Starting to execute %s' % self.active_task.action)
+        try:
+            rospy.loginfo('Starting to execute %s' % self.active_task.action)
 
-        (action_string, goal_string) = self.get_task_types(self.active_task.action)
-        action_clz = dc_util.load_class(dc_util.type_to_class_string(action_string))
-        goal_clz = dc_util.load_class(dc_util.type_to_class_string(goal_string))
+            (action_string, goal_string) = self.get_task_types(self.active_task.action)
+            action_clz = dc_util.load_class(dc_util.type_to_class_string(action_string))
+            goal_clz = dc_util.load_class(dc_util.type_to_class_string(goal_string))
 
-        self.action_client = actionlib.SimpleActionClient(self.active_task.action, action_clz)
-        self.action_client.wait_for_server()
+            self.action_client = actionlib.SimpleActionClient(self.active_task.action, action_clz)
+            self.action_client.wait_for_server()
 
-        argument_list = self.get_arguments(self.active_task.arguments)
+            argument_list = self.get_arguments(self.active_task.arguments)
 
-        # print "ARGS:"
-        # print argument_list
+            # print "ARGS:"
+            # print argument_list
 
-        goal = goal_clz(*argument_list)         
+            goal = goal_clz(*argument_list)         
 
-        rospy.logdebug('Sending goal to %s' % self.active_task.action)
-        self.action_client.send_goal(goal, self.task_execution_complete_cb) 
-        
-        wiggle_room = rospy.Duration(5)
-        # start a timer to kill off tasks that overrun
-        self.timeout_timer = rospy.Timer(self.active_task.max_duration + wiggle_room, self.cancel_active_task, oneshot=True)
+            rospy.logdebug('Sending goal to %s' % self.active_task.action)
+            self.action_client.send_goal(goal, self.task_execution_complete_cb) 
+            
+            wiggle_room = rospy.Duration(5)
+            # start a timer to kill off tasks that overrun
+            self.timeout_timer = rospy.Timer(self.active_task.max_duration + wiggle_room, self.cancel_active_task, oneshot=True)
+
+        except Exception, e:
+            rospy.logwarn('Exception in start_task_action: %s', e)
+            self.task_failed(self.active_task)
+            self.active_task = None
+            self.active_task_id = Task.NO_TASK
 
     def start_task_navigation(self):
         # handle delayed start up
@@ -204,14 +227,8 @@ class AbstractTaskExecutor(object):
         # stop anything else
         self.cancel_active_task(None)
 
-        # save what /was/ executing (if any)
-        previously_active_task = self.active_task
-
-        # trigger demended execution
-        self.execute_task(req.task)
-
         # and inform implementation to let it take action
-        self.task_demanded(previously_active_task)                        
+        self.task_demanded(req.task, self.active_task)                        
 
         return req.task.task_id
     demand_task_ros_srv.type=DemandTask

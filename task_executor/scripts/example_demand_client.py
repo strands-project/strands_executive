@@ -28,7 +28,8 @@ if __name__ == '__main__':
     # get services to call into execution framework
     demand_task, set_execution_status = get_services()
 
-    demanded_wait = Task(action='wait_action')
+    # 
+    demanded_wait = Task(action='wait_action', max_duration=rospy.Duration(12))
 
     task_id = demand_task(demanded_wait)
 

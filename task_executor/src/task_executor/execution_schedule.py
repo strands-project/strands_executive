@@ -35,9 +35,16 @@ class ExecutionSchedule(object):
         """ Get the tasks which are queued for execution. """
         return deepcopy(self.execution_queue)
 
-    def clear_execution_queue(self):
-        """ Removes all tasks from the execution queue. """
-        self.execution_queue.clear()
+    def get_execution_queue_length(self):
+        """ Get the number of tasks which are queued for execution. """
+        return len(self.execution_queue)
+
+
+    def clear_schedule(self):
+        """ Removes all tasks from the execution queue and task list """
+        self.execution_queue.clear()        
+        del self.tasks[:]
+
 
     def execute_next_task(self):
         """
