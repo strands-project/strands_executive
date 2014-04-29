@@ -83,7 +83,7 @@ def create_master_task():
     else:
         pose_id = meta["_id"]           
 
-    master_task = Task(action='test_task')        
+    master_task = Task(action='test_task',start_node_id='v24',end_node_id='v24')        
     task_utils.add_string_argument(master_task, 'hello world')
     task_utils.add_object_id_argument(master_task, pose_id, Pose)
     task_utils.add_int_argument(master_task, 24)
@@ -122,9 +122,9 @@ if __name__ == '__main__':
     afternoon = (midday, end)
 
     routine = task_routine.DailyRoutine(start, end)
-    # do this task every day
+    #do this task every day
     routine.repeat_every_day(task)
-    # and every two hours during the day
+    #and every two hours during the day
     routine.repeat_every_hour(task, hours=2)
     # once in the morning
     routine.repeat_every(task, *morning)

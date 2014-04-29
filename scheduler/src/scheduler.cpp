@@ -36,7 +36,7 @@ vector< vector<int> > Scheduler::getPairs()
 }
 
 void Scheduler::setPairs()
-{
+{       
   vector< vector<int> >::iterator it;
   vector<int> opair(3);  //one pair, always containing two integers + order of pair, when setted by preVar method
 
@@ -45,12 +45,15 @@ void Scheduler::setPairs()
   {
     for (int j=i+1; j<numTasks; j++)
     {
+
       double ei = tasksToS->at(i)->getEnd();
       double sj = tasksToS->at(j)->getStart();
       double dist = DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
+      
 
       if(ei+dist >sj)
       {
+        printf("DIST %f",dist+ei);
         //the combination of tasks is possible
         opair[0] = i;//tasksToS->at(i)->getID();
         opair[1] = j;//tasksToS->at(j)->getID();

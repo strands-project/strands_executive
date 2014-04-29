@@ -7,4 +7,4 @@ string time_of_day
 
 ---
 
-duration travel_time
+float64 travel_time
