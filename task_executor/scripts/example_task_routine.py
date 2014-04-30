@@ -39,7 +39,7 @@ def get_services():
     return add_tasks_srv, set_execution_status
 
 def create_wait_task(max_duration):
-    master_task = Task(action='wait_action',start_node_id='WayPoint3',end_node_id='WayPoint0', max_duration=max_duration)
+    master_task = Task(action='wait_action',start_node_id='WayPoint2',end_node_id='WayPoint3', max_duration=max_duration)
     task_utils.add_time_argument(master_task, rospy.Time())
     task_utils.add_duration_argument(master_task, max_duration)
     return master_task
@@ -65,7 +65,7 @@ def create_master_task(max_duration):
         pose_id = meta["_id"]           
 
 
-    master_task = Task(action='test_task',start_node_id='WayPoint3',end_node_id='WayPoint0', max_duration=max_duration)        
+    master_task = Task(action='test_task',start_node_id='WayPoint2',end_node_id='WayPoint3', max_duration=max_duration)        
     task_utils.add_string_argument(master_task, 'hello world')
     task_utils.add_object_id_argument(master_task, pose_id, Pose)
     task_utils.add_int_argument(master_task, 24)

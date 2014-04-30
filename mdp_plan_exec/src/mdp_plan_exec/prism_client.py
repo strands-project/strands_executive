@@ -28,10 +28,7 @@ class PrismClient(object):
         self.sock.connect((HOST, PORT))
         self.command=''
         self.directory = os.path.expanduser("~") + '/tmp/prism'
-        try:
-            os.makedirs(self.directory)
-        except OSError as ex:
-            print 'error creating PRISM directory:',  ex
+        
         
         
     def add_model(self,time_of_day, model_file):
