@@ -46,7 +46,6 @@ class MdpPlanner(object):
         starting_node= req.start_id
         self.top_map_mdp.set_initial_state_from_name(starting_node)
         self.top_map_mdp.write_prism_model(self.mdp_prism_file)
-        rospy.logwarn(starting_node)
         result=self.prism_client.update_model(req.time_of_day,self.mdp_prism_file)
         specification='R{"time"}min=? [ (' + req.ltl_task + ') ]'
         result=self.prism_client.check_model(req.time_of_day,specification)
