@@ -102,9 +102,9 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
 
         # now try to put the other tasks back in
-        if self.try_schedule(previously_scheduled):
+        if len(previously_scheduled) > 0 and self.try_schedule(previously_scheduled):
             rospy.loginfo('Was able to reinstate tasks after demand')
-            if self.try_schedule([currently_active_task]):
+            if currently_active_task != None and self.try_schedule([currently_active_task]):
                 rospy.loginfo('Was also able to reinstate previously active task after demand')
         else:
             rospy.loginfo('Was NOT able to reinstate tasks after demand')

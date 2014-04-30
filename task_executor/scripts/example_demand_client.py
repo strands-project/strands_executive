@@ -29,7 +29,7 @@ if __name__ == '__main__':
     demand_task, set_execution_status = get_services()
 
     # 
-    demanded_wait = Task(action='wait_action', max_duration=rospy.Duration(30))
+    demanded_wait = Task(action='wait_action', max_duration=rospy.Duration(30), start_node_id='WayPoint0')
 
     task_id = demand_task(demanded_wait)
 
