@@ -37,7 +37,7 @@ vector<vector<int>> Scheduler::getPairs()
 }
 
 void Scheduler::setPairs()
-
+{
   vector<vector<int>>::iterator it;
   vector<int> opairs(4);  //one pair, always containing two integers + order of pair, when setted by preVar method + the type of pair
 
@@ -51,7 +51,7 @@ void Scheduler::setPairs()
       double si = tasksToS->at(i)->getStart();
       double ej = tasksToS->at(j)->getEnd();
       double sj = tasksToS->at(j)->getStart();
-      //double dist = DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
+      double dist = DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
 
       //I before J, or I after J there is no overlapp and we dont want to add the pair.
       //for other cases, we would like to add some constraint
