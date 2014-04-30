@@ -16,12 +16,14 @@ include(ExternalProject)
 
 ExternalProject_Add(
    Prism
-   UPDATE_COMMAND ""
+   UPDATE_COMMAND make -C ${CMAKE_CURRENT_SOURCE_DIR}/${PRISM_DIR}
    DOWNLOAD_COMMAND ""
    CONFIGURE_COMMAND ""
    BUILD_COMMAND make -C ${CMAKE_CURRENT_SOURCE_DIR}/${PRISM_DIR}
-   INSTALL_COMMAND "" 
+   INSTALL_COMMAND ""
 )
+
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 

@@ -83,7 +83,7 @@ def create_master_task():
     else:
         pose_id = meta["_id"]           
 
-    master_task = Task(action='test_task',start_node_id='v24',end_node_id='v24')        
+    master_task = Task(action='test_task',start_node_id='WayPoint3',end_node_id='WayPoint0')        
     task_utils.add_string_argument(master_task, 'hello world')
     task_utils.add_object_id_argument(master_task, pose_id, Pose)
     task_utils.add_int_argument(master_task, 24)

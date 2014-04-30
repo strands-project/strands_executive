@@ -70,6 +70,15 @@ class PrismClient(object):
         print "policy:", data
         
         
+    def update_model(self,time_of_day,model_file):
+        command='update\n'
+        command=command+time_of_day+'\n'
+        command=command+model_file+'\n'
+        self.sock.sendall(command)
+        data = self.sock.recv(1024)
+        print "updated model:", data
+       
+       
     def shutdown(self,remove_dir):
         if remove_dir:
             shutil.rmtree(self.directory)        

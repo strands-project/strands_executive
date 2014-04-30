@@ -78,8 +78,12 @@ class Mdp(object):
         
         f.close()
         
-    def set_initial_state(initial_state):
+    def set_initial_state(self,initial_state):
         self.initial_state=initial_state
+        
+    def set_initial_state_from_name(self,state_name):
+        index=self.state_names.index(state_name)
+        self.set_initial_state(index)
         
  
     
