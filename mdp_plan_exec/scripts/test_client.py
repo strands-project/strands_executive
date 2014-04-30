@@ -40,8 +40,8 @@ class MdpPlanner(object):
         
         
         req=GetExpectedTravelTimeRequest()
-        req.start_id='WayPoint15'
-        req.ltl_task='F "WayPoint15"'
+        req.start_id='WayPoint1'
+        req.ltl_task='F "WayPoint2"'
         req.time_of_day='all_day'
 
         
@@ -49,8 +49,8 @@ class MdpPlanner(object):
         rospy.loginfo(d)
         
         req=GeneratePolicyRequest()
-        req.start_id='WayPoint15'
-        req.ltl_task='F "WayPoint15"'
+        req.start_id='WayPoint2'
+        req.ltl_task='F "WayPoint1"'
         req.time_of_day='all_day'
         
         d=self.policy_client(req)
