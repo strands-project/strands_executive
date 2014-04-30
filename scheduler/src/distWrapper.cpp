@@ -15,7 +15,6 @@ double DistWrapper::dist(string p1, string p2)
     srv.request.ltl_task = "F \"" + p2 + "\"";
     srv.request.time_of_day="all_day";
     expectedTimeClient.call(srv);
-    ROS_INFO_STREAM(srv.response.travel_time);
     return srv.response.travel_time;
     
 

@@ -23,7 +23,6 @@ ExternalProject_Add(
    INSTALL_COMMAND ""
 )
 
-
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
