@@ -2,7 +2,7 @@
 
 import rospy
 from strands_executive_msgs.msg import Task
-from strands_executive_msgs.srv import AddTasks, AddTask, SetExecutionStatus, GetExecutionStatus
+from strands_executive_msgs.srv import *
 import ros_datacentre.util as dc_util
 import actionlib
 from actionlib_msgs.msg import GoalStatus
@@ -38,6 +38,9 @@ class AbstractTaskExecutor(object):
         self.task_complete(task)
 
 
+    def task_demanded(self, demanded_task, currently_active_task):
+        """ Called when a task is demanded. self.active_task is the demanded task (and is being executed) and previously_active_task was the task that was being executed (which could be None) """
+        pass
 
     def __init__(self):
         self.task_counter = 1
@@ -46,7 +49,8 @@ class AbstractTaskExecutor(object):
         self.active_task = None
         self.active_task_id = Task.NO_TASK
         self.nav_client = None
-
+        self.action_client = None
+        self.active_task_completes_by = rospy.get_rostime()
         
 
     def advertise_services(self):
@@ -72,9 +76,19 @@ class AbstractTaskExecutor(object):
         raise RuntimeError('No action associated with topic: %s'% action_name)
 
 
+    def expected_navigation_duration(self, task):        
+        return rospy.Duration(60)
+
+    def get_active_task_completion_time(self):
+        return self.active_task_completes_by
+
     def execute_task(self, task):
         self.active_task = task
         self.active_task_id = task.task_id               
+
+        total_task_duration = self.expected_navigation_duration(task) + task.max_duration
+        self.active_task_completes_by = rospy.get_rostime() + total_task_duration
+
         if self.active_task.start_node_id != '':                    
             self.start_task_navigation()
         elif self.active_task.action != '':                    
@@ -85,27 +99,51 @@ class AbstractTaskExecutor(object):
             self.active_task_id = Task.NO_TASK
 
 
+    def cancel_active_task(self, event):
+        """ Cancel any active nav or task action """
+        if event:
+            rospy.logwarn("Cancelling task that has overrun %s" % self.active_task)
+        else:
+            rospy.logwarn("Cancelling task %s" % self.active_task)
+        if self.nav_client and self.nav_client.get_state() == GoalStatus.ACTIVE:
+            self.nav_client.cancel_goal()
+        if self.action_client and self.action_client.get_state() == GoalStatus.ACTIVE:
+            self.timeout_timer.shutdown()
+            self.action_client.cancel_goal()
+
+
     def start_task_action(self):
 
-        rospy.loginfo('Starting to execute %s' % self.active_task.action)
+        try:
+            rospy.loginfo('Starting to execute %s' % self.active_task.action)
 
-        (action_string, goal_string) = self.get_task_types(self.active_task.action)
-        action_clz = dc_util.load_class(dc_util.type_to_class_string(action_string))
-        goal_clz = dc_util.load_class(dc_util.type_to_class_string(goal_string))
+            (action_string, goal_string) = self.get_task_types(self.active_task.action)
+            action_clz = dc_util.load_class(dc_util.type_to_class_string(action_string))
+            goal_clz = dc_util.load_class(dc_util.type_to_class_string(goal_string))
 
-        self.action_client = actionlib.SimpleActionClient(self.active_task.action, action_clz)
-        self.action_client.wait_for_server()
+            self.action_client = actionlib.SimpleActionClient(self.active_task.action, action_clz)
+            self.action_client.wait_for_server()
 
-        argument_list = self.get_arguments(self.active_task.arguments)
+            argument_list = self.get_arguments(self.active_task.arguments)
 
-        # print "ARGS:"
-        # print argument_list
+            # print "ARGS:"
+            # print argument_list
 
-        goal = goal_clz(*argument_list)         
+            goal = goal_clz(*argument_list)         
 
-        rospy.logdebug('Sending goal to %s' % self.active_task.action)
-        self.action_client.send_goal(goal, self.task_execution_complete_cb)
-        
+            rospy.logdebug('Sending goal to %s' % self.active_task.action)
+            self.action_client.send_goal(goal, self.task_execution_complete_cb) 
+            
+            wiggle_room = rospy.Duration(5)
+            # start a timer to kill off tasks that overrun
+            self.timeout_timer = rospy.Timer(self.active_task.max_duration + wiggle_room, self.cancel_active_task, oneshot=True)
+
+        except Exception, e:
+            rospy.logwarn('Exception in start_task_action: %s', e)
+            self.task_failed(self.active_task)
+            self.active_task = None
+            self.active_task_id = Task.NO_TASK
+
     def start_task_navigation(self):
         # handle delayed start up
         if self.nav_client == None:
@@ -118,11 +156,9 @@ class AbstractTaskExecutor(object):
         rospy.loginfo("navigating to %s" % nav_goal)
 
     def navigation_complete_cb(self, goal_status, result):
-        # todo: check goal status to see if we really go there
-        # now do the action
 
-        print self.nav_client.get_state()
-        print self.nav_client.get_result()
+        # print self.nav_client.get_state()
+        # print self.nav_client.get_result()
 
         if self.nav_client.get_state() == GoalStatus.SUCCEEDED and self.nav_client.get_result().success:
 
@@ -150,6 +186,7 @@ class AbstractTaskExecutor(object):
         else:
             rospy.loginfo('Execution of task %s failed' % self.active_task.task_id)        
             self.task_failed(self.active_task)
+        self.timeout_timer.shutdown()
         self.active_task = None
         self.active_task_id = Task.NO_TASK
 
@@ -180,6 +217,22 @@ class AbstractTaskExecutor(object):
         return [task_ids]
     add_tasks_ros_srv.type=AddTasks
 
+    def demand_task_ros_srv(self, req):
+        """
+        Demand a the task from the execution framework.
+        """
+        req.task.task_id = self.task_counter
+        self.task_counter += 1
+
+        # stop anything else
+        if self.active_task:
+            self.cancel_active_task(None)
+
+        # and inform implementation to let it take action
+        self.task_demanded(req.task, self.active_task)                        
+
+        return req.task.task_id
+    demand_task_ros_srv.type=DemandTask
 
 
     def get_execution_status_ros_srv(self, req):
@@ -206,6 +259,10 @@ class AbstractTaskExecutor(object):
             return int(string_pair.second)
         elif string_pair.first == Task.FLOAT_TYPE:
             return float(string_pair.second)     
+        elif string_pair.first == Task.TIME_TYPE:
+            return rospy.Time.from_sec(float(string_pair.second))
+        elif string_pair.first == Task.DURATION_TYPE:
+            return rospy.Duration.from_sec(float(string_pair.second))
         else:
             msg = self.msg_store.query_id(string_pair.second, string_pair.first)[0]
             # print msg
