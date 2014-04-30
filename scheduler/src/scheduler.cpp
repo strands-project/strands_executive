@@ -51,7 +51,7 @@ void Scheduler::setPairs()
       double si = tasksToS->at(i)->getStart();
       double ej = tasksToS->at(j)->getEnd();
       double sj = tasksToS->at(j)->getStart();
-      double dist = DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
+      //double dist = DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
 
       //I before J, or I after J there is no overlapp and we dont want to add the pair.
       //for other cases, we would like to add some constraint
