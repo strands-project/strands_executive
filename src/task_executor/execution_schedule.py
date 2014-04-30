@@ -22,6 +22,7 @@ class ExecutionSchedule(object):
     	self.execution_change = Event()
     	self.execution_queue = deque()
     	self.tasks = []        
+        self.execution_delay_timer = None
 
     def add_new_tasks(self, tasks):
     	""" Add new tasks to be scheduled. """
@@ -35,23 +36,32 @@ class ExecutionSchedule(object):
         """ Get the tasks which are queued for execution. """
         return deepcopy(self.execution_queue)
 
+    def get_execution_queue_length(self):
+        """ Get the number of tasks which are queued for execution. """
+        return len(self.execution_queue)
+
+
+    def clear_schedule(self):
+        """ Removes all tasks from the execution queue and task list """
+        self.execution_queue.clear()        
+        del self.tasks[:]
+
 
     def execute_next_task(self):
         """
-        Sets the head of the execution queue to the current task, removes this from schedulable tasks, and notifies the wait_for_execution_change method. 
+        Pops the head of the execution queue to the current task, removes this from schedulable tasks, and notifies the wait_for_execution_change method. 
         """
         if len(self.execution_queue) > 0:
             self.current_task = self.execution_queue.popleft()
             # remove current task from schedulable tasks
-            print len(self.tasks)
             self.tasks = [t for t in self.tasks if t.task_id != self.current_task.task_id]            
-            print len(self.tasks)
             self.execution_change.set()
         else:
             self.current_task = None
 
     def execution_delay_cb(self, event):
         rospy.logdebug('timer for execution delay fired')
+        self.execution_delay_timer = None
         self.next_in_schedule()
 
     def next_in_schedule(self):
@@ -72,6 +82,7 @@ class ExecutionSchedule(object):
             else:     
                 exe_delay = next_task.start_after - now
                 rospy.loginfo('need to delay %s.%s for execution' % (exe_delay.secs, exe_delay.nsecs))
+                self.current_task = None
                 self.execution_delay_timer = rospy.Timer(exe_delay, self.execution_delay_cb, oneshot=True)
         else:
             self.current_task = None
@@ -94,12 +105,12 @@ class ExecutionSchedule(object):
     	# check that the tasks that were scheduled are the ones we're waiting on
 
     	if len(scheduled_tasks) != len(self.tasks):
-    		rospy.loginfo('Number of scheduled tasks mismatch')
+    		rospy.logwarn('Number of scheduled tasks mismatch')
     		return False
 
     	for scheduled in scheduled_tasks:
     		if not any(t.task_id == scheduled.task_id for t in self.tasks):
-    			rospy.loginfo('Trying to scheduled a missed task')
+    			rospy.logwarn('Trying to scheduled a missed task')
     			return False
 
     	# now clear out the execution queue so that the new schedule comes into effect after current execution completes
@@ -108,7 +119,11 @@ class ExecutionSchedule(object):
     	
         # if nothing is executing, make sure something starts
         if self.current_task == None:
-            self.next_in_schedule()            
+            # nothing may be executing becuase we're waiting for delayed execution
+            if self.execution_delay_timer != None:
+                self.execution_delay_timer.shutdown()
+            self.next_in_schedule()
+
 
 
 

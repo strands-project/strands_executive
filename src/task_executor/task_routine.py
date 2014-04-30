@@ -70,10 +70,13 @@ class DailyRoutine(object):
         window_start = self.daily_start
         window_end =  window_start.replace(hour=(window_start.hour + hours))
 
-        while window_end <= self.daily_end:
+        while window_end < self.daily_end:
             # print '%s.%s - %s.%s' % (window_start.hour, window_start.minute, window_end.hour, window_end.minute)
             window_start = window_end
-            window_end =  window_start.replace(hour=(window_start.hour + hours))
+            if window_start.hour + hours < 23:
+                window_end =  window_start.replace(hour=(window_start.hour + hours))
+            else:
+                window_end = self.daily_end
             self.repeat_every(tasks, window_start, window_end, times)
 
 
