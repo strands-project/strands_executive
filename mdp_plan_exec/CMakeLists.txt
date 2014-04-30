@@ -9,6 +9,19 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
 )
 
+set(PRISM_DIR prism-robots/prism/)
+
+include(ExternalProject)
+
+
+ExternalProject_Add(
+   Prism
+   UPDATE_COMMAND ""
+   DOWNLOAD_COMMAND ""
+   CONFIGURE_COMMAND ""
+   BUILD_COMMAND make -C ${CMAKE_CURRENT_SOURCE_DIR}/${PRISM_DIR}
+   INSTALL_COMMAND "" 
+)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -96,6 +109,22 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+
+
+
+
+# 
+# add_custom_command(TARGET Prism COMMAND make WORKING_DIRECTORY ${PRISM_DIR})
+ #add_library(Prism ${PRISM_DIR}/Makefile)
+# #EXECUTE_PROCESS(COMMAND dir)
+#execute_process(COMMAND make WORKING_DIRECTORY ${PRISM_DIR} OUTPUT_FILE ${PRISM_DIR}/cona.txt)
+#add_library(prism  ${PRISM_DIR}/src)
+#  target_link_libraries(prism
+#    ${catkin_LIBRARIES}
+#  )
+
+
+ 
 ## Declare a cpp library
 # add_library(prism_ros_bridge
 #   src/${PROJECT_NAME}/prism_ros_bridge.cpp
