@@ -49,8 +49,8 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
 
   // for(strands_executive_msgs::Task task : req.tasks) {
   for(auto & task : req.tasks) {
-    ROS_INFO_STREAM(task.task_id << " start " << task.start_after << ", end " << task.end_before
-        << ", duration " << task.max_duration);
+    // ROS_INFO_STREAM(task.task_id << " start " << task.start_after << ", end " << task.end_before
+        // << ", duration " << task.max_duration);
   	tasks.push_back(createSchedulerTask(task));
   }
 

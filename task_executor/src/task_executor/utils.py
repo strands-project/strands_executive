@@ -24,7 +24,7 @@ class TestTaskAction(object):
         target = rospy.get_rostime() + self.expected_action_duration
 
         while not rospy.is_shutdown() and rospy.get_rostime() < target and not self.task_server.is_preempt_requested():
-            rospy.sleep(1)       
+            rospy.sleep(20)       
         
         if self.task_server.is_preempt_requested():
             print "done preempted"
@@ -39,7 +39,7 @@ class TestTaskAction(object):
         target = rospy.get_rostime() + self.expected_drive_duration
 
         while not rospy.is_shutdown() and rospy.get_rostime() < target and not self.nav_server.is_preempt_requested():
-            rospy.sleep(1)       
+            rospy.sleep(20)       
         
         if self.nav_server.is_preempt_requested():
             print "done preempted"
