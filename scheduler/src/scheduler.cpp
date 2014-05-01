@@ -46,6 +46,7 @@ void Scheduler::setPairs()
   {
     for (int j=i+1; j<numTasks; j++)
     {
+
       double ei = tasksToS->at(i)->getEnd();
       double si = tasksToS->at(i)->getStart();
       double ej = tasksToS->at(j)->getEnd();

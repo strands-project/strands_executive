@@ -1,10 +1,7 @@
 string start_id
-
 string ltl_task
-
-# lookup in the time dictionary
 string time_of_day
 
 ---
 
-float64 travel_time
+bool succeess

@@ -32,6 +32,9 @@ add_service_files(
   GetExecutionStatus.srv
   GetSchedule.srv
   GetExpectedTravelTime.srv
+  AddMdpModel.srv
+  GeneratePolicy.srv
+  UpdateNavStatistics.srv
 )
 
 
