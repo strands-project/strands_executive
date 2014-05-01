@@ -11,6 +11,6 @@
 
 
   <!-- This allows waiting to happen. It's not very interesting but is useful for testing -->
-  <!-- <node pkg="wait_action" type="wait_node.py" name="wait_node"  output="screen"/> -->
+  <node pkg="wait_action" type="wait_node.py" name="wait_node"  output="screen"/>
 
 </launch>

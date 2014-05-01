@@ -81,14 +81,14 @@ if __name__ == '__main__':
 
 
     # Perform my own actions
-    actual_action_duration = rospy.Duration(10)
-    if False:
-        action_server = TestTaskAction(expected_action_duration=actual_action_duration)
+    actual_action_duration = rospy.Duration(60)
+    if True:
+        action_server = TestTaskAction(expected_action_duration=actual_action_duration, expected_drive_duration=actual_action_duration)
 
 
     # create a task we will copy later
-    # task = create_master_task(actual_action_duration)
-    task = create_wait_task(actual_action_duration)
+    task = create_master_task(actual_action_duration)
+    # task = create_wait_task(actual_action_duration)
 
     # get services to call into execution framework
     add_tasks, set_execution_status = get_services()
@@ -97,8 +97,8 @@ if __name__ == '__main__':
     # some useful times
     localtz = tzlocal()
     # the time the robot will be active
-    start = time(9,00, tzinfo=localtz)
-    end = time(23,00, tzinfo=localtz)
+    start = time(07,00, tzinfo=localtz)
+    end = time(20,00, tzinfo=localtz)
     midday = time(12,00, tzinfo=localtz)
 
     morning = (start, midday)
@@ -114,7 +114,7 @@ if __name__ == '__main__':
     # and twice in the afternoon
     # routine.repeat_every(task, *afternoon, times=2)
 
-    routine.repeat_every_hour(task, times=30)
+    routine.repeat_every_hour(task, times=10)
 
     # create the object which will talk to the scheduler
     runner = task_routine.DailyRoutineRunner(start, end, add_tasks)
