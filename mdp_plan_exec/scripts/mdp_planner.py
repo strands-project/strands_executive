@@ -11,8 +11,7 @@ from mdp_plan_exec.mdp import TopMapMdp
 from strands_executive_msgs.srv import AddMdpModel
 from strands_executive_msgs.srv import GetExpectedTravelTime
 from strands_executive_msgs.srv import GeneratePolicy
-
-
+from strands_executive_msgs.srv import UpdateNavStatistics
 
     
 class MdpPlanner(object):
@@ -23,6 +22,7 @@ class MdpPlanner(object):
         self.travel_time_service = rospy.Service('/mdp_plan_exec/get_expected_travel_time', GetExpectedTravelTime, self.travel_time_cb)
         self.add_mdp_service = rospy.Service('/mdp_plan_exec/add_mdp_model', AddMdpModel, self.add_mdp_cb)
         self.generate_policy=rospy.Service('/mdp_plan_exec/generate_policy', GeneratePolicy, self.policy_cb)
+        self.update_nav_statistics=rospy.Service('mdp_plan_exec/update_nav_statistics',UpdateNavStatistics,self.update_cb)
 
         self.top_map_mdp=TopMapMdp(top_map)
         self.top_map_mdp.update_nav_statistics()
@@ -66,8 +66,11 @@ class MdpPlanner(object):
         return True
         
         
-        
-        
+    def update_cb(self,req): 
+        self.top_map_mdp.update_nav_statistics()
+        self.top_map_mdp.write_prism_model(self.mdp_prism_file)
+        result=self.prism_client.update_model(req.time_of_day,self.mdp_prism_file)
+        return True
         
     
     def main(self):

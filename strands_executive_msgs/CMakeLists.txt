@@ -34,6 +34,7 @@ add_service_files(
   GetExpectedTravelTime.srv
   AddMdpModel.srv
   GeneratePolicy.srv
+  UpdateNavStatistics.srv
 )
 
 
