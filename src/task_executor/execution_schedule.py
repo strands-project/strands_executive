@@ -47,6 +47,17 @@ class ExecutionSchedule(object):
         del self.tasks[:]
 
 
+    def remove_task(self, task):
+        # remove from list of available tasks
+        self.tasks = [t for t in self.tasks if t.task_id != task.task_id]            
+        # also remove from execution queue, order and contents can be different from self.tasks
+        self.execution_queue = deque([t for t in self.execution_queue if t.task_id != task.task_id])            
+
+    def remove_tasks(self, tasks):
+        for task in tasks:
+            # massively inefficient!
+            self.remove_task(task)
+
     def execute_next_task(self):
         """
         Pops the head of the execution queue to the current task, removes this from schedulable tasks, and notifies the wait_for_execution_change method. 
@@ -105,7 +116,7 @@ class ExecutionSchedule(object):
     	# check that the tasks that were scheduled are the ones we're waiting on
 
     	if len(scheduled_tasks) != len(self.tasks):
-    		rospy.logwarn('Number of scheduled tasks mismatch')
+    		rospy.logwarn('Number of scheduled tasks mismatch: given %s, had %s' % (len(scheduled_tasks),len(self.tasks)))
     		return False
 
     	for scheduled in scheduled_tasks:
