@@ -181,8 +181,7 @@ class TopMapMdp(Mdp):
         message_list = msg_store.query(NavStatistics._type, {}, query_meta)
         n_data=len(message_list)
         n_unprocessed_data=n_data
-        #for entry in message_list:
-            #print entry
+
         
         
         for i in range(0,self.n_actions):
@@ -198,7 +197,6 @@ class TopMapMdp(Mdp):
                 outcomes_count=[0]*self.n_states
                 while j<n_unprocessed_data:
                     entry=message_list[j]
-                    print  current_action, entry[0].origin, entry[0].target
                     if current_action[1]==entry[0].origin and current_action[2]==entry[0].target:
                         n_total_data=n_total_data+1
                         expected_time=expected_time+float(entry[0].operation_time)-float(entry[0].time_to_waypoint)
@@ -208,9 +206,8 @@ class TopMapMdp(Mdp):
                         n_unprocessed_data=n_unprocessed_data-1
                     else:
                         j=j+1
-                    print n_total_data, expected_time,outcomes_count
                 if n_total_data==0:
-                    rospy.logwarn("No data for edge between waypoints"+current_action[1] + " and " + current_action[2] + ". Assuming it to be 2 min. Expected time between nodes will not be correct.")
+                    rospy.logwarn("No data for edge between waypoints " + current_action[1] + " and " + current_action[2] + ". Assuming it to be 2 min. Expected time between nodes will not be correct.")
                     self.rewards[source_index][action_index]=120
                 else:
                     self.rewards[source_index][action_index]=expected_time/total_outcomes_count
@@ -237,7 +234,7 @@ class ProductMdp(Mdp):
     def __init__(self, original_mdp,product_sta,product_lab,product_tra):
         
         
-        self.read_states(product_sta,product_lab) 
+        self.read_states(product_sta,product_lab) #meter isto com  o objecto em vez do ficheiro
         self.read_actions(product_tra)
         self.read_transitions(product_tra)
         self.read_rewards(original_mdp)
@@ -267,8 +264,7 @@ class ProductMdp(Mdp):
                     if i not in self.goal_states:
                         if self.state_labels[i][1]==state:
                             if self.transitions[i][action]:
-                                self.rewards[i][action]=reward
-                
+                                self.rewards[i][action]=reward  
         f.close()
         
        

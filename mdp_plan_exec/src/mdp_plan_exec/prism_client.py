@@ -19,7 +19,7 @@ class PrismClient(object):
         PORT = 8085
         rospack = rospkg.RosPack()
         pack_dir=rospack.get_path('mdp_plan_exec')
-        os.chdir(pack_dir + '/prism-robots/prism')
+        os.chdir(pack_dir + '/prism_robots/prism')
         os.environ['PRISM_MAINCLASS'] = 'prism.PrismManager'
         self.java_server=subprocess.Popen("bin/prism")
         time.sleep(5)
