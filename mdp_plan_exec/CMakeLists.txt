@@ -9,7 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
 )
 
-set(PRISM_DIR prism-robots/prism/)
+set(PRISM_DIR prism_robots/prism/)
 
 include(ExternalProject)
 
