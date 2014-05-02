@@ -197,7 +197,7 @@ class TopMapMdp(Mdp):
                 outcomes_count=[0]*self.n_states
                 while j<n_unprocessed_data:
                     entry=message_list[j]
-                    if current_action[1]==entry[0].origin and current_action[2]==entry[0].target:
+                    if current_action[1]==entry[0].origin and current_action[2]==entry[0].target and not entry[0].final_node == 'Unknown':
                         n_total_data=n_total_data+1
                         expected_time=expected_time+float(entry[0].operation_time)-float(entry[0].time_to_waypoint)
                         outcomes_count[self.state_names.index(entry[0].final_node)]+=1
