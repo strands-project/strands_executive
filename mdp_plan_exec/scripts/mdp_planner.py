@@ -20,6 +20,8 @@ from actionlib import SimpleActionServer, SimpleActionClient
 from std_msgs.msg import String
 #from actionlib_msgs import GoalStatus
 
+from strands_navigation_msgs.msg import NavStatistics
+
     
 class MdpPlanner(object):
 
@@ -31,7 +33,16 @@ class MdpPlanner(object):
         #self.generate_policy=rospy.Service('/mdp_plan_exec/generate_policy', GeneratePolicy, self.policy_cb)
         self.update_nav_statistics=rospy.Service('mdp_plan_exec/update_nav_statistics',UpdateNavStatistics,self.update_cb)
         
+        
+        rospy.loginfo("Creating monitored navigation client.")
+        self.top_nav_action_client= SimpleActionClient('topological_navigation', GotoNodeAction)
+        self.top_nav_action_client.wait_for_server()
+        rospy.loginfo(" ...done")
+        rospy.sleep(0.3)
+        
+        
         self.mdp_navigation_action=SimpleActionServer('mdp_plan_exec/execute_policy', ExecutePolicyAction, execute_cb = self.execute_policy_cb, auto_start = False)
+        self.mdp_navigation_action.register_preempt_callback(self.preempt_cb)
         self.mdp_navigation_action.start()
 
         self.top_map_mdp=TopMapMdp(top_map)
@@ -51,8 +62,10 @@ class MdpPlanner(object):
         
         self.closest_node=None
         self.current_node=None
+        self.edge_nav_time=0
         self.closest_state_subscriber=rospy.Subscriber('/closest_node', String, self.closest_node_cb)
         self.current_state_subscriber=rospy.Subscriber('/current_node', String, self.current_node_cb)
+        self.nav_stats_subscriber = rospy.Subscriber('/topological_navigation/Statistics', NavStatistics, self.get_nav_time_cb)
         
         self.forbidden_nodes=[]
         self.forbidden_nodes_ltl_string=''
@@ -92,11 +105,7 @@ class MdpPlanner(object):
         
    
     def execute_policy_cb(self,goal):
-        rospy.loginfo("Creating monitored navigation client.")
-        top_nav_action_client= SimpleActionClient('topological_navigation', GotoNodeAction)
-        top_nav_action_client.wait_for_server()
-        rospy.loginfo(" ...done")
-        rospy.sleep(0.3)
+        
    
         if self.current_node == 'none':
             self.top_map_mdp.set_initial_state_from_name(self.closest_node) 
@@ -119,10 +128,13 @@ class MdpPlanner(object):
         current_mdp_state=product_mdp.initial_state
         while current_mdp_state not in product_mdp.goal_states:
             current_action=product_mdp.policy[current_mdp_state]
+            expected_edge_transversal_time=product_mdp.get_expected_edge_transversal_time(current_mdp_state,current_action)
+            #expected_success_prob=product_mdp.get_expected_success_prob(current_mdp_state,current_action)
+            print expected_edge_transversal_time
             top_nav_goal=GotoNodeGoal()
             top_nav_goal.target=current_action.split('_')[2]
-            top_nav_action_client.send_goal(top_nav_goal)
-            top_nav_action_client.wait_for_result()
+            self.top_nav_action_client.send_goal(top_nav_goal)
+            self.top_nav_action_client.wait_for_result()
             if self.current_node == 'none':
                 current_mdp_state=product_mdp.get_new_state(current_mdp_state,current_action,self.closest_node)
             else:
@@ -132,11 +144,16 @@ class MdpPlanner(object):
             if current_mdp_state==-1:
                 rospy.logerror('State transition is not in model!')
                 self.mdp_navigation_action.set_aborted()
+            else:
+                if self.edge_nav_time>2*expected_edge_transversal_time:
+                    rospy.logwarn("took too long transvesing the edge")
         
         self.mdp_navigation_action.set_succeeded()
             
        
-    
+    def preempt_cb(self):
+        self.top_nav_action_client.cancel_all_goals()
+        self.mdp_navigation_action.set_preempted()
     
     def closest_node_cb(self,msg):
         self.closest_node=msg.data
@@ -144,6 +161,8 @@ class MdpPlanner(object):
     def current_node_cb(self,msg):
         self.current_node=msg.data
 
+    def get_nav_time_cb(self,msg):   
+        self.edge_nav_time=msg.operation_time-msg.time_to_waypoint
     
     def main(self):
 

@@ -81,7 +81,11 @@ class Mdp(object):
     def set_initial_state(self,initial_state):
         self.initial_state=initial_state
         
-
+    def get_expected_edge_transversal_time(self,state_index,action_name):
+        action_index=self.actions.index(action_name)
+        return self.rewards[state_index][action_index]
+        
+    #def get_expected_success_prob(self,current_mdp_state,current_action)
         
  
     
@@ -149,7 +153,7 @@ class TopMapMdp(Mdp):
     def read_top_map(self):
 
 
-        msg_store = MessageStoreProxy()
+        msg_store = MessageStoreProxy(collection='topological_maps')
     
         query_meta = {}
         query_meta["pointset"] =self.top_map
