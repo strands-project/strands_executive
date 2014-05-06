@@ -50,7 +50,10 @@ def time_less_than(t1, t2):
         if t1.minute < t2.minute:
             return True 
         elif t1.minute == t2.minute:
-            return t1.second < t2.second
+            if t1.second < t2.second:
+                return True
+            elif t1.second == t2.second:
+                return t1.microsecond < t2.microsecond
 
     return False
 
@@ -88,7 +91,7 @@ class DailyRoutine(object):
             if window_start == window_end:
                 return
            
-            print '%s.%s - %s.%s' % (window_start.hour, window_start.minute, window_end.hour, window_end.minute)
+            # print '%s.%s - %s.%s' % (window_start.hour, window_start.minute, window_end.hour, window_end.minute)
             self.repeat_every(tasks, window_start, window_end, times)
     
 
@@ -357,7 +360,7 @@ class DailyRoutineRunner(object):
                 if throw:
                     raise RoutineException('%s is too late to schedule task %s' % (now.secs, task))
                 else:
-                    rospy.loginfo('Ignoring task for today')
+                    rospy.logdebug('Ignoring task for today')
             else:
                 # if we're in the the window when this should be scheduled
                 if now > (task.start_after - self.pre_schedule_delay):
