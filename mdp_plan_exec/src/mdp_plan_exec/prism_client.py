@@ -65,6 +65,7 @@ class PrismClient(object):
         self.sock.sendall(command)
         data = self.sock.recv(1024)
         print "policy:", data
+        return data
         
         
     def update_model(self,time_of_day,model_file):
