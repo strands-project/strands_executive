@@ -88,7 +88,7 @@ class DailyRoutine(object):
             if window_start == window_end:
                 return
            
-            # print '%s.%s - %s.%s' % (window_start.hour, window_start.minute, window_end.hour, window_end.minute)
+            print '%s.%s - %s.%s' % (window_start.hour, window_start.minute, window_end.hour, window_end.minute)
             self.repeat_every(tasks, window_start, window_end, times)
     
 
@@ -159,7 +159,7 @@ class DailyRoutineRunner(object):
                 rospy.sleep(loop_delay)
                 now = datetime.fromtimestamp(rospy.get_rostime().to_sec(), tz=tzlocal())
 
-            if self.day_start_cb != None:
+            if self.day_start_cb is not None and not rospy.is_shutdown():
                 rospy.loginfo('triggering day start cb at %s' % now)
                 self.day_start_cb()
 
@@ -167,7 +167,7 @@ class DailyRoutineRunner(object):
                 rospy.sleep(loop_delay)
                 now = datetime.fromtimestamp(rospy.get_rostime().to_sec(), tz=tzlocal())
 
-            if self.day_end_cb != None:
+            if self.day_end_cb is not None and not rospy.is_shutdown():
                 rospy.loginfo('triggering day end cb at %s' % now)
                 self.day_end_cb()
 
