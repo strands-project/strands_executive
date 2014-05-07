@@ -131,11 +131,27 @@ class AbstractTaskExecutor(object):
             rospy.logwarn("Cancelling task that has overrun %s" % self.active_task)
         else:
             rospy.logwarn("Cancelling task %s" % self.active_task)
+        if self.nav_client is not None and self.nav_client.get_state() == GoalStatus.ACTIVE:
+            self.nav_client.cancel_goal()
+            self.nav_timeout_timer.shutdown()
+            ropy.loginfo('Sent cancellation signals to nav')
+        if self.action_client  is not None and self.action_client.get_state() == GoalStatus.ACTIVE:
+            self.action_timeout_timer.shutdown()
+            self.action_client.cancel_goal()
+            ropy.loginfo('Sent cancellation signals to action')
+
+
+    def cancel_navigation(self, event):
+        """ Called on nav timeout """
+        rospy.logwarn("Cancelling navigation that has overrun for task %s" % self.active_task)
+        # cancel navigation
         if self.nav_client and self.nav_client.get_state() == GoalStatus.ACTIVE:
             self.nav_client.cancel_goal()
-        if self.action_client and self.action_client.get_state() == GoalStatus.ACTIVE:
-            self.timeout_timer.shutdown()
-            self.action_client.cancel_goal()
+
+        # and note task as cancelled too
+        self.task_failed(self.active_task)
+        self.active_task = None
+        self.active_task_id = Task.NO_TASK
 
 
     def start_task_action(self):
@@ -162,7 +178,7 @@ class AbstractTaskExecutor(object):
             
             wiggle_room = rospy.Duration(5)
             # start a timer to kill off tasks that overrun
-            self.timeout_timer = rospy.Timer(self.active_task.max_duration + wiggle_room, self.cancel_active_task, oneshot=True)
+            self.action_timeout_timer = rospy.Timer(self.active_task.max_duration + wiggle_room, self.cancel_active_task, oneshot=True)
 
         except Exception, e:
             rospy.logwarn('Exception in start_task_action: %s', e)
@@ -181,10 +197,19 @@ class AbstractTaskExecutor(object):
         self.nav_client.send_goal(nav_goal, self.navigation_complete_cb)
         rospy.loginfo("navigating to %s" % nav_goal)
 
+        wiggle_room = rospy.Duration(5)
+        # start a timer to kill off tasks that overrun
+        self.nav_timeout_timer = rospy.Timer(self.expected_navigation_duration(self.active_task) + wiggle_room, self.cancel_navigation, oneshot=True)
+
+
+
     def navigation_complete_cb(self, goal_status, result):
 
         # print self.nav_client.get_state()
         # print self.nav_client.get_result()
+
+        # stop the countdown
+        self.nav_timeout_timer.shutdown()
 
         if self.nav_client.get_state() == GoalStatus.SUCCEEDED and self.nav_client.get_result().success:
 
@@ -212,7 +237,7 @@ class AbstractTaskExecutor(object):
         else:
             rospy.loginfo('Execution of task %s failed' % self.active_task.task_id)        
             self.task_failed(self.active_task)
-        self.timeout_timer.shutdown()
+        self.action_timeout_timer.shutdown()
         self.active_task = None
         self.active_task_id = Task.NO_TASK
 
