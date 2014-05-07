@@ -57,4 +57,4 @@ class TestTaskAction(object):
             print "done normal"     
             self.result.success = True       
             self.nav_server.set_succeeded(self.result)
-            
+
