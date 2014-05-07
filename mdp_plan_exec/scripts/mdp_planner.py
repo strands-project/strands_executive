@@ -8,10 +8,9 @@ import os
 from mdp_plan_exec.prism_client import PrismClient
 from mdp_plan_exec.mdp import TopMapMdp, ProductMdp
 
-from strands_executive_msgs.srv import AddMdpModel
-from strands_executive_msgs.srv import GetExpectedTravelTime
+from strands_executive_msgs.srv import AddMdpModel, GetExpectedTravelTime, UpdateNavStatistics, AddDeleteSpecialWaypoint, AddDeleteSpecialWaypointRequest
 #from strands_executive_msgs.srv import GeneratePolicy
-from strands_executive_msgs.srv import UpdateNavStatistics
+
 
 from strands_executive_msgs.msg import ExecutePolicyAction, ExecutePolicyFeedback, ExecutePolicyGoal, LearnTravelTimesAction
 from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
@@ -73,10 +72,84 @@ class MdpPlanner(object):
         self.current_state_subscriber=rospy.Subscriber('/current_node', String, self.current_node_cb)
         self.nav_stats_subscriber = rospy.Subscriber('/topological_navigation/Statistics', NavStatistics, self.get_nav_time_cb)
         
-        self.forbidden_nodes=[]
-        self.forbidden_nodes_ltl_string=''
+        self.forbidden_waypoints=[]
+        self.forbidden_waypoints_ltl_string=''
+        
+        self.waypoints=[]
+        self.safe_waypoints_ltl_string=''
+        
+        self.special_waypoint_handler_service = rospy.Service('/mdp_plan_exec/add_delete_special_node', AddDeleteSpecialWaypoint, self.add_delete_special_waypoint_cb)
+        
+    
 
         
+    def add_delete_special_waypoint_cb(self,req):
+        if req.waypoint_type == AddDeleteSpecialWaypointRequest.FORBIDDEN:
+            if req.is_addition:
+                self.add_forbidden_waypoint(req.waypoint)
+            else:
+                self.del_forbidden_waypoint(req.waypoint)
+                
+        if req.waypoint_type == AddDeleteSpecialWaypointRequest.SAFE:
+            if req.is_addition:
+                self.add_safe_waypoint(req.waypoint)
+            else:
+                self.del_safe_waypoint(req.waypoint)
+    
+    
+    def add_forbidden_waypoint(self,waypoint):
+        if waypoint in self.forbidden_waypoints:
+            rospy.logwarn('Waypoint ' + waypoint + ' already in forbidden waypoint list.')
+        else:
+            self.forbidden_waypoints.append(waypoint)
+            self.set_forbidden_waypoints_ltl_string()
+                   
+    def del_forbidden_waypoint(self,waypoint):
+        if waypoint not in self.forbidden_waypoints:
+            rospy.logwarn('Waypoint ' + waypoint + ' not in forbidden waypoint list.')
+        else:
+            del self.forbidden_waypoints[self.forbidden_waypoints.index(waypoint)]
+            self.set_forbidden_waypoints_ltl_string()        
+        
+        
+    def add_safe_waypoint(self,waypoint):
+        if waypoint in self.safe_waypoints:
+            rospy.logwarn('Waypoint ' + waypoint + ' already in safe waypoint list.')
+        else:
+            self.safe_waypoints.append(waypoint)
+            self.set_safe_waypoints_ltl_string()
+    
+    def del_forbidden_waypoint(self,waypoint):
+        if waypoint not in self.safe_waypoints:
+            rospy.logwarn('Waypoint ' + waypoint + ' not in safe waypoint list.')
+        else:
+            del self.safe_waypoints[self.safe_waypoints.index(waypoint)]
+            self.set_safe_waypoints_ltl_string()    
+        
+        
+    
+    def set_forbidden_waypoints_ltl_string(self):
+        self.forbidden_waypoints_ltl_string=''
+        
+        for i in range(0,len(self.forbidden_waypoints)):
+            self.forbidden_waypoints_ltl_string=self.forbidden_waypoints_ltl_string + self.forbidden_waypoints[i] + ' && !'
+        
+        if not self.forbidden_waypoints_ltl_string=='':
+            self.forbidden_waypoints_ltl_string='(' + self.forbidden_waypoints_ltl_string[:-5] + ')'
+        
+        print forbidden_waypoints_ltl_string
+            
+
+    def set_safe_waypoints_ltl_string(self):
+        self.safe_waypoints_ltl_string=''
+        
+        for i in range(0,len(self.safe_waypoints)):
+            self.safe_waypoints_ltl_string=self.safe_waypoints_ltl_string + self.safe_waypoints[i] + ' || '
+        
+        if not self.safe_waypoints_ltl_string=='':
+            self.safe_waypoints_ltl_string='(' + self.safe_waypoints_ltl_string[:-4] + ')'
+            
+        print safe_waypoints_ltl_string
     
         
     def travel_time_to_node_cb(self,req):
@@ -180,12 +253,26 @@ class MdpPlanner(object):
         
         self.update_current_top_mdp(goal.time_of_day,self.mdp_prism_file)
         if goal.task_type==ExecutePolicyGoal.GOTO_WAYPOINT:
-            if self.forbidden_nodes==[]:
+            if self.forbidden_waypoints==[]:
                 specification='R{"time"}min=? [ (F "' + goal.target_id + '") ]'
             else:
-                specification='R{"time"}min=? [ (' + self.forbidden_nodes_ltl_string + ' U "' + goal.target_id + '") ]'
-        else:
-            rospy.logerr('Task type not implemented yet')
+                specification='R{"time"}min=? [ (' + self.forbidden_waypoints_ltl_string + ' U "' + goal.target_id + '") ]'
+        elif goal.task_type==ExecutePolicyGoal.LEAVE_FORBIDDEN_AREA:
+            if self.forbidden_waypoints==[]:
+                rospy.logerr("No forbidden waypoints defined. Nothing to leave.")
+            elif self.closest_node not in self.forbidden_waypoints
+                rospy.logerr(self.closest_node + " is not a forbidden waypoint. Staying here.")
+            else
+                specification='R{"time"}min=? [ (F "' + self.forbidden_waypoints_ltl_string + '") ]'
+        elif goal.task_type==ExecutePolicyGoal.GOTO_CLOSEST_SAFE_WAYPOINT:
+            if self.safe_waypoints==[]:
+                rospy.logerr("No safe waypoints defined. Nowhere to go to.")
+            elif self.current_node  in self.safe_waypoints
+                rospy.logerr(self.closest_node + " is already a safe waypoint. Staying here.")
+            else
+                specification='R{"time"}min=? [ (F "' + self.safe_waypoints_ltl_string + '") ]'
+                
+            
         feedback=ExecutePolicyFeedback()
         feedback.expected_time=float(self.prism_client.get_policy(goal.time_of_day,specification))
         self.mdp_navigation_action.publish_feedback(feedback)
