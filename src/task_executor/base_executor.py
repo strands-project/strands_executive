@@ -10,6 +10,7 @@ from geometry_msgs.msg import Pose, Point, Quaternion
 from ros_datacentre.message_store import MessageStoreProxy
 from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
 from std_srvs.srv import Empty
+from std_msgs.msg import String
 
 
 class AbstractTaskExecutor(object):
@@ -63,6 +64,18 @@ class AbstractTaskExecutor(object):
         self.action_client = None
         self.active_task_completes_by = rospy.get_rostime()
         
+        expected_time_srv_name = '/mdp_plan_exec/get_expected_travel_time'
+        rospy.loginfo('Waiting for %s' % expected_time_srv_name)
+        rospy.wait_for_service(expected_time_srv_name)
+        self.expected_time = rospy.ServiceProxy(expected_time_srv_name, GetExpectedTravelTime)
+
+        # start with some faked but likely one in case of problems
+        self.current_node = 'WayPoint1'
+        rospy.Subscriber('/current_node', String, self.update_topological_location)
+
+    def update_topological_location(self, node_name):
+        self.current_node = node_name.data
+
 
     def advertise_services(self):
         """
@@ -87,8 +100,10 @@ class AbstractTaskExecutor(object):
         raise RuntimeError('No action associated with topic: %s'% action_name)
 
 
-    def expected_navigation_duration(self, task):        
-        return rospy.Duration(60)
+    def expected_navigation_duration(self, task): 
+        et = self.expected_time(start_id=self.current_node, ltl_task='F \"%s\"'%task.start_node_id,time_of_day="all_day")
+        rospy.logwarn('worked %s' % et.travel_time)
+        return rospy.Duration(et.travel_time)
 
     def get_active_task_completion_time(self):
         return self.active_task_completes_by
