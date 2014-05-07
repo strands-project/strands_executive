@@ -7,16 +7,21 @@ using namespace std;
 
 double DistWrapper::dist(string p1, string p2)
 {
-    
-    ros::NodeHandle n;
-    ros::ServiceClient expectedTimeClient = n.serviceClient<strands_executive_msgs::GetExpectedTravelTime>("/mdp_plan_exec/get_expected_travel_time_to_node");
-    strands_executive_msgs::GetExpectedTravelTime srv;
-    srv.request.start_id= p1;
-    srv.request.target_id=p2;
-    srv.request.time_of_day="all_day";
-    expectedTimeClient.call(srv);
-    return srv.response.travel_time;
-    
+
+	// quick hack pending outcome of https://github.com/strands-project/strands_executive/issues/41
+	if(p1 == "" || p2 == "") {
+		return 0;
+	}    
+	else {
+	    ros::NodeHandle n;
+            ros::ServiceClient expectedTimeClient = n.serviceClient<strands_executive_msgs::GetExpectedTravelTime>("/mdp_plan_exec/get_expected_travel_time_to_node");
+            strands_executive_msgs::GetExpectedTravelTime srv;
+            srv.request.start_id= p1;
+            srv.request.target_id=p2;
+            srv.request.time_of_day="all_day";
+            expectedTimeClient.call(srv);
+            return srv.response.travel_time;
+    }
 
 }
 

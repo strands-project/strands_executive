@@ -46,17 +46,20 @@ class ExecutionSchedule(object):
         self.execution_queue.clear()        
         del self.tasks[:]
 
-
-    def remove_task(self, task):
+    def remove_task_with_id(self, task_id):
         # remove from list of available tasks
-        self.tasks = [t for t in self.tasks if t.task_id != task.task_id]            
+        prior_tasks_len = len(self.tasks)
+        prior_queue_len = len(self.execution_queue)
+        self.tasks = [t for t in self.tasks if t.task_id != task_id]            
         # also remove from execution queue, order and contents can be different from self.tasks
-        self.execution_queue = deque([t for t in self.execution_queue if t.task_id != task.task_id])            
+        self.execution_queue = deque([t for t in self.execution_queue if t.task_id != task_id])            
+        # if one of these got shorter then we did good
+        return len(self.tasks)  < prior_tasks_len or len(self.execution_queue) < prior_queue_len
 
     def remove_tasks(self, tasks):
         for task in tasks:
             # massively inefficient!
-            self.remove_task(task)
+            self.remove_task_with_id(task.task_id)
 
     def execute_next_task(self):
         """
@@ -129,12 +132,13 @@ class ExecutionSchedule(object):
     	self.execution_queue.extend(scheduled_tasks)
     	
         # if nothing is executing, make sure something starts
-        if self.current_task == None:
+        if self.current_task is None:
             # nothing may be executing becuase we're waiting for delayed execution
             if self.execution_delay_timer != None:
                 self.execution_delay_timer.shutdown()
             self.next_in_schedule()
-
+        # else:
+        #     rospy.logwarn('current task is still: %s', self.current_task)
 
 
 
