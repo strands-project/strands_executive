@@ -9,6 +9,8 @@ from actionlib_msgs.msg import GoalStatus
 from geometry_msgs.msg import Pose, Point, Quaternion
 from ros_datacentre.message_store import MessageStoreProxy
 from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
+from std_srvs.srv import Empty
+
 
 class AbstractTaskExecutor(object):
 
@@ -41,6 +43,15 @@ class AbstractTaskExecutor(object):
     def task_demanded(self, demanded_task, currently_active_task):
         """ Called when a task is demanded. self.active_task is the demanded task (and is being executed) and previously_active_task was the task that was being executed (which could be None) """
         pass
+
+    def cancel_task(self, task_id):
+        """ Called when a request is received to cancel a task. The currently executing one is checked elsewhere. """
+        return False
+
+    def clear_schedule(self):
+        """ Called to clear all tasks from schedule, with the exception of the currently executing one. """
+        pass
+
 
     def __init__(self):
         self.task_counter = 1
@@ -171,7 +182,7 @@ class AbstractTaskExecutor(object):
                 self.active_task = None
                 self.active_task_id = Task.NO_TASK
         else:
-            rospy.loginfo('Navigation to %s failed' % self.active_task.start_node_id)        
+            rospy.loginfo('Navigation to %s failed or was preempted' % self.active_task.start_node_id)        
             self.task_failed(self.active_task)
             self.active_task = None
             self.active_task_id = Task.NO_TASK
@@ -221,8 +232,9 @@ class AbstractTaskExecutor(object):
         """
         Demand a the task from the execution framework.
         """
-        req.task.task_id = self.task_counter
+        req.task.task_id = self.task_counter        
         self.task_counter += 1
+        req.task.execution_time = rospy.get_rostime()
 
         # stop anything else
         if self.active_task:
@@ -234,6 +246,22 @@ class AbstractTaskExecutor(object):
         return req.task.task_id
     demand_task_ros_srv.type=DemandTask
 
+    def cancel_task_ros_srv(self, req):
+        """ Cancel the speficially requested task """
+        if self.active_task is not None and self.active_task.task_id == req.task_id:        
+            self.cancel_active_task(None)
+            return True
+        else:
+            return self.cancel_task(req.task_id)
+    cancel_task_ros_srv.type = CancelTask
+
+    def clear_schedule_ros_srv(self, req):
+        """ Remove all scheduled tasks and active task """
+        if self.active_task is not None:        
+            self.cancel_active_task(None)
+
+        self.clear_schedule()
+    clear_schedule_ros_srv.type = Empty
 
     def get_execution_status_ros_srv(self, req):
         return self.executing

@@ -1,7 +1,8 @@
 import rospy
-from datetime import *
+from datetime import datetime, timedelta
+from dateutil.tz import tzlocal, tzutc
 from copy import copy
-from dateutil.tz import *
+
 from threading import Thread
 
 _epoch = datetime.utcfromtimestamp(0).replace(tzinfo=tzutc())
@@ -41,7 +42,22 @@ def start_of_the_day(day_delta=0):
     """
     return datetime.fromordinal(datetime.utcfromtimestamp(rospy.get_rostime().to_sec()).toordinal() + day_delta).replace(tzinfo=tzutc())
 
-        
+def time_less_than(t1, t2):
+    """ Seems to be a bug in datetime when comparing localtz dates, so do this instead. """
+    if t1.hour < t2.hour:
+        return True
+    elif t1.hour == t2.hour:
+        if t1.minute < t2.minute:
+            return True 
+        elif t1.minute == t2.minute:
+            if t1.second < t2.second:
+                return True
+            elif t1.second == t2.second:
+                return t1.microsecond < t2.microsecond
+
+    return False
+
+
 class DailyRoutine(object):
     """ An object for setting up the daily schedule of a robot. 
         Args:
@@ -108,16 +124,56 @@ class DailyRoutineRunner(object):
             daily_end (datetime.time): The time of day by when all tasks should end, local time.
             pre_start_window (datetime.timedelta): The duration before a task's start that it should be passed to the scheduler. Defaults to 1 hour.
     """
-    def __init__(self, daily_start, daily_end, add_tasks_srv, pre_start_window=timedelta(hours=1)):
+    def __init__(self, daily_start, daily_end, add_tasks_srv, pre_start_window=timedelta(hours=1), day_start_cb=None, day_end_cb=None):
         super(DailyRoutineRunner, self).__init__()
         self.daily_start = daily_start
         self.daily_end = daily_end
+        assert daily_start < daily_end
         # the tasks which need to be performed every day, tuples of form (daily_start, daily_end, task)
         self.routine_tasks = []
         self.add_tasks_srv = add_tasks_srv
         self.pre_schedule_delay = rospy.Duration(pre_start_window.total_seconds())
         self.midnight_thread = Thread(target=self._delay_to_midnight)
         self.midnight_thread.start()
+        self.day_start_cb = day_start_cb
+        self.day_end_cb = day_end_cb
+        if day_start_cb != None or day_end_cb != None:
+            Thread(target=self._start_and_end_day).start()
+
+    def _start_and_end_day(self):
+        """ Runs a loop which triggers the start and end of day callbacks """
+
+        loop_delay = rospy.Duration(1)
+
+        while not rospy.is_shutdown():
+ 
+            # again, using sleeps rather than timers due to slightly odd sim time behaviour of the latter
+            now = datetime.fromtimestamp(rospy.get_rostime().to_sec(), tz=tzlocal())
+    
+            # print('Now', now.time())
+            # print('Now', self.daily_start)
+
+            # wait for the start of the day
+            while time_less_than(self.daily_start, now.time()) and time_less_than(self.daily_end, now.time()) and not rospy.is_shutdown():
+                rospy.sleep(loop_delay)
+                now = datetime.fromtimestamp(rospy.get_rostime().to_sec(), tz=tzlocal())
+
+            while time_less_than(now.time(),self.daily_start) and not rospy.is_shutdown():                
+                rospy.sleep(loop_delay)
+                now = datetime.fromtimestamp(rospy.get_rostime().to_sec(), tz=tzlocal())
+
+            if self.day_start_cb is not None and not rospy.is_shutdown():
+                rospy.loginfo('triggering day start cb at %s' % now)
+                self.day_start_cb()
+
+            while time_less_than(now.time(),self.daily_end) and not rospy.is_shutdown():                
+                rospy.sleep(loop_delay)
+                now = datetime.fromtimestamp(rospy.get_rostime().to_sec(), tz=tzlocal())
+
+            if self.day_end_cb is not None and not rospy.is_shutdown():
+                rospy.loginfo('triggering day end cb at %s' % now)
+                self.day_end_cb()
+
 
 
     def _delay_to_midnight(self):
@@ -133,14 +189,13 @@ class DailyRoutineRunner(object):
             print "midnight_rostime  %s" % midnight_rostime.to_sec()
             print "             now  %s" % now.to_sec()
             assert midnight_rostime > now
-            midnight_delay = midnight_rostime - now
-            
-            print "   midnight delay %s" % midnight_delay.to_sec()
-            # sleep until midnight
-            rospy.sleep(midnight_delay)
-            # the set a recurring timer for everynight
-            print "MIDNIGHT %s" % datetime.fromtimestamp(rospy.get_rostime().to_sec())
-            self._new_day()
+                  
+            while rospy.get_rostime() < midnight_rostime and not rospy.is_shutdown():
+                rospy.sleep(1)
+
+            if not rospy.is_shutdown():               
+                print "MIDNIGHT %s" % datetime.fromtimestamp(rospy.get_rostime().to_sec())
+                self._new_day()
 
 
 
@@ -305,7 +360,7 @@ class DailyRoutineRunner(object):
                 if throw:
                     raise RoutineException('%s is too late to schedule task %s' % (now.secs, task))
                 else:
-                    rospy.loginfo('Ignoring task for today')
+                    rospy.logdebug('Ignoring task for today')
             else:
                 # if we're in the the window when this should be scheduled
                 if now > (task.start_after - self.pre_schedule_delay):
