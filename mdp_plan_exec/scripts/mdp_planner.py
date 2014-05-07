@@ -75,7 +75,7 @@ class MdpPlanner(object):
         self.forbidden_waypoints=[]
         self.forbidden_waypoints_ltl_string=''
         
-        self.waypoints=[]
+        self.safe_waypoints=[]
         self.safe_waypoints_ltl_string=''
         
         self.special_waypoint_handler_service = rospy.Service('/mdp_plan_exec/add_delete_special_node', AddDeleteSpecialWaypoint, self.add_delete_special_waypoint_cb)
@@ -95,6 +95,8 @@ class MdpPlanner(object):
                 self.add_safe_waypoint(req.waypoint)
             else:
                 self.del_safe_waypoint(req.waypoint)
+                
+        return True
     
     
     def add_forbidden_waypoint(self,waypoint):
@@ -119,7 +121,7 @@ class MdpPlanner(object):
             self.safe_waypoints.append(waypoint)
             self.set_safe_waypoints_ltl_string()
     
-    def del_forbidden_waypoint(self,waypoint):
+    def del_safe_waypoint(self,waypoint):
         if waypoint not in self.safe_waypoints:
             rospy.logwarn('Waypoint ' + waypoint + ' not in safe waypoint list.')
         else:
@@ -132,24 +134,24 @@ class MdpPlanner(object):
         self.forbidden_waypoints_ltl_string=''
         
         for i in range(0,len(self.forbidden_waypoints)):
-            self.forbidden_waypoints_ltl_string=self.forbidden_waypoints_ltl_string + self.forbidden_waypoints[i] + ' && !'
+            self.forbidden_waypoints_ltl_string=self.forbidden_waypoints_ltl_string + '"' + self.forbidden_waypoints[i] + '" & !'
         
         if not self.forbidden_waypoints_ltl_string=='':
-            self.forbidden_waypoints_ltl_string='(' + self.forbidden_waypoints_ltl_string[:-5] + ')'
+            self.forbidden_waypoints_ltl_string='(!' + self.forbidden_waypoints_ltl_string[:-4] + ')'
         
-        print forbidden_waypoints_ltl_string
+        print self.forbidden_waypoints_ltl_string
             
 
     def set_safe_waypoints_ltl_string(self):
         self.safe_waypoints_ltl_string=''
         
         for i in range(0,len(self.safe_waypoints)):
-            self.safe_waypoints_ltl_string=self.safe_waypoints_ltl_string + self.safe_waypoints[i] + ' || '
+            self.safe_waypoints_ltl_string=self.safe_waypoints_ltl_string  + '"' + self.safe_waypoints[i] + '"'  + ' | '
         
         if not self.safe_waypoints_ltl_string=='':
-            self.safe_waypoints_ltl_string='(' + self.safe_waypoints_ltl_string[:-4] + ')'
+            self.safe_waypoints_ltl_string='(' + self.safe_waypoints_ltl_string[:-3] + ')'
             
-        print safe_waypoints_ltl_string
+        print self.safe_waypoints_ltl_string
     
         
     def travel_time_to_node_cb(self,req):
@@ -260,17 +262,25 @@ class MdpPlanner(object):
         elif goal.task_type==ExecutePolicyGoal.LEAVE_FORBIDDEN_AREA:
             if self.forbidden_waypoints==[]:
                 rospy.logerr("No forbidden waypoints defined. Nothing to leave.")
-            elif self.closest_node not in self.forbidden_waypoints
+                self.mdp_navigation_action.set_aborted()
+                return
+            elif self.closest_node not in self.forbidden_waypoints:
                 rospy.logerr(self.closest_node + " is not a forbidden waypoint. Staying here.")
-            else
-                specification='R{"time"}min=? [ (F "' + self.forbidden_waypoints_ltl_string + '") ]'
+                self.mdp_navigation_action.set_aborted()
+                return
+            else:
+                specification='R{"time"}min=? [ (F ' + self.forbidden_waypoints_ltl_string + ') ]'
         elif goal.task_type==ExecutePolicyGoal.GOTO_CLOSEST_SAFE_WAYPOINT:
             if self.safe_waypoints==[]:
                 rospy.logerr("No safe waypoints defined. Nowhere to go to.")
-            elif self.current_node  in self.safe_waypoints
+                self.mdp_navigation_action.set_aborted()
+                return
+            elif self.current_node  in self.safe_waypoints:
                 rospy.logerr(self.closest_node + " is already a safe waypoint. Staying here.")
-            else
-                specification='R{"time"}min=? [ (F "' + self.safe_waypoints_ltl_string + '") ]'
+                self.mdp_navigation_action.set_aborted()
+                return
+            else:
+                specification='R{"time"}min=? [ (F ' + self.safe_waypoints_ltl_string + ') ]'
                 
             
         feedback=ExecutePolicyFeedback()

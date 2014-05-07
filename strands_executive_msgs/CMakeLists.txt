@@ -34,6 +34,7 @@ add_service_files(
   GetExpectedTravelTime.srv
   AddMdpModel.srv
   UpdateNavStatistics.srv
+  AddDeleteSpecialWaypoint.srv
 )
 
 
