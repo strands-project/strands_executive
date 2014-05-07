@@ -23,6 +23,7 @@ class Mdp(object):
         self.actions=[]
         self.prop_map=[[]]
         self.transitions=[[]]
+        self.transitions_transversal_count=[[]]
         self.rewards=[[]]
         self.current_policy=[]
         
@@ -85,7 +86,11 @@ class Mdp(object):
         action_index=self.actions.index(action_name)
         return self.rewards[state_index][action_index]
         
-    #def get_expected_success_prob(self,current_mdp_state,current_action)
+    def get_total_transversals(self,state_index,action_name):
+        action_index=self.actions.index(action_name)
+        return self.transitions_transversal_count[state_index][action_index]
+        
+        
         
  
     
@@ -129,6 +134,8 @@ class TopMapMdp(Mdp):
         self.rewards=[[0]*self.n_actions for i in range(self.n_states)]
         
         self.transitions=[[False]*self.n_actions for i in range(self.n_states)]
+        
+        self.transitions_transversal_count=[[0]*self.n_actions for i in range(self.n_states)]
         
         self.actions=[None]*self.n_actions
         
@@ -213,11 +220,11 @@ class TopMapMdp(Mdp):
                     self.rewards[source_index][action_index]=120
                 else:
                     self.rewards[source_index][action_index]=expected_time/total_outcomes_count
+                    self.transitions_transversal_count[source_index][action_index]=total_outcomes_count
                     transition=None
                     for j in range(0,self.n_states):
                         count=outcomes_count[j]
                         if count > 0:
-                            print count, total_outcomes_count
                             probability=float(count)/float(total_outcomes_count)
                             if transition is None:
                                 transition=[[j, probability]]
@@ -242,20 +249,21 @@ class ProductMdp(Mdp):
         self.read_states(product_sta,product_lab) 
         self.read_actions(product_tra)
         self.read_transitions(product_tra)
-        #self.read_rewards(original_mdp)
-        self.set_rewards()
+        self.set_rewards_and_trans_count()
         self.set_props()
         
         
-    def set_rewards(self):
+    def set_rewards_and_trans_count(self):
         
         self.rewards=[[0]*self.n_actions for i in range(self.n_states)]
+        self.transitions_transversal_count=[[0]*self.n_actions for i in range(self.n_states)]
         
         for i in range(0,self.n_states):
             original_state_index=self.state_labels[i][1]
             for j in range(0,self.n_actions):
                 original_action_index=self.original_mdp.actions.index(self.actions[j])
                 self.rewards[i][j]=self.original_mdp.rewards[original_state_index][original_action_index]
+                self.transitions_transversal_count[i][j]=self.original_mdp.transitions_transversal_count[original_state_index][original_action_index]
         
     def set_props(self):
         self.n_props=self.original_mdp.n_props

@@ -13,7 +13,7 @@ from strands_executive_msgs.srv import GetExpectedTravelTime
 #from strands_executive_msgs.srv import GeneratePolicy
 from strands_executive_msgs.srv import UpdateNavStatistics
 
-from strands_executive_msgs.msg import ExecutePolicyAction, ExecutePolicyFeedback
+from strands_executive_msgs.msg import ExecutePolicyAction, ExecutePolicyFeedback, ExecutePolicyGoal, LearnTravelTimesAction
 from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
 
 from actionlib import SimpleActionServer, SimpleActionClient
@@ -34,7 +34,7 @@ class MdpPlanner(object):
         self.update_nav_statistics=rospy.Service('mdp_plan_exec/update_nav_statistics',UpdateNavStatistics,self.update_cb)
         
         
-        rospy.loginfo("Creating monitored navigation client.")
+        rospy.loginfo("Creating topological navigation client.")
         self.top_nav_action_client= SimpleActionClient('topological_navigation', GotoNodeAction)
         self.top_nav_action_client.wait_for_server()
         rospy.loginfo(" ...done")
@@ -42,8 +42,13 @@ class MdpPlanner(object):
         
         
         self.mdp_navigation_action=SimpleActionServer('mdp_plan_exec/execute_policy', ExecutePolicyAction, execute_cb = self.execute_policy_cb, auto_start = False)
-        self.mdp_navigation_action.register_preempt_callback(self.preempt_cb)
+        self.mdp_navigation_action.register_preempt_callback(self.preempt_policy_execution_cb)
         self.mdp_navigation_action.start()
+        
+        self.learning_travel_times=True
+        self.learn_travel_times_action=SimpleActionServer('mdp_plan_exec/learn_travel_times', LearnTravelTimesAction, execute_cb = self.execute_learn_travel_times_cb, auto_start = False)
+        self.learn_travel_times_action.register_preempt_callback(self.preempt_learning_cb)
+        self.learn_travel_times_action.start()
 
         self.top_map_mdp=TopMapMdp(top_map)
         self.top_map_mdp.update_nav_statistics()
@@ -63,6 +68,7 @@ class MdpPlanner(object):
         self.closest_node=None
         self.current_node=None
         self.edge_nav_time=0
+        self.nav_action_outcome=''
         self.closest_state_subscriber=rospy.Subscriber('/closest_node', String, self.closest_node_cb)
         self.current_state_subscriber=rospy.Subscriber('/current_node', String, self.current_node_cb)
         self.nav_stats_subscriber = rospy.Subscriber('/topological_navigation/Statistics', NavStatistics, self.get_nav_time_cb)
@@ -76,8 +82,7 @@ class MdpPlanner(object):
     def travel_time_to_node_cb(self,req):
         starting_node= req.start_id
         self.top_map_mdp.set_initial_state_from_name(starting_node)
-        self.top_map_mdp.write_prism_model(self.mdp_prism_file)
-        result=self.prism_client.update_model(req.time_of_day,self.mdp_prism_file)
+        self.update_current_top_mdp(req.time_of_day,self.mdp_prism_file)
         specification='R{"time"}min=? [ ( F "' + req.target_id + '") ]'
         result=self.prism_client.check_model(req.time_of_day,specification)
         result=float(result)
@@ -98,11 +103,72 @@ class MdpPlanner(object):
         #return result
         
     def update_cb(self,req): 
-        self.top_map_mdp.update_nav_statistics()
-        self.top_map_mdp.write_prism_model(self.mdp_prism_file)
-        result=self.prism_client.update_model(req.time_of_day,self.mdp_prism_file)
+        self.update_current_top_mdp(req.time_of_day,self.mdp_prism_file)
         return True
+    
+    
+    def update_current_top_mdp(self,time_of_day,mdp_file):
+        self.top_map_mdp.update_nav_statistics()
+        self.top_map_mdp.write_prism_model(mdp_file)
+        result=self.prism_client.update_model(time_of_day,self.mdp_prism_file)
+    
+    
+    def execute_learn_travel_times_cb(self,goal):
+        self.learning_travel_times=True
+        rospy.Timer(rospy.Duration(goal.timeout), self.finish_learning_callback)
+        n_successive_fails=0
         
+        while self.learning_travel_times:
+            if self.current_node == 'none':
+                self.top_map_mdp.set_initial_state_from_name(self.closest_node) 
+            else:
+                self.top_map_mdp.set_initial_state_from_name(self.current_node)
+            
+            current_waypoint=self.top_map_mdp.initial_state
+            current_waypoint_trans=self.top_map_mdp.transitions[current_waypoint]
+            current_trans_count=self.top_map_mdp.transitions_transversal_count[current_waypoint]
+            current_min=-1
+            current_min_index=-1
+            for i in range(0,self.top_map_mdp.n_actions):
+                if current_waypoint_trans[i] is not False:
+                    if current_min==-1:
+                        current_min=current_trans_count[i]
+                        current_min_index=i
+                    elif current_trans_count[i]<current_min:
+                        current_min=current_trans_count[i]
+                        current_min_index=i
+            current_action=self.top_map_mdp.actions[current_min_index]
+            top_nav_goal=GotoNodeGoal()
+            top_nav_goal.target=current_action.split('_')[2]
+            self.top_nav_action_client.send_goal(top_nav_goal)
+            self.top_nav_action_client.wait_for_result()
+            
+            if self.nav_action_outcome=='fatal':
+                n_successive_fails=n_successive_fails+1
+            else:
+                n_successive_fails=0
+            
+            if n_successive_fails>1:
+                self.update_current_top_mdp('all_day',self.mdp_prism_file)
+                self.learn_travel_times_action.set_aborted()
+                return
+            
+            self.top_map_mdp.transitions_transversal_count[current_waypoint][current_min_index]+=1
+
+        
+        
+    def finish_learning_callback(self,event):
+        self.update_current_top_mdp('all_day',self.mdp_prism_file)
+        self.learn_travel_times_action.set_succeeded()
+        self.learning_travel_times=False
+        
+    def preempt_learning_cb(self):
+        self.update_current_top_mdp('all_day',self.mdp_prism_file)
+        self.top_nav_action_client.cancel_all_goals()
+        self.learn_travel_times_action.set_preempted()
+
+
+    
    
     def execute_policy_cb(self,goal):
         
@@ -111,13 +177,15 @@ class MdpPlanner(object):
             self.top_map_mdp.set_initial_state_from_name(self.closest_node) 
         else:
             self.top_map_mdp.set_initial_state_from_name(self.current_node)
-            
-        self.top_map_mdp.write_prism_model(self.mdp_prism_file)
-        result=self.prism_client.update_model(goal.time_of_day,self.mdp_prism_file)
-        if self.forbidden_nodes==[]:
-            specification='R{"time"}min=? [ (F "' + goal.target_id + '") ]'
+        
+        self.update_current_top_mdp(goal.time_of_day,self.mdp_prism_file)
+        if goal.task_type==ExecutePolicyGoal.GOTO_WAYPOINT:
+            if self.forbidden_nodes==[]:
+                specification='R{"time"}min=? [ (F "' + goal.target_id + '") ]'
+            else:
+                specification='R{"time"}min=? [ (' + self.forbidden_nodes_ltl_string + ' U "' + goal.target_id + '") ]'
         else:
-            specification='R{"time"}min=? [ (' + self.forbidden_nodes_ltl_string + ' U "' + goal.target_id + '") ]'
+            rospy.logerr('Task type not implemented yet')
         feedback=ExecutePolicyFeedback()
         feedback.expected_time=float(self.prism_client.get_policy(goal.time_of_day,specification))
         self.mdp_navigation_action.publish_feedback(feedback)
@@ -126,10 +194,11 @@ class MdpPlanner(object):
         product_mdp.set_policy(result_dir + '/adv.tra')
         
         current_mdp_state=product_mdp.initial_state
+        n_successive_fails=0
         while current_mdp_state not in product_mdp.goal_states:
             current_action=product_mdp.policy[current_mdp_state]
             expected_edge_transversal_time=product_mdp.get_expected_edge_transversal_time(current_mdp_state,current_action)
-            #expected_success_prob=product_mdp.get_expected_success_prob(current_mdp_state,current_action)
+            print product_mdp.get_total_transversals(current_mdp_state,current_action)
             print expected_edge_transversal_time
             top_nav_goal=GotoNodeGoal()
             top_nav_goal.target=current_action.split('_')[2]
@@ -139,19 +208,34 @@ class MdpPlanner(object):
                 current_mdp_state=product_mdp.get_new_state(current_mdp_state,current_action,self.closest_node)
             else:
                 current_mdp_state=product_mdp.get_new_state(current_mdp_state,current_action,self.current_node)
-                
+             
+            
             
             if current_mdp_state==-1:
-                rospy.logerror('State transition is not in model!')
+                rospy.logerr('State transition is not in model!')
                 self.mdp_navigation_action.set_aborted()
+                return
+            elif self.edge_nav_time>2*expected_edge_transversal_time and product_mdp.get_total_transversals(current_mdp_state,current_action):
+                rospy.logwarn("took too long transvesing the edge")
+                
+            if self.nav_action_outcome=='fatal':
+                n_successive_fails=n_successive_fails+1
             else:
-                if self.edge_nav_time>2*expected_edge_transversal_time:
-                    rospy.logwarn("took too long transvesing the edge")
+                n_successive_fails=0
+            
+            if n_successive_fails>1:
+                self.mdp_navigation_action.set_aborted()
+                return
+                
+        
+        
+        #go to the exact goal waypoint pose
+        
         
         self.mdp_navigation_action.set_succeeded()
             
        
-    def preempt_cb(self):
+    def preempt_policy_execution_cb(self):
         self.top_nav_action_client.cancel_all_goals()
         self.mdp_navigation_action.set_preempted()
     
@@ -163,6 +247,7 @@ class MdpPlanner(object):
 
     def get_nav_time_cb(self,msg):   
         self.edge_nav_time=msg.operation_time-msg.time_to_waypoint
+        self.nav_action_outcome=msg.status
     
     def main(self):
 
