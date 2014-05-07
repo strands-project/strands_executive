@@ -124,7 +124,7 @@ class DailyRoutineRunner(object):
             daily_end (datetime.time): The time of day by when all tasks should end, local time.
             pre_start_window (datetime.timedelta): The duration before a task's start that it should be passed to the scheduler. Defaults to 1 hour.
     """
-    def __init__(self, daily_start, daily_end, add_tasks_srv, pre_start_window=timedelta(hours=1), day_start_cb=None, day_end_cb=None):
+    def __init__(self, daily_start, daily_end, add_tasks_srv, pre_start_window=timedelta(hours=1), day_start_cb=None, day_end_cb=None, tasks_allowed_fn=None):
         super(DailyRoutineRunner, self).__init__()
         self.daily_start = daily_start
         self.daily_end = daily_end
@@ -132,6 +132,12 @@ class DailyRoutineRunner(object):
         # the tasks which need to be performed every day, tuples of form (daily_start, daily_end, task)
         self.routine_tasks = []
         self.add_tasks_srv = add_tasks_srv
+
+        if tasks_allowed_fn is None:
+            self.tasks_allowed = self._tasks_allowed_fn
+        else:
+            self.tasks_allowed = tasks_allowed_fn
+
         self.pre_schedule_delay = rospy.Duration(pre_start_window.total_seconds())
         self.midnight_thread = Thread(target=self._delay_to_midnight)
         self.midnight_thread.start()
@@ -139,6 +145,10 @@ class DailyRoutineRunner(object):
         self.day_end_cb = day_end_cb
         if day_start_cb != None or day_end_cb != None:
             Thread(target=self._start_and_end_day).start()
+
+
+    def _tasks_allowed_fn(self):
+        return True
 
     def _start_and_end_day(self):
         """ Runs a loop which triggers the start and end of day callbacks """
@@ -312,9 +322,14 @@ class DailyRoutineRunner(object):
         rospy.loginfo('Delaying %s tasks for %s secs' % (len(tasks), delay.secs))
 
         def _check_tasks():
-            # using a sleep instead of a timer as the timer seems flakey with sim time
-            rospy.sleep(delay)
-            self._create_routine(tasks)
+            # using a sleep instead of a timer as the timer seems flakey with sim time            
+            target = rospy.get_rostime() + delay
+            # make sure we can be killed here
+            while rospy.get_rostime() < target and not rospy.is_shutdown():
+                rospy.sleep(1)
+            # handle being shutdown
+            if not rospy.is_shutdown():
+                self._create_routine(tasks)
 
         Thread(target=_check_tasks).start()
 
@@ -322,7 +337,10 @@ class DailyRoutineRunner(object):
     def _schedule_tasks(self, tasks):
         rospy.loginfo('Sending %s tasks to the scheduler' % (len(tasks)))
         if len(tasks) > 0:
-            self.add_tasks_srv(tasks)
+            if self.tasks_allowed():
+                self.add_tasks_srv(tasks)
+            else:
+                rospy.loginfo('Provided function prevented tasks being send to the scheduler')
 
     def _instantiate_for_day(self, start_of_day, daily_start, daily_end, task):
         """ 
