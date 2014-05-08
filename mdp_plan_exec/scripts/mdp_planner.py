@@ -24,6 +24,8 @@ from strands_navigation_msgs.msg import NavStatistics
 from ros_datacentre.message_store import MessageStoreProxy
 from robblog.msg import RobblogEntry
 import robblog.utils
+from sensor_msgs.msg import Image
+import datetime
 
     
 class MdpPlanner(object):
@@ -85,8 +87,10 @@ class MdpPlanner(object):
         
         self.special_waypoint_handler_service = rospy.Service('/mdp_plan_exec/add_delete_special_node', AddDeleteSpecialWaypoint, self.add_delete_special_waypoint_cb)
         
-        self.unexpected_travel_time=False
         self.msg_store_blog = MessageStoreProxy(collection='robblog')
+        self.origin_waypoint=''
+        self.target_waypoint=''
+        self.last_stuck_image=None
 
         
     def add_delete_special_waypoint_cb(self,req):
@@ -309,8 +313,9 @@ class MdpPlanner(object):
             expected_edge_transversal_time=product_mdp.get_expected_edge_transversal_time(current_mdp_state,current_action)
             top_nav_goal=GotoNodeGoal()
             split_action=current_action.split('_')
-            origin_node=split_action[1]
-            top_nav_goal.target=split_action[2]
+            self.origin_waypoint=split_action[1]
+            self.target_waypoint=split_action[2]
+            top_nav_goal.target=self.target_waypoint
             timer=rospy.Timer(rospy.Duration(2*expected_edge_transversal_time), self.unexpected_trans_time_cb,oneshot=True)
             self.top_nav_action_client.send_goal(top_nav_goal)
             self.top_nav_action_client.wait_for_result()
@@ -321,11 +326,6 @@ class MdpPlanner(object):
              
             timer.shutdown()
             
-            if self.unexpected_travel_time:
-                self.unexpected_travel_time=False
-                entry= RobblogEntry(title='Possible Blocked Path', body='The time it took me to go between ' + origin_node + ' and ' + top_nav_goal.target + ' was twice as long as I was expecting. Something might be blocking the way.')
-                #add snapshot to blog
-                self.msg_store_blog.insert(entry)
             
             if current_mdp_state==-1 and self.executing_policy:
                 rospy.logerr('State transition is not in model!')
@@ -346,14 +346,13 @@ class MdpPlanner(object):
                 
         
         
-        #go to the exact goal waypoint pose
         
         if self.executing_policy:
             self.executing_policy=False
             self.mdp_navigation_action.set_succeeded()
 
+ 
             
-       
     def preempt_policy_execution_cb(self):
         self.executing_policy=False
         self.top_nav_action_client.cancel_all_goals()
@@ -362,11 +361,29 @@ class MdpPlanner(object):
         
     def unexpected_trans_time_cb(self,event):
         print("ROBBLOG!!")
-        self.unexpected_travel_time=True
-        #self.pic=get snapshot
+        self.last_stuck_image = None
+        image_topic = '/head_xtion/rgb/image_mono'
+        image_sub = rospy.Subscriber(image_topic, Image, self.img_callback)
+        
+        count = 0
+        while self.last_stuck_image == None and  not rospy.is_shutdown() and count < 10:
+            rospy.loginfo('waiting for image %s' % count)
+            count += 1
+            rospy.sleep(1)
+            
+        e = RobblogEntry(title='Possible Blocked Path at ' + datetime.datetime.now().strftime("%I:%M%p"))
+        e.body = 'The time it took me to go between ' + self.origin_waypoint + ' and ' + self.target_waypoint + ' was twice as long as I was expecting. Something might be blocking the way. Here is what I saw:'
+            
+        if self.last_stuck_image != None:
+            img_id = self.msg_store_blog.insert(self.last_stuck_image)
+            rospy.loginfo('adding possible blockage image to blog post')
+            e.body += '\n\n![Image of the door](ObjectID(%s))' % img_id
+            self.msg_store_blog.insert(e)
         
         
-        
+    def img_callback(self, img):
+        self.last_stuck_image = img
+    
         
     
     def closest_node_cb(self,msg):
