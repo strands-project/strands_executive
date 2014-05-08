@@ -75,7 +75,7 @@ if __name__ == '__main__':
     localtz = tzlocal()
     # the time the robot will be active
     start = time(8,00, tzinfo=localtz)
-    end = time(23,59, tzinfo=localtz)
+    end = time(23,00, tzinfo=localtz)
     midday = time(12,00, tzinfo=localtz)
 
     morning = (start, midday)
