@@ -334,7 +334,7 @@ class MdpPlanner(object):
                 return
                 
                 
-            if self.nav_action_outcome=='fatal':
+            if self.nav_action_outcome=='fatal'or self.nav_action_outcome=='failed':
                 n_successive_fails=n_successive_fails+1
             else:
                 n_successive_fails=0
