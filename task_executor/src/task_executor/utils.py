@@ -19,7 +19,8 @@ class TestTaskAction(object):
         self.task_server = actionlib.SimpleActionServer('test_task', TestExecutionAction, execute_cb = self.execute, auto_start = False)
         self.task_server.start() 
         self.cn_pub = rospy.Publisher('/current_node', String, latch=True)
-        self.cn_pub.publish(String('WayPoint1'))
+        self.cn = 'WayPoint1'
+        self.cn_pub.publish(String(self.cn))
         
 
     def execute(self, goal):
@@ -44,10 +45,9 @@ class TestTaskAction(object):
         print 'called with nav goal %s'%goal.target
         target = rospy.get_rostime() + self.expected_drive_duration
 
-        while not rospy.is_shutdown() and rospy.get_rostime() < target and not self.nav_server.is_preempt_requested():
-            rospy.sleep(0.1)       
-        
-       
+        if goal.target != self.cn:
+            while not rospy.is_shutdown() and rospy.get_rostime() < target and not self.nav_server.is_preempt_requested():
+                rospy.sleep(0.1)           
 
         if self.nav_server.is_preempt_requested():
             print "done preempted"
@@ -55,7 +55,8 @@ class TestTaskAction(object):
             self.nav_server.set_preempted(self.result)
         else:
             print "done normal"     
-            self.cn_pub.publish(String(goal.target))
+            self.cn = goal.target
+            self.cn_pub.publish(String(self.cn))
             self.result.success = True       
             self.nav_server.set_succeeded(self.result)
 
