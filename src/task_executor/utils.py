@@ -10,7 +10,7 @@ class TestTaskAction(object):
     """ 
     Creates the action servers the example tasks required.
     """
-    def __init__(self, expected_action_duration=rospy.Duration(1), expected_drive_duration=rospy.Duration(1)):
+    def __init__(self, expected_action_duration=rospy.Duration(1), expected_drive_duration=rospy.Duration(20)):
         self.expected_action_duration = expected_action_duration
         self.expected_drive_duration = expected_drive_duration
         self.result   =  GotoNodeResult()
@@ -27,7 +27,7 @@ class TestTaskAction(object):
         target = rospy.get_rostime() + self.expected_action_duration
 
         while not rospy.is_shutdown() and rospy.get_rostime() < target and not self.task_server.is_preempt_requested():
-            rospy.sleep(20)       
+            rospy.sleep(0.1)       
         
 
 
@@ -45,9 +45,9 @@ class TestTaskAction(object):
         target = rospy.get_rostime() + self.expected_drive_duration
 
         while not rospy.is_shutdown() and rospy.get_rostime() < target and not self.nav_server.is_preempt_requested():
-            rospy.sleep(20)       
+            rospy.sleep(0.1)       
         
-        self.cn_pub.publish(String(goal.target))
+       
 
         if self.nav_server.is_preempt_requested():
             print "done preempted"
@@ -55,6 +55,7 @@ class TestTaskAction(object):
             self.nav_server.set_preempted(self.result)
         else:
             print "done normal"     
+            self.cn_pub.publish(String(goal.target))
             self.result.success = True       
             self.nav_server.set_succeeded(self.result)
 
