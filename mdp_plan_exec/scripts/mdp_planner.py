@@ -85,6 +85,7 @@ class MdpPlanner(object):
         
         self.special_waypoint_handler_service = rospy.Service('/mdp_plan_exec/add_delete_special_node', AddDeleteSpecialWaypoint, self.add_delete_special_waypoint_cb)
         
+        self.unexpected_travel_time=False
         self.msg_store_blog = MessageStoreProxy(collection='robblog')
 
         
@@ -196,8 +197,7 @@ class MdpPlanner(object):
     def execute_learn_travel_times_cb(self,goal):
         rospy.set_param('/topological_navigation/mode', 'Node_by_node')
         self.learning_travel_times=True
-        rospy.Timer(rospy.Duration(goal.timeout), self.finish_learning_callback)
-        print rospy.Duration(goal.timeout)
+        timer=rospy.Timer(rospy.Duration(goal.timeout), self.finish_learning_callback,oneshot=True)
         n_successive_fails=0
         
         while self.learning_travel_times:
@@ -236,6 +236,8 @@ class MdpPlanner(object):
                 return
             
             self.top_map_mdp.transitions_transversal_count[current_waypoint][current_min_index]+=1
+            
+        timer.shutdown()    
 
         
         
@@ -305,12 +307,11 @@ class MdpPlanner(object):
         while current_mdp_state not in product_mdp.goal_states and self.executing_policy:
             current_action=product_mdp.policy[current_mdp_state]
             expected_edge_transversal_time=product_mdp.get_expected_edge_transversal_time(current_mdp_state,current_action)
-            print product_mdp.get_total_transversals(current_mdp_state,current_action)
-            print expected_edge_transversal_time
             top_nav_goal=GotoNodeGoal()
             split_action=current_action.split('_')
             origin_node=split_action[1]
             top_nav_goal.target=split_action[2]
+            timer=rospy.Timer(rospy.Duration(2*expected_edge_transversal_time), self.unexpected_trans_time_cb,oneshot=True)
             self.top_nav_action_client.send_goal(top_nav_goal)
             self.top_nav_action_client.wait_for_result()
             if self.current_node == 'none':
@@ -318,16 +319,20 @@ class MdpPlanner(object):
             else:
                 current_mdp_state=product_mdp.get_new_state(current_mdp_state,current_action,self.current_node)
              
+            timer.shutdown()
             
+            if self.unexpected_travel_time:
+                self.unexpected_travel_time=False
+                entry= RobblogEntry(title='Possible Blocked Path', body='The time it took me to go between ' + origin_node + ' and ' + top_nav_goal.target + ' was twice as long as I was expecting. Something might be blocking the way.')
+                #add snapshot to blog
+                self.msg_store_blog.insert(entry)
             
             if current_mdp_state==-1 and self.executing_policy:
                 rospy.logerr('State transition is not in model!')
                 self.executing_policy=False
                 self.mdp_navigation_action.set_aborted()
                 return
-            elif self.edge_nav_time>2*expected_edge_transversal_time and product_mdp.get_total_transversals(current_mdp_state,current_action)>1:
-                entry= RobblogEntry(title='Possible Blocked Path', body='The time it took me to go between ' + origin_node + ' and ' + top_nav_goal.target + ' was twice as long as I was expecting. Something might be blocking the way.')
-                msg_store_blog.insert(entry)
+                
                 
             if self.nav_action_outcome=='fatal':
                 n_successive_fails=n_successive_fails+1
@@ -353,6 +358,16 @@ class MdpPlanner(object):
         self.executing_policy=False
         self.top_nav_action_client.cancel_all_goals()
         self.mdp_navigation_action.set_preempted()
+        
+        
+    def unexpected_trans_time_cb(self,event):
+        print("ROBBLOG!!")
+        self.unexpected_travel_time=True
+        #self.pic=get snapshot
+        
+        
+        
+        
     
     def closest_node_cb(self,msg):
         self.closest_node=msg.data
