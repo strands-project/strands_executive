@@ -66,7 +66,11 @@ class AbstractTaskExecutor(object):
         self.action_client = None
         self.active_task_completes_by = rospy.get_rostime()
         
+<<<<<<< HEAD
         expected_time_srv_name = '/mdp_plan_exec/get_expected_travel_time_to_node'
+=======
+        expected_time_srv_name = '/mdp_plan_exec/get_expected_travel_time'
+>>>>>>> 6a20bbe36a6a677435fc70684ffbf492b494a74f
         rospy.loginfo('Waiting for %s' % expected_time_srv_name)
         rospy.wait_for_service(expected_time_srv_name)
         rospy.loginfo('... and got %s' % expected_time_srv_name)
@@ -143,7 +147,6 @@ class AbstractTaskExecutor(object):
         else:
             rospy.logwarn("Cancelling task %s" % self.active_task.task_id)
 
-            
         if self.nav_client is not None and self.nav_client.get_state() == GoalStatus.ACTIVE:
             self.nav_client.cancel_goal()
             self.nav_timeout_timer.shutdown()            
@@ -214,7 +217,6 @@ class AbstractTaskExecutor(object):
 
 
 
-
     def navigation_complete_cb(self, goal_status, result):
 
         # print self.nav_client.get_state()
@@ -224,6 +226,7 @@ class AbstractTaskExecutor(object):
         self.nav_timeout_timer.shutdown()
 
         if self.nav_client.get_state() == GoalStatus.SUCCEEDED:
+
 
             rospy.loginfo('Navigation to %s succeeded' % self.active_task.start_node_id)        
             self.log_task_event(self.active_task, TaskEvent.NAVIGATION_SUCCEEDED, now)                
@@ -252,6 +255,7 @@ class AbstractTaskExecutor(object):
 
             self.task_failed(completed)
             self.log_task_event(completed, TaskEvent.TASK_FINISHED, now)
+
             
 
 
@@ -260,8 +264,10 @@ class AbstractTaskExecutor(object):
         self.action_timeout_timer.shutdown()
         now = rospy.get_rostime()
 
+
         # do bookkeeping before causing update
         completed = self.active_task
+
         self.active_task = None
         self.active_task_id = Task.NO_TASK
 
