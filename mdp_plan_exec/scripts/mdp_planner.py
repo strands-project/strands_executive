@@ -362,7 +362,7 @@ class MdpPlanner(object):
     def unexpected_trans_time_cb(self,event):
         print("ROBBLOG!!")
         self.last_stuck_image = None
-        image_topic = '/head_xtion/rgb/image_mono'
+        image_topic =  '/chest_xtion/rgb/image_color'
         image_sub = rospy.Subscriber(image_topic, Image, self.img_callback)
         
         count = 0
@@ -372,7 +372,7 @@ class MdpPlanner(object):
             rospy.sleep(1)
             
         e = RobblogEntry(title='Possible Blocked Path at ' + datetime.datetime.now().strftime("%I:%M%p"))
-        e.body = 'The time it took me to go between ' + self.origin_waypoint + ' and ' + self.target_waypoint + ' was twice as long as I was expecting. Something might be blocking the way. Here is what I saw:'
+        e.body = 'The time it took me to go between ' + self.origin_waypoint + ' and ' + self.target_waypoint + ' was twice as long than I was expecting. Something might be blocking the way. Here is what I saw:'
             
         if self.last_stuck_image != None:
             img_id = self.msg_store_blog.insert(self.last_stuck_image)
