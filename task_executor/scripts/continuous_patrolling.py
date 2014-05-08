@@ -10,7 +10,7 @@ from ros_datacentre.message_store import MessageStoreProxy
 from strands_navigation_msgs.msg import TopologicalNode
 
 def load_nodes():
-    msg_store = MessageStoreProxy()
+    msg_store = MessageStoreProxy(collection='topological_maps')
     query_meta = {}
     query_meta["pointset"] = rospy.get_param('topological_map_name')
     nodes = msg_store.query(TopologicalNode._type, {}, query_meta)
