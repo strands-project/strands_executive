@@ -105,7 +105,7 @@ class AbstractTaskExecutor(object):
 
     def expected_navigation_duration(self, task): 
         et = self.expected_time(start_id=self.current_node, ltl_task='F \"%s\"'%task.start_node_id,time_of_day="all_day")
-        rospy.loginfo('expected travel time %s' % et.travel_time)
+        # rospy.loginfo('expected travel time %s' % et.travel_time)
         # allow a bit of time for any transition -- mainly for testing cases
         return rospy.Duration(max(et.travel_time, 10))
         # return rospy.Duration(120)
@@ -142,6 +142,8 @@ class AbstractTaskExecutor(object):
             rospy.logwarn("Cancelling task that has overrun %s" % self.active_task.task_id)
         else:
             rospy.logwarn("Cancelling task %s" % self.active_task.task_id)
+
+            
         if self.nav_client is not None and self.nav_client.get_state() == GoalStatus.ACTIVE:
             self.nav_client.cancel_goal()
             self.nav_timeout_timer.shutdown()            
@@ -186,9 +188,11 @@ class AbstractTaskExecutor(object):
 
         except Exception, e:
             rospy.logwarn('Exception in start_task_action: %s', e)
-            self.task_failed(self.active_task)
+            # do bookkeeping before causing update
+            completed = self.active_task
             self.active_task = None
             self.active_task_id = Task.NO_TASK
+            self.task_failed(completed)
 
     def start_task_navigation(self):
         # handle delayed start up
@@ -227,9 +231,12 @@ class AbstractTaskExecutor(object):
             if self.active_task.action != '':                                        
                 self.start_task_action()
             else:
-                self.task_succeeded(self.active_task)
+                # do bookkeeping before causing update
+                completed = self.active_task
                 self.active_task = None
                 self.active_task_id = Task.NO_TASK
+
+                self.task_succeeded(completed)
         else:
             if self.nav_client.get_state() == GoalStatus.PREEMPTED:
                 rospy.loginfo('Navigation to %s timed out' % self.active_task.start_node_id)        
@@ -238,10 +245,13 @@ class AbstractTaskExecutor(object):
                 rospy.loginfo('Navigation to %s failed' % self.active_task.start_node_id)        
                 self.log_task_event(self.active_task, TaskEvent.NAVIGATION_FAILED, now)                
         
-            self.task_failed(self.active_task)
-            self.log_task_event(self.active_task, TaskEvent.TASK_FINISHED, now)
+            # do bookkeeping before causing update
+            completed = self.active_task
             self.active_task = None
             self.active_task_id = Task.NO_TASK
+
+            self.task_failed(completed)
+            self.log_task_event(completed, TaskEvent.TASK_FINISHED, now)
             
 
 
@@ -250,20 +260,24 @@ class AbstractTaskExecutor(object):
         self.action_timeout_timer.shutdown()
         now = rospy.get_rostime()
 
-        if self.action_client.get_state() == GoalStatus.SUCCEEDED:
-            rospy.loginfo('Execution of task %s succeeded' % self.active_task.task_id)        
-            self.log_task_event(self.active_task, TaskEvent.EXECUTION_SUCCEEDED, now)                
-            self.task_succeeded(self.active_task)
-        else:
-            if self.action_client.get_state() == GoalStatus.PREEMPTED:
-                self.log_task_event(self.active_task, TaskEvent.EXECUTION_PREEMPTED, now)                
-            else:
-                self.log_task_event(self.active_task, TaskEvent.EXECUTION_FAILED, now)                            
-            self.task_failed(self.active_task)
-
-        self.log_task_event(self.active_task, TaskEvent.TASK_FINISHED, now)   
+        # do bookkeeping before causing update
+        completed = self.active_task
         self.active_task = None
         self.active_task_id = Task.NO_TASK
+
+
+        if self.action_client.get_state() == GoalStatus.SUCCEEDED:
+            rospy.loginfo('Execution of task %s succeeded' % completed.task_id)        
+            self.log_task_event(completed, TaskEvent.EXECUTION_SUCCEEDED, now)                
+            self.task_succeeded(completed)
+        else:
+            if self.action_client.get_state() == GoalStatus.PREEMPTED:
+                self.log_task_event(completed, TaskEvent.EXECUTION_PREEMPTED, now)                
+            else:
+                self.log_task_event(completed, TaskEvent.EXECUTION_FAILED, now)                            
+            self.task_failed(completed)
+
+        self.log_task_event(completed, TaskEvent.TASK_FINISHED, now)   
 
 
     def log_task_events(self, tasks, event, time, description=""):
