@@ -2,7 +2,7 @@
 
   <arg name="topological_map"/>
   
-  <node pkg="mdp_plan_exec" type="mdp_planner.py" name="mdp_planner"  output="screen" args="$(arg topological_map)"/>
+  <node pkg="mdp_plan_exec" type="mdp_planner.py" name="mdp_planner"  args="$(arg topological_map)"/>
 
   <node pkg="scheduler" type="scheduler_node" name="scheduler"  output="screen"/>
 
