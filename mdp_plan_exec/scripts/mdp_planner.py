@@ -189,6 +189,7 @@ class MdpPlanner(object):
     
     
     def execute_learn_travel_times_cb(self,goal):
+        rospy.set_param('/topological_navigation/mode', 'Node_by_node')
         self.learning_travel_times=True
         rospy.Timer(rospy.Duration(goal.timeout), self.finish_learning_callback)
         n_successive_fails=0
@@ -247,7 +248,7 @@ class MdpPlanner(object):
    
     def execute_policy_cb(self,goal):
         
-   
+        rospy.set_param('/topological_navigation/mode', 'Node_to_IZ')
         if self.current_node == 'none':
             self.top_map_mdp.set_initial_state_from_name(self.closest_node) 
         else:
