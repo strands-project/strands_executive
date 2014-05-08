@@ -106,7 +106,8 @@ class AbstractTaskExecutor(object):
     def expected_navigation_duration(self, task): 
         et = self.expected_time(start_id=self.current_node, ltl_task='F \"%s\"'%task.start_node_id,time_of_day="all_day")
         rospy.loginfo('expected travel time %s' % et.travel_time)
-        return rospy.Duration(et.travel_time)
+        # allow a bit of time for any transition -- mainly for testing cases
+        return rospy.Duration(max(et.travel_time, 10))
         # return rospy.Duration(120)
 
     def get_active_task_completion_time(self):
@@ -197,15 +198,16 @@ class AbstractTaskExecutor(object):
             self.nav_client.wait_for_server()
             rospy.logdebug("Created action client")
 
+        # start a timer to kill off tasks that overrun
+        self.nav_timeout_timer = rospy.Timer(self.expected_navigation_duration(self.active_task), self.cancel_navigation, oneshot=True)
+
         #nav_goal = GotoNodeGoal(target = self.active_task.start_node_id)
         nav_goal = ExecutePolicyGoal(task_type=ExecutePolicyGoal.GOTO_WAYPOINT, target_id = self.active_task.start_node_id, time_of_day='all_day')
         self.log_task_event(self.active_task, TaskEvent.NAVIGATION_STARTED, rospy.get_rostime())
+
         self.nav_client.send_goal(nav_goal, self.navigation_complete_cb)
         rospy.loginfo("navigating to %s" % nav_goal)
 
-        wiggle_room = rospy.Duration(5)
-        # start a timer to kill off tasks that overrun
-        self.nav_timeout_timer = rospy.Timer(self.expected_navigation_duration(self.active_task) + wiggle_room, self.cancel_navigation, oneshot=True)
 
 
 
