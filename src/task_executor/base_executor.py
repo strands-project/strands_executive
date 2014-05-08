@@ -66,7 +66,7 @@ class AbstractTaskExecutor(object):
         self.action_client = None
         self.active_task_completes_by = rospy.get_rostime()
         
-        expected_time_srv_name = '/mdp_plan_exec/get_expected_travel_time'
+        expected_time_srv_name = '/mdp_plan_exec/get_expected_travel_time_to_node'
         rospy.loginfo('Waiting for %s' % expected_time_srv_name)
         rospy.wait_for_service(expected_time_srv_name)
         rospy.loginfo('... and got %s' % expected_time_srv_name)
@@ -104,7 +104,7 @@ class AbstractTaskExecutor(object):
 
 
     def expected_navigation_duration(self, task): 
-        et = self.expected_time(start_id=self.current_node, ltl_task='F \"%s\"'%task.start_node_id,time_of_day="all_day")
+        et = self.expected_time(start_id=self.current_node, target_id=task.start_node_id,time_of_day="all_day")
         # rospy.loginfo('expected travel time %s' % et.travel_time)
         # allow a bit of time for any transition -- mainly for testing cases
         return rospy.Duration(max(et.travel_time, 10))
