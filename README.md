@@ -54,7 +54,7 @@ task = Task()
 Then you can set the node id for where the task will be executed (or you can do this inline):
 
 ```python
-task.node_id = 'WayPoint1'
+task.start_node_id = 'WayPoint1'
 ```
 
 To add the name of the action server, do:
