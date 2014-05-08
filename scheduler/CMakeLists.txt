@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
 	  roscpp 
 	  scipoptsuite 
 	  strands_executive_msgs
+    ros_datacentre_cpp_client
 )
 
 ## System dependencies are found with CMake's conventions
@@ -133,6 +134,7 @@ add_executable(scheduler_node src/scheduler_node.cpp)
 add_dependencies(scheduler_node strands_executive_msgs_generate_messages_cpp)
 target_link_libraries(scheduler_node
   scheduler
+  message_store
   ${catkin_LIBRARIES}
 )
 
