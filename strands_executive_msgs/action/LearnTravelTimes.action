@@ -1,4 +1,4 @@
-uint8 timeout
+uint64 timeout
 ---
 
 ---
