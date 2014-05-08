@@ -312,7 +312,7 @@ class MdpPlanner(object):
                 rospy.logerr('State transition is not in model!')
                 self.mdp_navigation_action.set_aborted()
                 return
-            elif self.edge_nav_time>2*expected_edge_transversal_time and product_mdp.get_total_transversals(current_mdp_state,current_action):
+            elif self.edge_nav_time>2*expected_edge_transversal_time and product_mdp.get_total_transversals(current_mdp_state,current_action)>1:
                 rospy.logwarn("took too long transvesing the edge")
                 
             if self.nav_action_outcome=='fatal':
