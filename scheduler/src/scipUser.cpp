@@ -270,7 +270,7 @@ SCIP_Retcode ScipUser::setFinalCons_long(vector<Task*> * tasksToS, vector<SCIP_V
         distCache.insert(it, make_pair(nodes, dist));
        }
        else {
-
+        //cout<<"WOOoOOOOOOOoOO\n";
         dist = it->second;
        }
 
@@ -322,6 +322,7 @@ SCIP_Retcode ScipUser::setFinalCons_long(vector<Task*> * tasksToS, vector<SCIP_V
         distCache.insert(it, make_pair(nodes, distj));
        }
        else {       
+        //cout<<"WOOoOOOOOOOoOO\n";
         distj = it->second;
        }
 

@@ -120,13 +120,21 @@ class AbstractTaskExecutor(object):
         self.active_task_id = task.task_id               
 
         now = rospy.get_rostime()
-        total_task_duration = self.expected_navigation_duration(task) + task.max_duration
-        self.active_task_completes_by = now + total_task_duration
 
+        
+        
         self.log_task_event(self.active_task, TaskEvent.TASK_STARTED, now)
 
+        expected_nav_duration = rospy.Duration(0)
         if self.active_task.start_node_id != '':                    
-            self.start_task_navigation()
+            expected_nav_duration = self.expected_navigation_duration(task)
+
+        total_task_duration = expected_nav_duration + task.max_duration
+        
+        self.active_task_completes_by = now + total_task_duration    
+
+        if self.active_task.start_node_id != '':                    
+            self.start_task_navigation(expected_nav_duration)
         elif self.active_task.action != '':                    
             self.start_task_action()
         else:
@@ -195,7 +203,7 @@ class AbstractTaskExecutor(object):
             self.active_task_id = Task.NO_TASK
             self.task_failed(completed)
 
-    def start_task_navigation(self):
+    def start_task_navigation(self, expected_duration):
         # handle delayed start up
         if self.nav_client == None:
             #self.nav_client = actionlib.SimpleActionClient('topological_navigation', GotoNodeAction)
@@ -204,7 +212,7 @@ class AbstractTaskExecutor(object):
             rospy.logdebug("Created action client")
 
         # start a timer to kill off tasks that overrun
-        self.nav_timeout_timer = rospy.Timer(self.expected_navigation_duration(self.active_task), self.cancel_navigation, oneshot=True)
+        self.nav_timeout_timer = rospy.Timer(expected_duration, self.cancel_navigation, oneshot=True)
 
         #nav_goal = GotoNodeGoal(target = self.active_task.start_node_id)
         nav_goal = ExecutePolicyGoal(task_type=ExecutePolicyGoal.GOTO_WAYPOINT, target_id = self.active_task.start_node_id, time_of_day='all_day')
