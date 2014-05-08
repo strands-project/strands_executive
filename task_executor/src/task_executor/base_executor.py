@@ -8,7 +8,8 @@ import actionlib
 from actionlib_msgs.msg import GoalStatus
 from geometry_msgs.msg import Pose, Point, Quaternion
 from ros_datacentre.message_store import MessageStoreProxy
-from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
+#from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
+from strands_executive_msgs.msg import ExecutePolicyAction, ExecutePolicyGoal
 from std_srvs.srv import Empty
 
 
@@ -88,7 +89,7 @@ class AbstractTaskExecutor(object):
 
 
     def expected_navigation_duration(self, task):        
-        return rospy.Duration(60)
+        return rospy.Duration(60) #this is provided as the feedback of the nav_client, as a float
 
     def get_active_task_completion_time(self):
         return self.active_task_completes_by
@@ -158,11 +159,13 @@ class AbstractTaskExecutor(object):
     def start_task_navigation(self):
         # handle delayed start up
         if self.nav_client == None:
-            self.nav_client = actionlib.SimpleActionClient('topological_navigation', GotoNodeAction)
+            #self.nav_client = actionlib.SimpleActionClient('topological_navigation', GotoNodeAction)
+            self.nav_client = actionlib.SimpleActionClient('mdp_plan_exec/execute_policy', ExecutePolicyAction)
             self.nav_client.wait_for_server()
             rospy.logdebug("Created action client")
 
-        nav_goal = GotoNodeGoal(target = self.active_task.start_node_id)
+        #nav_goal = GotoNodeGoal(target = self.active_task.start_node_id)
+        nav_goal = ExecutePolicyGoal(task_type=ExecutePolicyGoal.GOTO_WAYPOINT, target_id = self.active_task.start_node_id, time_of_day='all_day')
         self.nav_client.send_goal(nav_goal, self.navigation_complete_cb)
         rospy.loginfo("navigating to %s" % nav_goal)
 
@@ -171,8 +174,8 @@ class AbstractTaskExecutor(object):
         # print self.nav_client.get_state()
         # print self.nav_client.get_result()
 
-        if self.nav_client.get_state() == GoalStatus.SUCCEEDED and self.nav_client.get_result().success:
-
+        #if self.nav_client.get_state() == GoalStatus.SUCCEEDED and self.nav_client.get_result().success:
+        if self.nav_client.get_state() == GoalStatus.SUCCEEDED:
             rospy.loginfo('Navigation to %s succeeded' % self.active_task.start_node_id)        
 
             if self.active_task.action != '':                                        

@@ -10,6 +10,10 @@ from strands_executive_msgs.srv import AddMdpModel, AddMdpModelRequest
 from strands_executive_msgs.srv import GeneratePolicy, GeneratePolicyRequest
 
 
+from mdp_plan_exec.mdp import TopMapMdp, ProductMdp
+
+
+
 
 
     
@@ -29,12 +33,19 @@ class MdpPlanner(object):
     
     
     def main(self):
-        rospack = rospkg.RosPack()
-        pack_dir=rospack.get_path('mdp_plan_exec')
+        
+        
+        
+        top_map_mdp=TopMapMdp('top_floor_simple')
+        top_map_mdp.update_nav_statistics()
+
+    
+        #top_map_mdp.set_policy('/home/bruno/tmp/prism/all_day/adv.tra')
+        top_map_mdp.write_prism_model('/home/bruno/Desktop/teste.prism')
         
         req=AddMdpModelRequest()
         req.time_of_day='all_day'
-        req.mdp_file=pack_dir + '/example_models/teste.prism'
+        req.mdp_file='/home/bruno/Desktop/teste.prism'
         self.add_client(req)
         
         
@@ -54,6 +65,12 @@ class MdpPlanner(object):
         req.time_of_day='all_day'
         
         d=self.policy_client(req)
+        
+        product_mdp=ProductMdp(top_map_mdp,'/home/bruno/tmp/prism/all_day/prod.sta','/home/bruno/tmp/prism/all_day/prod.lab','/home/bruno/tmp/prism/all_day/prod.tra')
+        
+        product_mdp.write_prism_model('/home/bruno/Desktop/product.prism')
+        
+        product_mdp.set_policy('/home/bruno/tmp/prism/all_day/adv.tra')
 
 
 

@@ -23,6 +23,7 @@ class Mdp(object):
         self.actions=[]
         self.prop_map=[[]]
         self.transitions=[[]]
+        self.transitions_transversal_count=[[]]
         self.rewards=[[]]
         self.current_policy=[]
         
@@ -81,9 +82,15 @@ class Mdp(object):
     def set_initial_state(self,initial_state):
         self.initial_state=initial_state
         
-    def set_initial_state_from_name(self,state_name):
-        index=self.state_names.index(state_name)
-        self.set_initial_state(index)
+    def get_expected_edge_transversal_time(self,state_index,action_name):
+        action_index=self.actions.index(action_name)
+        return self.rewards[state_index][action_index]
+        
+    def get_total_transversals(self,state_index,action_name):
+        action_index=self.actions.index(action_name)
+        return self.transitions_transversal_count[state_index][action_index]
+        
+        
         
  
     
@@ -128,6 +135,8 @@ class TopMapMdp(Mdp):
         
         self.transitions=[[False]*self.n_actions for i in range(self.n_states)]
         
+        self.transitions_transversal_count=[[0]*self.n_actions for i in range(self.n_states)]
+        
         self.actions=[None]*self.n_actions
         
 
@@ -151,7 +160,7 @@ class TopMapMdp(Mdp):
     def read_top_map(self):
 
 
-        msg_store = MessageStoreProxy()
+        msg_store = MessageStoreProxy(collection='topological_maps')
     
         query_meta = {}
         query_meta["pointset"] =self.top_map
@@ -211,11 +220,11 @@ class TopMapMdp(Mdp):
                     self.rewards[source_index][action_index]=120
                 else:
                     self.rewards[source_index][action_index]=expected_time/total_outcomes_count
+                    self.transitions_transversal_count[source_index][action_index]=total_outcomes_count
                     transition=None
                     for j in range(0,self.n_states):
                         count=outcomes_count[j]
                         if count > 0:
-                            print count, total_outcomes_count
                             probability=float(count)/float(total_outcomes_count)
                             if transition is None:
                                 transition=[[j, probability]]
@@ -225,7 +234,9 @@ class TopMapMdp(Mdp):
                         self.transitions[source_index][action_index]=transition
         
         
-    
+    def set_initial_state_from_name(self,state_name):
+        index=self.state_names.index(state_name)
+        self.set_initial_state(index)
 
 
 
@@ -233,39 +244,68 @@ class ProductMdp(Mdp):
 
     def __init__(self, original_mdp,product_sta,product_lab,product_tra):
         
+        self.original_mdp=original_mdp
         
-        self.read_states(product_sta,product_lab) #meter isto com  o objecto em vez do ficheiro
+        self.read_states(product_sta,product_lab) 
         self.read_actions(product_tra)
         self.read_transitions(product_tra)
-        self.read_rewards(original_mdp)
-    
-    def read_rewards(self,original_mdp):
+        self.set_rewards_and_trans_count()
+        self.set_props()
         
-        f = open(original_mdp, 'r')
-         
-        for line in f:
-            #print(line)
-            #print('rewards "time"\n')
-            if line.startswith('rewards'):
-                break
-                
+        
+    def set_rewards_and_trans_count(self):
+        
         self.rewards=[[0]*self.n_actions for i in range(self.n_states)]
+        self.transitions_transversal_count=[[0]*self.n_actions for i in range(self.n_states)]
         
-        for line in f:
-            if line.startswith('endrewards'):
-                break
-            line=line.split()
-            if line !=[]:
-                action=self.actions.index(line[0].strip('[]'))
-                rest=line[1].split('=')[1].split(':')
-                state=int(rest[0])
-                reward=float(rest[1].rstrip(';'))
-                for i in range(0,self.n_states):
-                    if i not in self.goal_states:
-                        if self.state_labels[i][1]==state:
-                            if self.transitions[i][action]:
-                                self.rewards[i][action]=reward  
-        f.close()
+        for i in range(0,self.n_states):
+            original_state_index=self.state_labels[i][1]
+            for j in range(0,self.n_actions):
+                original_action_index=self.original_mdp.actions.index(self.actions[j])
+                self.rewards[i][j]=self.original_mdp.rewards[original_state_index][original_action_index]
+                self.transitions_transversal_count[i][j]=self.original_mdp.transitions_transversal_count[original_state_index][original_action_index]
+        
+    def set_props(self):
+        self.n_props=self.original_mdp.n_props
+        self.props=self.original_mdp.props
+        #self.props.append('ltl_goal')
+        #self.n_props=self.n_props+1
+        
+        self.prop_map=[[False]*self.n_props for i in range(self.n_states)]
+        
+        for i in range(0,self.n_states):
+            prop_line=self.original_mdp.prop_map[self.state_labels[i][1]]
+            prop_line.append(False)
+            self.prop_map[i]=prop_line
+        
+    
+    #def read_rewards(self,original_mdp):
+        
+        #f = open(original_mdp, 'r')
+         
+        #for line in f:
+            ##print(line)
+            ##print('rewards "time"\n')
+            #if line.startswith('rewards'):
+                #break
+                
+        #self.rewards=[[0]*self.n_actions for i in range(self.n_states)]
+        
+        #for line in f:
+            #if line.startswith('endrewards'):
+                #break
+            #line=line.split()
+            #if line !=[]:
+                #action=self.actions.index(line[0].strip('[]'))
+                #rest=line[1].split('=')[1].split(':')
+                #state=int(rest[0])
+                #reward=float(rest[1].rstrip(';'))
+                #for i in range(0,self.n_states):
+                    #if i not in self.goal_states:
+                        #if self.state_labels[i][1]==state:
+                            #if self.transitions[i][action]:
+                                #self.rewards[i][action]=reward  
+        #f.close()
         
        
         
@@ -280,7 +320,6 @@ class ProductMdp(Mdp):
         for line in f:
             line=line.split(' ')
             from_state=int(line[0])
-            #line[1]=int(line[1])
             to_state=int(line[2])
             probability=float(line[3])
             action=self.actions.index(line[4].rstrip('\n'))
@@ -314,7 +353,7 @@ class ProductMdp(Mdp):
         f = open(product_sta, 'r')
         f.readline()
         
-        self.n_states=pass0
+        self.n_states=0
         self.state_labels=[]
         
         
@@ -355,7 +394,6 @@ class ProductMdp(Mdp):
                 self.goal_states.append(int_line[0])
             if int_line[1]==init_index:
                 self.initial_state=int_line[0]
-                print(self.initial_state)
         
         f.close()
         
@@ -363,19 +401,36 @@ class ProductMdp(Mdp):
 
 
     def set_policy(self,policy_file):
-        print "ALTERAR PARA USAR O .STA"
         self.policy=[None]*self.n_states
-        print self.n_states
         f=open(policy_file,'r')
         f.readline()
         for line in f:
             line=line.split(' ')
-            print line
             self.policy[int(line[0])]=line[3].strip('\n')
         print self.policy    
         f.close()    
                     
-            
+    
+    def set_initial_state_from_name(self,state_name):
+        state_name_prop_index=self.props.index(state_name)
+        for i in range(0,self.n_states):
+            if self.props_map[i][state_name_prop_index] and self.state_labels[i][0]==self.state_labels[self.initial_state][0]:
+                self.set_initial_state(i)
+                return
+        print "set initial state of product MDP error"
+    
+    
+    def get_new_state(self,current_state,action,final_node):
+        action_index=self.actions.index(action)
+        possible_next_states=self.transitions[current_state][action_index]
+        n_possible_next_states=len(possible_next_states)
+        final_node_prop_index=self.props.index(final_node)
+        for i in range(0,n_possible_next_states):
+            next_possible_state=possible_next_states[i][0]
+            if self.prop_map[next_possible_state][final_node_prop_index]:
+                return next_possible_state
+        return -1
+    
 #if __name__ == '__main__':
     
     #graph=sys.argv[1]
