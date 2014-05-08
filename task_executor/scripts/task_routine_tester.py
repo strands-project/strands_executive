@@ -74,7 +74,7 @@ if __name__ == '__main__':
     # some useful times
     localtz = tzlocal()
     # the time the robot will be active
-    start = time(8,00, tzinfo=localtz)
+    start = time(00,01, tzinfo=localtz)
     end = time(23,00, tzinfo=localtz)
     midday = time(12,00, tzinfo=localtz)
 
@@ -83,7 +83,7 @@ if __name__ == '__main__':
 
     routine = task_routine.DailyRoutine(start, end)
    
-    routine.repeat_every_hour(task, times=10, hours=3)
+    routine.repeat_every_hour(task, times=1, hours=1)
 
     # create the object which will talk to the scheduler
     runner = task_routine.DailyRoutineRunner(start, end, add_tasks, day_start_cb=on_day_start, day_end_cb=on_day_end)
