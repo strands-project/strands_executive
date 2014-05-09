@@ -19,3 +19,7 @@ def add_time_argument(task, time_arg):
 
 def add_duration_argument(task, duration_arg):
 	task.arguments.append(StringPair(first=Task.DURATION_TYPE, second=str(duration_arg.to_sec())))
+
+def add_bool_argument(task, bool_arg):
+	task.arguments.append(StringPair(first=Task.BOOL_TYPE, second=str(bool_arg)))
+

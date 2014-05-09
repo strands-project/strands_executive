@@ -398,6 +398,8 @@ class AbstractTaskExecutor(object):
             return rospy.Time.from_sec(float(string_pair.second))
         elif string_pair.first == Task.DURATION_TYPE:
             return rospy.Duration.from_sec(float(string_pair.second))
+        elif string_pair.first == Task.BOOL_TYPE:   
+            return string_pair.second == 'True'
         else:
             msg = self.msg_store.query_id(string_pair.second, string_pair.first)[0]
             # print msg
