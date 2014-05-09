@@ -9,7 +9,6 @@ from mdp_plan_exec.prism_client import PrismClient
 from mdp_plan_exec.mdp import TopMapMdp, ProductMdp
 
 from strands_executive_msgs.srv import AddMdpModel, GetExpectedTravelTime, UpdateNavStatistics, AddDeleteSpecialWaypoint, AddDeleteSpecialWaypointRequest
-#from strands_executive_msgs.srv import GeneratePolicy
 
 
 from strands_executive_msgs.msg import ExecutePolicyAction, ExecutePolicyFeedback, ExecutePolicyGoal, LearnTravelTimesAction
@@ -17,9 +16,9 @@ from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
 
 from actionlib import SimpleActionServer, SimpleActionClient
 from std_msgs.msg import String
-#from actionlib_msgs import GoalStatus
+from actionlib_msgs.msg import GoalStatus
 
-from strands_navigation_msgs.msg import NavStatistics
+from strands_navigation_msgs.msg import NavStatistics, MonitoredNavigationActionResult
 
 from ros_datacentre.message_store import MessageStoreProxy
 from robblog.msg import RobblogEntry
@@ -73,11 +72,13 @@ class MdpPlanner(object):
         
         self.closest_node=None
         self.current_node=None
-        self.edge_nav_time=0
         self.nav_action_outcome=''
         self.closest_state_subscriber=rospy.Subscriber('/closest_node', String, self.closest_node_cb)
         self.current_state_subscriber=rospy.Subscriber('/current_node', String, self.current_node_cb)
         self.nav_stats_subscriber = rospy.Subscriber('/topological_navigation/Statistics', NavStatistics, self.get_nav_time_cb)
+        
+        self.nonitored_nav_result=None
+        self.monitored_nav_sub=rospy.Subscriber('/monitored_navigation/result', MonitoredNavigationActionResult, self.get_monitored_nav_status_cb)
         
         self.forbidden_waypoints=[]
         self.forbidden_waypoints_ltl_string=''
@@ -229,7 +230,7 @@ class MdpPlanner(object):
             self.top_nav_action_client.send_goal(top_nav_goal)
             self.top_nav_action_client.wait_for_result()
             
-            if self.nav_action_outcome=='fatal':
+            if self.nav_action_outcome=='fatal'  or self.nav_action_outcome=='failed':
                 n_successive_fails=n_successive_fails+1
             else:
                 n_successive_fails=0
@@ -334,7 +335,7 @@ class MdpPlanner(object):
                 return
                 
                 
-            if self.nav_action_outcome=='fatal'or self.nav_action_outcome=='failed':
+            if self.nav_action_outcome=='fatal' or self.nav_action_outcome=='failed':
                 n_successive_fails=n_successive_fails+1
             else:
                 n_successive_fails=0
@@ -345,12 +346,24 @@ class MdpPlanner(object):
                 return
                 
         
-        
-        
+        self.monitored_nav_result=None
         if self.executing_policy:
             self.executing_policy=False
-            self.mdp_navigation_action.set_succeeded()
+            while self.monitored_nav_result is None:
+                rospy.sleep(0.5)
+            
+            if self.monitored_nav_result==GoalStatus.SUCCEEDED:
+                self.mdp_navigation_action.set_succeeded()
+            if self.monitored_nav_result==GoalStatus.ABORTED:
+                self.mdp_navigation_action.set_aborted()
+            if self.monitored_nav_result==GoalStatus.PREEMPTED:
+                self.mdp_navigation_action.set_preempted()
 
+ 
+    def get_monitored_nav_status_cb(self,msg):
+        self.monitored_nav_result=msg.status.status
+        
+ 
  
             
     def preempt_policy_execution_cb(self):
@@ -393,7 +406,6 @@ class MdpPlanner(object):
         self.current_node=msg.data
 
     def get_nav_time_cb(self,msg):   
-        self.edge_nav_time=msg.operation_time-msg.time_to_waypoint
         self.nav_action_outcome=msg.status
     
     def main(self):
