@@ -7,7 +7,7 @@
 #include "objscip/objscipdefplugins.h"
 
 #include <vector>
-
+#include <map>
 #include <iostream> //TODO:delete this
 
 using namespace scip;
@@ -236,6 +236,9 @@ SCIP_Retcode ScipUser::setTcons(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t
 
 SCIP_Retcode ScipUser::setFinalCons_long(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t_var, SCIP_VAR * g, vector<vector<int>> * pairs)
 {
+
+  map<pair<string, string>, SCIP_Real> distCache;
+
   char con_name[255]; 
   for(int x=0; x<(int)pairs->size(); x++)
   {
@@ -258,7 +261,20 @@ SCIP_Retcode ScipUser::setFinalCons_long(vector<Task*> * tasksToS, vector<SCIP_V
      {   
        //creating a constraint ti + di + dist - tj <= 0     
        SCIP_Real d = tasksToS->at(i)->getDuration();
-       SCIP_Real dist = DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
+       
+       SCIP_Real dist;
+       pair<string, string> nodes = make_pair(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
+       map<pair<string, string>, SCIP_Real>::iterator it = distCache.find(nodes);
+       if(it == distCache.end()) {
+        dist = DistWrapper::dist(nodes.first, nodes.second);
+        distCache.insert(it, make_pair(nodes, dist));
+       }
+       else {
+        //cout<<"WOOoOOOOOOOoOO\n";
+        dist = it->second;
+       }
+
+        
 
        SCIP_Real vals[2]; //array of values
        vals[0] = 1;
@@ -298,7 +314,18 @@ SCIP_Retcode ScipUser::setFinalCons_long(vector<Task*> * tasksToS, vector<SCIP_V
        //creating a constraint tj + dj + dist - ti <= 0
 
        SCIP_Real dj = tasksToS->at(j)->getDuration();
-       SCIP_Real distj = DistWrapper::dist(tasksToS->at(j)->getEndPos(),tasksToS->at(i)->getStartPos());; 
+       SCIP_Real distj;
+       pair<string, string> nodes = make_pair(tasksToS->at(j)->getEndPos(),tasksToS->at(i)->getStartPos());
+       map<pair<string, string>, SCIP_Real>::iterator it = distCache.find(nodes);
+       if(it == distCache.end()) {
+        distj = DistWrapper::dist(nodes.first, nodes.second);
+        distCache.insert(it, make_pair(nodes, distj));
+       }
+       else {       
+        //cout<<"WOOoOOOOOOOoOO\n";
+        distj = it->second;
+       }
+
 
        SCIP_Real vals3[2]; //array of values
        vals3[0] = 1;

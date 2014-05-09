@@ -172,7 +172,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
             if start_after + task.max_duration <= task.end_before:
                 # if we need to push it back to the bound
                 if start_after > task.start_after:
-                    rospy.loginfo('pushing boundary')
+                    # rospy.loginfo('pushing boundary')
                     task.start_after = start_after
                 bounded_tasks.append(task)                            
             else:
@@ -262,10 +262,10 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
             if(self.execution_schedule.wait_for_execution_change(wait_time)):
                 next_task = self.execution_schedule.get_current_task()
                 rospy.loginfo('Next task to execute: %s' % next_task.task_id)
-                if next_task:
+                if next_task is not None:
                     self.execute_task(next_task)                
                 else:
-                    rospy.loginfo('Next task was None')
+                    rospy.logwarn('Next task was None')
 
 
     def cancel_task(self, task_id):

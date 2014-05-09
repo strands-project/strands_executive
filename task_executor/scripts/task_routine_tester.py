@@ -44,7 +44,7 @@ def get_services():
     return add_tasks_srv, set_execution_status
 
 def create_wait_task(max_duration):
-    master_task = Task(action='wait_action',start_node_id='',end_node_id='WayPoint3', max_duration=max_duration)
+    master_task = Task(action='wait_action',start_node_id='WayPoint2',end_node_id='WayPoint2', max_duration=max_duration)
     task_utils.add_time_argument(master_task, rospy.Time())
     task_utils.add_duration_argument(master_task, max_duration)
     return master_task
@@ -64,7 +64,7 @@ if __name__ == '__main__':
         pass
 
     # create a task we will copy later
-    actual_action_duration = rospy.Duration(120)
+    actual_action_duration = rospy.Duration(20)
     task = create_wait_task(actual_action_duration)
 
     # get services to call into execution framework
@@ -74,17 +74,16 @@ if __name__ == '__main__':
     # some useful times
     localtz = tzlocal()
     # the time the robot will be active
-    start = time(8,00, tzinfo=localtz)
-    end = time(23,59, tzinfo=localtz)
+    start = time(00,01, tzinfo=localtz)
+    end = time(23,00, tzinfo=localtz)
     midday = time(12,00, tzinfo=localtz)
 
     morning = (start, midday)
     afternoon = (midday, end)
 
-
     routine = task_routine.DailyRoutine(start, end)
    
-    routine.repeat_every_hour(task, times=4)
+    routine.repeat_every_hour(task, times=1, hours=1)
 
     # create the object which will talk to the scheduler
     runner = task_routine.DailyRoutineRunner(start, end, add_tasks, day_start_cb=on_day_start, day_end_cb=on_day_end)

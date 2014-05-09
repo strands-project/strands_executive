@@ -4,9 +4,12 @@
 #include "scheduler.h"
 #include <vector>
 #include <algorithm>
+#include "ros_datacentre_msgs/StringPairList.h"
+#include "ros_datacentre/message_store.h"
 
 using namespace std;
-
+using namespace ros_datacentre;
+using namespace ros_datacentre_msgs;
 
 // /*constructor without parameter now, automatically set now to false*/
 // Task::Task(unsigned int ID, double s, double e, double d, string start_pos, string end_pos)
@@ -45,14 +48,32 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
   
   ROS_INFO_STREAM("Got a request for a schedule " << req.tasks.size() << " tasks ");
 
+  static ros::NodeHandle nh;
+  static MessageStoreProxy messageStore(nh, "scheduling_problems");
+
+
   std::vector<Task*> tasks;
+
+  vector< pair<string, string> > stored;
 
   // for(strands_executive_msgs::Task task : req.tasks) {
   for(auto & task : req.tasks) {
     // ROS_INFO_STREAM(task.task_id << " start " << task.start_after << ", end " << task.end_before
         // << ", duration " << task.max_duration);
+
+    static string taskType(get_ros_type(task));
+
+    stored.push_back( make_pair(taskType, messageStore.insert(task)) );
   	tasks.push_back(createSchedulerTask(task));
   }
+
+  StringPairList spl;
+  for(auto & pair : stored) {
+    spl.pairs.push_back(ros_datacentre::makePair(pair.first, pair.second));
+  }
+
+  messageStore.insert(spl);
+
 
   Scheduler scheduler(&tasks);
   if(scheduler.solve()) {

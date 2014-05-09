@@ -1,5 +1,6 @@
 import rospy
 import actionlib
+from std_msgs.msg import String
 from strands_executive_msgs.msg import Task
 from task_executor.msg import *
 from topological_navigation.msg import GotoNodeAction, GotoNodeResult
@@ -9,7 +10,7 @@ class TestTaskAction(object):
     """ 
     Creates the action servers the example tasks required.
     """
-    def __init__(self, expected_action_duration=rospy.Duration(1), expected_drive_duration=rospy.Duration(1)):
+    def __init__(self, expected_action_duration=rospy.Duration(1), expected_drive_duration=rospy.Duration(20)):
         self.expected_action_duration = expected_action_duration
         self.expected_drive_duration = expected_drive_duration
         self.result   =  GotoNodeResult()
@@ -17,6 +18,9 @@ class TestTaskAction(object):
         self.nav_server.start() 
         self.task_server = actionlib.SimpleActionServer('test_task', TestExecutionAction, execute_cb = self.execute, auto_start = False)
         self.task_server.start() 
+        self.cn_pub = rospy.Publisher('/current_node', String, latch=True)
+        self.cn = 'WayPoint1'
+        self.cn_pub.publish(String(self.cn))
         
 
     def execute(self, goal):
@@ -24,8 +28,11 @@ class TestTaskAction(object):
         target = rospy.get_rostime() + self.expected_action_duration
 
         while not rospy.is_shutdown() and rospy.get_rostime() < target and not self.task_server.is_preempt_requested():
-            rospy.sleep(20)       
+            rospy.sleep(0.1)       
         
+
+
+
         if self.task_server.is_preempt_requested():
             print "done preempted"
             self.task_server.set_preempted()
@@ -38,14 +45,18 @@ class TestTaskAction(object):
         print 'called with nav goal %s'%goal.target
         target = rospy.get_rostime() + self.expected_drive_duration
 
-        while not rospy.is_shutdown() and rospy.get_rostime() < target and not self.nav_server.is_preempt_requested():
-            rospy.sleep(20)       
-        
+        if goal.target != self.cn:
+            while not rospy.is_shutdown() and rospy.get_rostime() < target and not self.nav_server.is_preempt_requested():
+                rospy.sleep(0.1)           
+
         if self.nav_server.is_preempt_requested():
             print "done preempted"
             self.result.success = False
             self.nav_server.set_preempted(self.result)
         else:
             print "done normal"     
+            self.cn = goal.target
+            self.cn_pub.publish(String(self.cn))
             self.result.success = True       
             self.nav_server.set_succeeded(self.result)
+
