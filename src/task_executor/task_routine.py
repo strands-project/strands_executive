@@ -128,7 +128,7 @@ class DailyRoutineRunner(object):
         super(DailyRoutineRunner, self).__init__()
         self.daily_start = daily_start
         self.daily_end = daily_end
-        assert daily_start < daily_end
+        assert time_less_than(daily_start, daily_end)
         # the tasks which need to be performed every day, tuples of form (daily_start, daily_end, task)
         self.routine_tasks = []
         self.add_tasks_srv = add_tasks_srv
@@ -241,11 +241,11 @@ class DailyRoutineRunner(object):
 
             for task in task_tuple[0]:
                 # bound by daily activity window
-                if daily_start < self.daily_start:
+                if time_less_than(daily_start, self.daily_start):
                     rospy.loginfo('Bounding task to daily start window')
                     daily_start = self.daily_start
 
-                if daily_end > self.daily_end:
+                if time_less_than(self.daily_end, daily_end):
                     rospy.loginfo('Bounding task to daily end window')
                     daily_end = self.daily_end
 
