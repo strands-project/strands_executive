@@ -10,7 +10,7 @@ from geometry_msgs.msg import Pose, Point, Quaternion
 from ros_datacentre.message_store import MessageStoreProxy
 #from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
 from strands_executive_msgs.msg import ExecutePolicyAction, ExecutePolicyGoal
-from std_srvs.srv import Empty
+from std_srvs.srv import Empty, EmptyResponse
 from std_msgs.msg import String
 
 
@@ -213,11 +213,11 @@ class AbstractTaskExecutor(object):
 
     def start_task_navigation(self, expected_duration):
         # handle delayed start up
-        if self.nav_client == None:
-            #self.nav_client = actionlib.SimpleActionClient('topological_navigation', GotoNodeAction)
-            self.nav_client = actionlib.SimpleActionClient('mdp_plan_exec/execute_policy', ExecutePolicyAction)
-            self.nav_client.wait_for_server()
-            rospy.logdebug("Created action client")
+        # if self.nav_client == None:
+        # always reconnect in case of issues before
+        self.nav_client = actionlib.SimpleActionClient('mdp_plan_exec/execute_policy', ExecutePolicyAction)
+        self.nav_client.wait_for_server()
+        rospy.logdebug("Created action client")
 
         # start a timer to kill off tasks that overrun
         self.nav_timeout_timer = rospy.Timer(expected_duration, self.cancel_navigation, oneshot=True)
@@ -376,6 +376,8 @@ class AbstractTaskExecutor(object):
             self.cancel_active_task(None)
 
         self.clear_schedule()
+        return EmptyResponse()
+
     clear_schedule_ros_srv.type = Empty
 
     def get_execution_status_ros_srv(self, req):
