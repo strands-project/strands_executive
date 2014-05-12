@@ -76,10 +76,15 @@ class AbstractTaskExecutor(object):
 
         # start with some faked but likely one in case of problems
         self.current_node = 'WayPoint1'
+        self.closest_node = 'WayPoint1'
         rospy.Subscriber('/current_node', String, self.update_topological_location)
+        rospy.Subscriber('/closest_node', String, self.update_topological_closest_node)
 
     def update_topological_location(self, node_name):
         self.current_node = node_name.data
+    
+    def update_topological_closest_node(self,node_name):
+        self.closest_node=node_name.data
 
 
     def advertise_services(self):
@@ -105,8 +110,11 @@ class AbstractTaskExecutor(object):
         raise RuntimeError('No action associated with topic: %s'% action_name)
 
 
-    def expected_navigation_duration(self, task): 
-        et = self.expected_time(start_id=self.current_node, target_id=task.start_node_id,time_of_day="all_day")
+    def expected_navigation_duration(self, task):
+        if self.current_node == 'none':
+            et = self.expected_time(start_id=self.closest_node, target_id=task.start_node_id,time_of_day="all_day")
+        else:
+            et = self.expected_time(start_id=self.current_node, target_id=task.start_node_id,time_of_day="all_day")
         # rospy.loginfo('expected travel time %s' % et.travel_time)
         # allow a bit of time for any transition -- mainly for testing cases
         return rospy.Duration(max(et.travel_time, 10))
