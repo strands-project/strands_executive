@@ -271,6 +271,10 @@ class MdpPlanner(object):
         
         self.update_current_top_mdp(goal.time_of_day,self.mdp_prism_file)
         if goal.task_type==ExecutePolicyGoal.GOTO_WAYPOINT:
+            if goal.target_id in self.forbidden_waypoints:
+                rospy.logerr("The goal is a forbidden waypoint. Aborting")
+                self.mdp_navigation_action.set_aborted()
+                return
             if self.forbidden_waypoints==[]:
                 specification='R{"time"}min=? [ (F "' + goal.target_id + '") ]'
             else:
@@ -302,12 +306,21 @@ class MdpPlanner(object):
         feedback=ExecutePolicyFeedback()
         feedback.expected_time=float(self.prism_client.get_policy(goal.time_of_day,specification))
         self.mdp_navigation_action.publish_feedback(feedback)
+        if feedback.expected_time==float("inf"):
+            rospy.logerr("The goal is unattainable with the current forbidden nodes. Aborting...")
+            self.mdp_navigation_action.set_aborted()
+            return
         result_dir=self.directory + '/' + goal.time_of_day 
         product_mdp=ProductMdp(self.top_map_mdp,result_dir + '/prod.sta',result_dir + '/prod.lab',result_dir + '/prod.tra')
         product_mdp.set_policy(result_dir + '/adv.tra')
         
         self.executing_policy=True
         current_mdp_state=product_mdp.initial_state
+        if current_mdp_state in product_mdp.goal_states:
+            self.executing_policy=False
+            self.mdp_navigation_action.set_succeeded()
+            return
+        
         n_successive_fails=0
         while current_mdp_state not in product_mdp.goal_states and self.executing_policy:
             current_action=product_mdp.policy[current_mdp_state]
@@ -329,7 +342,7 @@ class MdpPlanner(object):
             
             
             if current_mdp_state==-1 and self.executing_policy:
-                rospy.logerr('State transition is not in model!')
+                rospy.logerr('State transition is not in MDP model! Aborting...')
                 self.executing_policy=False
                 self.mdp_navigation_action.set_aborted()
                 return
@@ -373,25 +386,25 @@ class MdpPlanner(object):
         
         
     def unexpected_trans_time_cb(self,event):
-        print("ROBBLOG!!")
         self.last_stuck_image = None
-        image_topic =  '/chest_xtion/rgb/image_color'
+        image_topic =  '/head_xtion/rgb/image_color'
+        #image_topic =  '/head_xtion/rgb/image_mono'  #simulation topic
         image_sub = rospy.Subscriber(image_topic, Image, self.img_callback)
         
         count = 0
         while self.last_stuck_image == None and  not rospy.is_shutdown() and count < 10:
-            rospy.loginfo('waiting for image %s' % count)
+            rospy.loginfo('waiting for image of possible blocked path %s' % count)
             count += 1
             rospy.sleep(1)
             
         e = RobblogEntry(title='Possible Blocked Path at ' + datetime.datetime.now().strftime("%I:%M%p"))
-        e.body = 'The time it took me to go between ' + self.origin_waypoint + ' and ' + self.target_waypoint + ' was twice as long than I was expecting. Something might be blocking the way. Here is what I saw:'
+        e.body = 'It took me a lot more time to go between ' + self.origin_waypoint + ' and ' + self.target_waypoint + ' than I was expecting. Something might be blocking the way.'
             
         if self.last_stuck_image != None:
             img_id = self.msg_store_blog.insert(self.last_stuck_image)
             rospy.loginfo('adding possible blockage image to blog post')
-            e.body += '\n\n![Image of the door](ObjectID(%s))' % img_id
-            self.msg_store_blog.insert(e)
+            e.body += ' Here is what I saw: \n\n![Image of the door](ObjectID(%s))' % img_id
+        self.msg_store_blog.insert(e)
         
         
     def img_callback(self, img):
