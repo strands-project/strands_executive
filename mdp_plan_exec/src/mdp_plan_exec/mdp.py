@@ -199,11 +199,13 @@ class TopMapMdp(Mdp):
                 action_index=self.actions.index(current_action)
                 current_action=current_action.split('_')
                 source_index=self.state_names.index(current_action[1])
+                target_index=self.state_names.index(current_action[2])
                 j=0
-                n_total_data=0
+                n_total_data=1
                 expected_time=0
-                total_outcomes_count=0
+                total_outcomes_count=1
                 outcomes_count=[0]*self.n_states
+                outcomes_count[target_index]=1
                 while j<n_unprocessed_data:
                     entry=message_list[j]
                     if current_action[1]==entry[0].origin and current_action[2]==entry[0].target and not entry[0].final_node == 'Unknown':
@@ -215,12 +217,12 @@ class TopMapMdp(Mdp):
                         n_unprocessed_data=n_unprocessed_data-1
                     else:
                         j=j+1
-                if n_total_data==0:
-                    rospy.logwarn("No data for edge between waypoints " + current_action[1] + " and " + current_action[2] + ". Assuming it to be 2 min. Expected time between nodes will not be correct.")
-                    self.rewards[source_index][action_index]=120
+                if n_total_data==1:
+                    rospy.logwarn("No data for edge between waypoints " + current_action[1] + " and " + current_action[2] + ". Assuming it to be 20 seconds. Expected time between nodes will not be correct.")
+                    self.rewards[source_index][action_index]=20
                 else:
-                    self.rewards[source_index][action_index]=expected_time/total_outcomes_count
-                    self.transitions_transversal_count[source_index][action_index]=total_outcomes_count
+                    self.rewards[source_index][action_index]=expected_time/(total_outcomes_count-1)
+                    self.transitions_transversal_count[source_index][action_index]=total_outcomes_count-1
                     transition=None
                     for j in range(0,self.n_states):
                         count=outcomes_count[j]
