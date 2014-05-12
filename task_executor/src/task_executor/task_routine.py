@@ -70,6 +70,8 @@ class DailyRoutine(object):
         self.daily_start = daily_start
         self.daily_end = daily_end
         self.routine_tasks = []
+    
+
 
     def repeat_every_day(self, tasks, times=1):
         """
@@ -138,6 +140,17 @@ class DailyRoutineRunner(object):
         else:
             self.tasks_allowed = tasks_allowed_fn
 
+        self.days_off = []
+        self.dates_off = []
+
+        # check for local spellings!
+        self.all_days = []
+        day_today = datetime.fromtimestamp(rospy.get_rostime().to_sec(), tz=tzlocal())
+        for n in range(0,7):
+            self.all_days.append(day_today.strftime("%A"))
+            day_today += timedelta(days=1)
+
+
         self.pre_schedule_delay = rospy.Duration(pre_start_window.total_seconds())
         self.midnight_thread = Thread(target=self._delay_to_midnight)
         self.midnight_thread.start()
@@ -146,8 +159,24 @@ class DailyRoutineRunner(object):
         if day_start_cb != None or day_end_cb != None:
             Thread(target=self._start_and_end_day).start()
 
+    def add_day_off(self, day_name):
+        """ Add a day of the week, e.g. Saturday, on which the routing should not be run """
+        if day_name not in self.all_days:
+            raise Exception('Day name %s not allowed. Must be one of %s' % (day_name, self.all_days))
+        self.days_off.append(day_name)
 
-    def _tasks_allowed_fn(self):
+    def add_date_off(self, date):
+        """ Add a datetime.date on which the robot should not work. """
+        self.dates_off.append(date)
+
+    def day_off(self):
+        datetime_today = datetime.fromtimestamp(rospy.get_rostime().to_sec(), tz=tzlocal())
+        day_today = datetime_today.strftime("%A")
+        date_today = datetime_today.date()
+
+        return (day_today in self.days_off) or (date_today in self.dates_off)
+
+    def _tasks_allowed_fn(self):        
         return True
 
     def _start_and_end_day(self):
@@ -337,7 +366,7 @@ class DailyRoutineRunner(object):
     def _schedule_tasks(self, tasks):
         rospy.loginfo('Sending %s tasks to the scheduler' % (len(tasks)))
         if len(tasks) > 0:
-            if self.tasks_allowed():
+            if not self.day_off() and self.tasks_allowed():
                 self.add_tasks_srv(tasks)
             else:
                 rospy.loginfo('Provided function prevented tasks being send to the scheduler')
