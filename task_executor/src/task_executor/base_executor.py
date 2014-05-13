@@ -303,7 +303,12 @@ class AbstractTaskExecutor(object):
     def log_task_events(self, tasks, event, time, description=""):
         for task in tasks:
             te = TaskEvent(task=task, event=event, time=time, description=description)
-            self.logging_msg_store.insert(te)
+
+            try:
+                self.logging_msg_store.insert(te)
+            except Exception, e:
+                rospy.loginfo('Caught exception when logging: %s' % e)
+
 
 
     def log_task_event(self, task, event, time, description=""):
