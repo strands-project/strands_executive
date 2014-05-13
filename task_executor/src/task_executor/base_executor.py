@@ -117,7 +117,7 @@ class AbstractTaskExecutor(object):
             et = self.expected_time(start_id=self.current_node, target_id=task.start_node_id,time_of_day="all_day")
         # rospy.loginfo('expected travel time %s' % et.travel_time)
         # allow a bit of time for any transition -- mainly for testing cases
-        return rospy.Duration(max(et.travel_time, 10))
+        return rospy.Duration(max(et.travel_time * 3, 10))
         # return rospy.Duration(120)
 
     def get_active_task_completion_time(self):
