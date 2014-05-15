@@ -18,7 +18,7 @@ from actionlib import SimpleActionServer, SimpleActionClient
 from std_msgs.msg import String
 from actionlib_msgs.msg import GoalStatus
 
-from strands_navigation_msgs.msg import NavStatistics, MonitoredNavigationActionResult
+from strands_navigation_msgs.msg import NavStatistics, MonitoredNavigationAction, MonitoredNavigationActionResult
 
 from ros_datacentre.message_store import MessageStoreProxy
 from robblog.msg import RobblogEntry
@@ -41,6 +41,12 @@ class MdpPlanner(object):
         rospy.loginfo("Creating topological navigation client.")
         self.top_nav_action_client= SimpleActionClient('topological_navigation', GotoNodeAction)
         self.top_nav_action_client.wait_for_server()
+        rospy.loginfo(" ...done")
+        rospy.sleep(0.3)
+        
+        rospy.loginfo("Creating monitored navigation client.")
+        self.mon_nav_action_client= SimpleActionClient('monitored_navigation', MonitoredNavigationAction)
+        self.mon_nav_action_client.wait_for_server()
         rospy.loginfo(" ...done")
         rospy.sleep(0.3)
         
@@ -360,11 +366,11 @@ class MdpPlanner(object):
                 
         
         self.monitored_nav_result=None
-        if self.executing_policy:
-            self.executing_policy=False
-            while self.monitored_nav_result is None:
-                rospy.sleep(0.5)
+        while self.monitored_nav_result is None and self.executing_policy:     
+            rospy.sleep(0.5)
             
+        if self.executing_policy:
+            self.executing_policy=False 
             if self.monitored_nav_result==GoalStatus.SUCCEEDED:
                 self.mdp_navigation_action.set_succeeded()
             if self.monitored_nav_result==GoalStatus.ABORTED:
@@ -381,6 +387,7 @@ class MdpPlanner(object):
             
     def preempt_policy_execution_cb(self):
         self.executing_policy=False
+        self.mon_nav_action_client.cancel_all_goals()
         self.top_nav_action_client.cancel_all_goals()
         self.mdp_navigation_action.set_preempted()
         
