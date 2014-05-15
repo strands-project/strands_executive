@@ -350,6 +350,8 @@ class MdpPlanner(object):
             if current_mdp_state==-1 and self.executing_policy:
                 rospy.logerr('State transition is not in MDP model! Aborting...')
                 self.executing_policy=False
+                self.mon_nav_action_client.cancel_all_goals()
+                self.top_nav_action_client.cancel_all_goals()
                 self.mdp_navigation_action.set_aborted()
                 return
                 
@@ -361,6 +363,8 @@ class MdpPlanner(object):
             
             if n_successive_fails>1:
                 self.executing_policy=False
+                self.mon_nav_action_client.cancel_all_goals()
+                self.top_nav_action_client.cancel_all_goals()
                 self.mdp_navigation_action.set_aborted()
                 return
                 
