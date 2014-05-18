@@ -352,13 +352,29 @@ class MdpPlanner(object):
             
             
             if current_mdp_state==-1 and self.executing_policy:
-                rospy.logerr('State transition is not in MDP model! Aborting...')
-                self.executing_policy=False
+                rospy.logwarn('State transition is not in MDP model! Replanning...')
                 self.mon_nav_action_client.cancel_all_goals()
                 self.top_nav_action_client.cancel_all_goals()
-                self.mdp_navigation_action.set_aborted()
-                return
-                
+                if self.current_node == 'none':
+                    self.top_map_mdp.set_initial_state_from_name(self.closest_node) 
+                else:
+                    self.top_map_mdp.set_initial_state_from_name(self.current_node)
+                self.update_current_top_mdp(goal.time_of_day,self.mdp_prism_file)
+                feedback.expected_time=float(self.prism_client.get_policy(goal.time_of_day,specification))
+                self.mdp_navigation_action.publish_feedback(feedback)
+                if feedback.expected_time==float("inf"):
+                    rospy.logerr("The goal is unattainable with the current forbidden nodes. Aborting...")
+                    self.mdp_navigation_action.set_aborted()
+                    return
+                product_mdp=ProductMdp(self.top_map_mdp,result_dir + '/prod.sta',result_dir + '/prod.lab',result_dir + '/prod.tra')
+                product_mdp.set_policy(result_dir + '/adv.tra')
+                current_mdp_state=product_mdp.initial_state
+                if current_mdp_state in product_mdp.goal_states:
+                    rospy.set_param('/topological_navigation/mode', 'Normal')
+                    top_nav_goal=GotoNodeGoal()
+                    top_nav_goal.target=goal.target_id
+                    self.top_nav_action_client.send_goal(top_nav_goal)
+                continue
                 
             if self.nav_action_outcome=='fatal' or self.nav_action_outcome=='failed':
                 n_successive_fails=n_successive_fails+1
@@ -366,6 +382,7 @@ class MdpPlanner(object):
                 n_successive_fails=0
             
             if n_successive_fails>1:
+                rospy.logerr("Two successive fails in topological navigation. Aborting...")
                 self.executing_policy=False
                 self.mon_nav_action_client.cancel_all_goals()
                 self.top_nav_action_client.cancel_all_goals()
@@ -382,6 +399,7 @@ class MdpPlanner(object):
             if self.monitored_nav_result==GoalStatus.SUCCEEDED:
                 self.mdp_navigation_action.set_succeeded()
             if self.monitored_nav_result==GoalStatus.ABORTED:
+                rospy.logerr("Failure in getting to exact pose in goal waypoint")
                 self.mdp_navigation_action.set_aborted()
             if self.monitored_nav_result==GoalStatus.PREEMPTED:
                 self.mdp_navigation_action.set_preempted()
