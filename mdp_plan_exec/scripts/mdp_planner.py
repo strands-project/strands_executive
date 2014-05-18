@@ -323,9 +323,13 @@ class MdpPlanner(object):
         self.executing_policy=True
         current_mdp_state=product_mdp.initial_state
         if current_mdp_state in product_mdp.goal_states:
-            self.executing_policy=False
-            self.mdp_navigation_action.set_succeeded()
-            return
+            rospy.set_param('/topological_navigation/mode', 'Normal')
+            top_nav_goal=GotoNodeGoal()
+            top_nav_goal.target=goal.target_id
+            self.top_nav_action_client.send_goal(top_nav_goal)
+
+            
+            
         
         n_successive_fails=0
         while current_mdp_state not in product_mdp.goal_states and self.executing_policy:
