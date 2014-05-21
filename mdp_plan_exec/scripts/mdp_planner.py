@@ -174,7 +174,7 @@ class MdpPlanner(object):
     def travel_time_to_node_cb(self,req):
         starting_node= req.start_id
         self.top_map_mdp.set_initial_state_from_name(starting_node)
-        self.update_current_top_mdp(req.time_of_day,self.mdp_prism_file)
+        # self.update_current_top_mdp(req.time_of_day,self.mdp_prism_file)
         specification='R{"time"}min=? [ ( F "' + req.target_id + '") ]'
         result=self.prism_client.check_model(req.time_of_day,specification)
         result=float(result)
@@ -340,7 +340,7 @@ class MdpPlanner(object):
             self.origin_waypoint=split_action[1]
             self.target_waypoint=split_action[2]
             top_nav_goal.target=self.target_waypoint
-            timer=rospy.Timer(rospy.Duration(2*expected_edge_transversal_time), self.unexpected_trans_time_cb,oneshot=True)
+            timer=rospy.Timer(rospy.Duration(4*expected_edge_transversal_time), self.unexpected_trans_time_cb,oneshot=True)
             self.top_nav_action_client.send_goal(top_nav_goal)
             self.top_nav_action_client.wait_for_result()
             if self.current_node == 'none':
@@ -381,8 +381,8 @@ class MdpPlanner(object):
             else:
                 n_successive_fails=0
             
-            if n_successive_fails>1:
-                rospy.logerr("Two successive fails in topological navigation. Aborting...")
+            if n_successive_fails>4:
+                rospy.logerr("Five successive fails in topological navigation. Aborting...")
                 self.executing_policy=False
                 self.mon_nav_action_client.cancel_all_goals()
                 self.top_nav_action_client.cancel_all_goals()
@@ -430,7 +430,7 @@ class MdpPlanner(object):
             count += 1
             rospy.sleep(1)
             
-        e = RobblogEntry(title='Possible Blocked Path at ' + datetime.datetime.now().strftime("%I:%M%p"))
+        e = RobblogEntry(title=datetime.datetime.now().strftime("%I:%M%p") + 'Possible Blocked Path')
         e.body = 'It took me a lot more time to go between ' + self.origin_waypoint + ' and ' + self.target_waypoint + ' than I was expecting. Something might be blocking the way.'
             
         if self.last_stuck_image != None:
