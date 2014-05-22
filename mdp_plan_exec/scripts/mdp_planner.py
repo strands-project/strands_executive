@@ -205,11 +205,6 @@ class MdpPlanner(object):
         result=self.prism_client.update_model(time_of_day,self.mdp_prism_file)
     
     
-    def set_current_top_map_mdp_state(self):
-        if self.current_node == 'none' or self.current_node is None:
-            self.top_map_mdp.set_initial_state_from_name(self.closest_node) 
-        else:
-            self.top_map_mdp.set_initial_state_from_name(self.current_node)
     
     def execute_learn_travel_times_cb(self,goal):
         rospy.set_param('/topological_navigation/mode', 'Node_by_node')
@@ -218,7 +213,11 @@ class MdpPlanner(object):
         n_successive_fails=0
         
         while self.learning_travel_times:
-            self.set_current_top_map_mdp_state()
+            if self.current_node == 'none' or self.current_node is None:
+                self.top_map_mdp.set_initial_state_from_name(self.closest_node) 
+            else:
+                self.top_map_mdp.set_initial_state_from_name(self.current_node)
+            
             current_waypoint=self.top_map_mdp.initial_state
             current_waypoint_trans=self.top_map_mdp.transitions[current_waypoint]
             current_trans_count=self.top_map_mdp.transitions_transversal_count[current_waypoint]
@@ -272,7 +271,10 @@ class MdpPlanner(object):
     def execute_policy_cb(self,goal):
         
         rospy.set_param('/topological_navigation/mode', 'Node_to_IZ')
-        self.set_current_top_map_mdp_state()
+        if self.current_node == 'none' or self.current_node is None:
+            self.top_map_mdp.set_initial_state_from_name(self.closest_node) 
+        else:
+            self.top_map_mdp.set_initial_state_from_name(self.current_node)
         
         self.update_current_top_mdp(goal.time_of_day,self.mdp_prism_file)
         if goal.task_type==ExecutePolicyGoal.GOTO_WAYPOINT:
@@ -342,7 +344,10 @@ class MdpPlanner(object):
             timer=rospy.Timer(rospy.Duration(2*expected_edge_transversal_time), self.unexpected_trans_time_cb,oneshot=True)
             self.top_nav_action_client.send_goal(top_nav_goal)
             self.top_nav_action_client.wait_for_result()
-            self.set_current_top_map_mdp_state()
+            if self.current_node == 'none' or self.current_node is None:
+                current_mdp_state=product_mdp.get_new_state(current_mdp_state,current_action,self.closest_node)
+            else:
+                current_mdp_state=product_mdp.get_new_state(current_mdp_state,current_action,self.current_node)
              
             timer.shutdown()
             
@@ -351,7 +356,10 @@ class MdpPlanner(object):
                 rospy.logwarn('State transition is not in MDP model! Replanning...')
                 self.mon_nav_action_client.cancel_all_goals()
                 self.top_nav_action_client.cancel_all_goals()
-                self.set_current_top_map_mdp_state()
+                if self.current_node == 'none' or self.current_node is None:
+                    self.top_map_mdp.set_initial_state_from_name(self.closest_node) 
+                else:
+                    self.top_map_mdp.set_initial_state_from_name(self.current_node)
                 self.update_current_top_mdp(goal.time_of_day,self.mdp_prism_file)
                 feedback.expected_time=float(self.prism_client.get_policy(goal.time_of_day,specification))
                 self.mdp_navigation_action.publish_feedback(feedback)
