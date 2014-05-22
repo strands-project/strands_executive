@@ -275,7 +275,6 @@ class MdpPlanner(object):
             self.top_map_mdp.set_initial_state_from_name(self.closest_node) 
         else:
             self.top_map_mdp.set_initial_state_from_name(self.current_node)
-        
         self.update_current_top_mdp(goal.time_of_day,self.mdp_prism_file)
         if goal.task_type==ExecutePolicyGoal.GOTO_WAYPOINT:
             if goal.target_id in self.forbidden_waypoints:
@@ -375,8 +374,8 @@ class MdpPlanner(object):
                     top_nav_goal=GotoNodeGoal()
                     top_nav_goal.target=goal.target_id
                     self.top_nav_action_client.send_goal(top_nav_goal)
-                continue
-                
+
+                    
             if self.nav_action_outcome=='fatal' or self.nav_action_outcome=='failed':
                 n_successive_fails=n_successive_fails+1
             else:
