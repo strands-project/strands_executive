@@ -15,7 +15,7 @@ from std_msgs.msg import String
 from task_executor.base_executor import BaseTaskExecutor
 from smach_ros import SimpleActionState
 import smach
-
+import threading
 
 class ExecutorState(smach.State):
     def __init__(self, task_executor, outcomes):
@@ -23,21 +23,21 @@ class ExecutorState(smach.State):
         self.executor = task_executor
 
 
-class NavigationAborted(ExecutorState):
-    def __init__(self, task_executor):
-        ExecutorState.__init__(self, task_executor, outcomes=['aborted'])        
+# class NavigationAborted(ExecutorState):
+#     def __init__(self, task_executor):
+#         ExecutorState.__init__(self, task_executor, outcomes=['aborted'])        
 
-    def execute(self, userdata):
-        rospy.logwarn('Navigation aborted for task')
-        return 'aborted'
+#     def execute(self, userdata):
+#         rospy.logwarn('Navigation aborted for task')
+#         return 'aborted'
 
-class NavigationPreempted(ExecutorState):
-    def __init__(self, task_executor):
-        ExecutorState.__init__(self, task_executor, outcomes=['preempted'])        
+# class NavigationPreempted(ExecutorState):
+#     def __init__(self, task_executor):
+#         ExecutorState.__init__(self, task_executor, outcomes=['preempted'])        
 
-    def execute(self, userdata):
-        rospy.logwarn('Navigation was preempted for task')
-        return 'preempted'
+#     def execute(self, userdata):
+#         rospy.logwarn('Navigation was preempted for task')
+#         return 'preempted'
 
 
 class TaskFailed(ExecutorState):
@@ -46,6 +46,11 @@ class TaskFailed(ExecutorState):
 
     def execute(self, userdata):
         rospy.logwarn('Task failed')
+        completed = userdata.task
+        self.executor.active_task = None
+        self.executor.active_task_id = Task.NO_TASK
+        self.executor.task_failed(completed)
+        rospy.loginfo('Execution of task %s failed' % userdata.task.task_id)
         return 'aborted'
 
 class TaskSucceeded(ExecutorState):
@@ -55,11 +60,11 @@ class TaskSucceeded(ExecutorState):
     def execute(self, userdata):
         now = rospy.get_rostime()
         # do bookkeeping before causing update
-        completed = self.active_task
+        completed = userdata.task
         self.executor.active_task = None
         self.executor.active_task_id = Task.NO_TASK
         self.executor.task_succeeded(completed)
-        self.executor.log_task_event(completed, TaskEvent.TASK_FINISHED, now) 
+        rospy.loginfo('Execution of task %s succeeded' % userdata.task.task_id)
         return 'succeeded'              
 
 
@@ -68,7 +73,11 @@ class TaskCancelled(ExecutorState):
         ExecutorState.__init__(self, task_executor, outcomes=['preempted'])        
 
     def execute(self, userdata):
-        rospy.logwarn('Task cancelled')
+        rospy.loginfo('Execution of task %s was cancelled' % userdata.task.task_id)
+        completed = userdata.task
+        self.executor.active_task = None
+        self.executor.active_task_id = Task.NO_TASK
+        self.executor.task_failed(completed)        
         return 'preempted'
 
 
@@ -88,9 +97,16 @@ class AbstractTaskExecutor(BaseTaskExecutor):
 
     def __init__(self):
         super( AbstractTaskExecutor, self ).__init__()
+        self.reset_sm()
+
+    def reset_sm(self):
+        self.task_sm = None
+        self.smach_thread = None
 
     def execute_task(self, task):
         """ Called to trigger execution of given task. """
+
+        rospy.loginfo('Execution of task %s was requested' % task.task_id)
 
         # Create the state machine necessary to execution this task        
         self.task_sm = smach.StateMachine(['succeeded','aborted','preempted'])
@@ -103,31 +119,31 @@ class AbstractTaskExecutor(BaseTaskExecutor):
             if task.start_node_id != '':
                 init_transition = {'succeeded': 'TASK_NAVIGATION'}
             else:
-                init_transition = {'succeeded': 'succeeded'}
+                init_transition = {'succeeded': 'TASK_EXECUTION'}
 
 
-            smach.StateMachine.add('TASK_INITIALISATION', TaskInitialisation(self), transitions=init_transition, remapping={'task':'task'})
+            smach.StateMachine.add('TASK_INITIALISATION', TaskInitialisation(self), transitions=init_transition)
             
             # Final task outcomes
             smach.StateMachine.add('TASK_SUCCEEDED', TaskSucceeded(self), transitions={'succeeded':'succeeded'})
             smach.StateMachine.add('TASK_CANCELLED', TaskCancelled(self), transitions={'preempted':'preempted'})
             smach.StateMachine.add('TASK_FAILED', TaskFailed(self), transitions={'aborted':'aborted'})
 
-            # # Non-success navigation states
-            smach.StateMachine.add('NAVIGATION_PREEMMPTED', NavigationPreempted(self), transitions={'preempted':'TASK_CANCELLED'})
-            smach.StateMachine.add('NAVIGATION_ABORTED', NavigationAborted(self), transitions={'aborted':'TASK_FAILED'})
+            # # # Non-success navigation states
+            # smach.StateMachine.add('NAVIGATION_PREEMMPTED', NavigationPreempted(self), transitions={'preempted':'TASK_CANCELLED'})
+            # smach.StateMachine.add('NAVIGATION_ABORTED', NavigationAborted(self), transitions={'aborted':'TASK_FAILED'})
 
             # navigation action
             if task.start_node_id != '':
 
-                nav_transitions = {'preempted':'NAVIGATION_PREEMMPTED', 'aborted':'NAVIGATION_ABORTED'}
+                nav_transitions = {'preempted':'TASK_CANCELLED', 'aborted':'TASK_FAILED'}
 
                 # if no action then nav success leads to task success
-                if task.action = '':
+                if task.action == '':
                     nav_transitions['succeeded'] = 'TASK_SUCCEEDED'
                 # else move on to execution
                 else:
-                    nav_transitions['succeeded'] = 'succeeded'
+                    nav_transitions['succeeded'] = 'TASK_EXECUTION'
 
                 nav_goal = ExecutePolicyGoal(task_type=ExecutePolicyGoal.GOTO_WAYPOINT, target_id=task.start_node_id, time_of_day='all_day')
                 smach.StateMachine.add('TASK_NAVIGATION',
@@ -136,9 +152,34 @@ class AbstractTaskExecutor(BaseTaskExecutor):
                                     goal=nav_goal),
                                 transitions=nav_transitions)
 
+            # actual task action
+            if task.action != '':
+                (action_string, goal_string) = self.get_task_types(task.action)
+                action_clz = dc_util.load_class(dc_util.type_to_class_string(action_string))
+                goal_clz = dc_util.load_class(dc_util.type_to_class_string(goal_string))
+
+                argument_list = self.get_arguments(task.arguments)
+                goal = goal_clz(*argument_list)         
+
+                smach.StateMachine.add('TASK_EXECUTION',
+                                SimpleActionState(task.action,
+                                    action_clz,
+                                    goal=goal),
+                                transitions={'preempted':'TASK_CANCELLED', 'aborted':'TASK_FAILED', 'succeeded':'TASK_SUCCEEDED'})
+
+
+
 
         self.task_sm.set_initial_state(['TASK_INITIALISATION'])
 
-        self.task_sm.execute()
+        self.smach_thread = threading.Thread(target=self.task_sm.execute)
+        self.smach_thread.start()
 
-
+    def cancel_active_task(self):
+        if self.task_sm is not None:
+            rospy.loginfo('Requesting preempt on state machine in state %s' % self.task_sm.get_active_states())
+            self.task_sm.request_preempt()
+            rospy.loginfo('Waiting for exit')
+            self.smach_thread.join()
+            rospy.loginfo('And relax')
+            self.reset_sm()
