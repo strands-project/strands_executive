@@ -227,7 +227,7 @@ class AbstractTaskExecutor(object):
         self.log_task_event(self.active_task, TaskEvent.NAVIGATION_STARTED, rospy.get_rostime())
 
         self.nav_client.send_goal(nav_goal, self.navigation_complete_cb)
-        rospy.loginfo("navigating to %s" % nav_goal)
+        rospy.loginfo("navigating to %s for action %s" % (self.active_task.start_node_id, self.action))
 
 
 
