@@ -327,6 +327,16 @@ class MdpPlanner(object):
             top_nav_goal=GotoNodeGoal()
             top_nav_goal.target=goal.target_id
             self.top_nav_action_client.send_goal(top_nav_goal)
+            self.top_nav_action_client.wait_for_result()
+            result=self.top_nav_action_client.get_state()
+            if result==GoalStatus.SUCCEEDED:
+                self.mdp_navigation_action.set_succeeded()
+            if result==GoalStatus.ABORTED:
+                rospy.logerr("Failure in getting to exact pose in goal waypoint")
+                self.mdp_navigation_action.set_aborted()
+            if result==GoalStatus.PREEMPTED:
+                self.mdp_navigation_action.set_preempted()
+            return
 
             
             
