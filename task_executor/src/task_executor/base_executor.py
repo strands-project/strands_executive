@@ -54,8 +54,7 @@ class BaseTaskExecutor(object):
         pass
 
     def __init__(self):
-        self.task_counter = 1
-        self.active_task_id = Task.NO_TASK
+        self.task_counter = 1        
         self.msg_store = MessageStoreProxy() 
         self.logging_msg_store = MessageStoreProxy(collection='task_events') 
         expected_time_srv_name = '/mdp_plan_exec/get_expected_travel_time_to_node'
@@ -220,8 +219,7 @@ class BaseTaskExecutor(object):
 
     def prepare_task(self, task):
 
-        self.active_task = task
-        self.active_task_id = task.task_id               
+        self.active_task = task       
 
         now = rospy.get_rostime()
                                 
@@ -280,8 +278,7 @@ class AbstractTaskExecutor(BaseTaskExecutor):
             rospy.logwarn(warning)
             self.log_task_event(self.active_task, TaskEvent.TASK_COMPLETE, now, warning)
 
-            self.active_task = None
-            self.active_task_id = Task.NO_TASK
+            self.active_task = None            
 
     def cancel_active_task(self):
         self.cancel_active_task_cb(None)
@@ -296,7 +293,6 @@ class AbstractTaskExecutor(BaseTaskExecutor):
         now = rospy.get_rostime()
         cancelled = self.active_task
         self.active_task = None
-        self.active_task_id = Task.NO_TASK
 
         if self.nav_client is not None: 
             self.nav_timeout_timer.shutdown()
@@ -335,7 +331,7 @@ class AbstractTaskExecutor(BaseTaskExecutor):
             now = rospy.get_rostime()
             cancelled = self.active_task
             self.active_task = None
-            self.active_task_id = Task.NO_TASK
+
             self.log_task_event(cancelled, TaskEvent.NAVIGATION_PREEMPTED, now)                
             self.task_failed(cancelled)
             self.log_task_event(cancelled, TaskEvent.TASK_FINISHED, now)
@@ -373,8 +369,7 @@ class AbstractTaskExecutor(BaseTaskExecutor):
             rospy.logwarn('Exception in start_task_action: %s', e)
             # do bookkeeping before causing update
             completed = self.active_task
-            self.active_task = None
-            self.active_task_id = Task.NO_TASK
+            self.active_task = None            
             self.task_failed(completed)
 
     def start_task_navigation(self, expected_duration):
@@ -419,8 +414,7 @@ class AbstractTaskExecutor(BaseTaskExecutor):
                 else:
                     # do bookkeeping before causing update
                     completed = self.active_task
-                    self.active_task = None
-                    self.active_task_id = Task.NO_TASK
+                    self.active_task = None                    
 
                     self.task_succeeded(completed)
             else:
@@ -433,8 +427,7 @@ class AbstractTaskExecutor(BaseTaskExecutor):
             
                 # do bookkeeping before causing update
                 completed = self.active_task
-                self.active_task = None
-                self.active_task_id = Task.NO_TASK
+                self.active_task = None                
 
                 self.task_failed(completed)
                 self.log_task_event(completed, TaskEvent.TASK_FINISHED, now)
@@ -452,9 +445,7 @@ class AbstractTaskExecutor(BaseTaskExecutor):
             # do bookkeeping before causing update
             completed = self.active_task
 
-            self.active_task = None
-            self.active_task_id = Task.NO_TASK
-
+            self.active_task = None            
 
             if self.action_client.get_state() == GoalStatus.SUCCEEDED:
                 rospy.loginfo('Execution of task %s succeeded' % completed.task_id)        
