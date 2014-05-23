@@ -331,7 +331,7 @@ class MdpPlanner(object):
             
         
         n_successive_fails=0
-        while current_mdp_state not in product_mdp.goal_states and self.executing_policy:
+        while current_mdp_state not in product_mdp.goal_states and self.executing_policy and not rospy.is_shutdown():
             current_action=product_mdp.policy[current_mdp_state]
             expected_edge_transversal_time=product_mdp.get_expected_edge_transversal_time(current_mdp_state,current_action)
             top_nav_goal=GotoNodeGoal()
