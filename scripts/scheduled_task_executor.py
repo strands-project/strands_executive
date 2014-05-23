@@ -4,7 +4,7 @@ import rospy
 from Queue import Queue, Empty
 from strands_executive_msgs.msg import Task, ExecutionStatus
 from strands_executive_msgs.srv import GetSchedule
-from task_executor.base_executor import AbstractTaskExecutor
+from task_executor.sm_base_executor import AbstractTaskExecutor
 from threading import Thread
 from task_executor.execution_schedule import ExecutionSchedule
 from operator import attrgetter
