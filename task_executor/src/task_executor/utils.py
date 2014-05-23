@@ -13,15 +13,21 @@ class TestTaskAction(object):
     def __init__(self, expected_action_duration=rospy.Duration(1), expected_drive_duration=rospy.Duration(20)):
         self.expected_action_duration = expected_action_duration
         self.expected_drive_duration = expected_drive_duration
-        self.result   =  GotoNodeResult()
+        self.result   =  GotoNodeResult()    
         self.nav_server = actionlib.SimpleActionServer('topological_navigation', GotoNodeAction, execute_cb = self.nav_callback, auto_start = False)
-        self.nav_server.start() 
-        self.task_server = actionlib.SimpleActionServer('test_task', TestExecutionAction, execute_cb = self.execute, auto_start = False)
-        self.task_server.start() 
-        self.cn_pub = rospy.Publisher('/current_node', String, latch=True)
+        # self.task_server = actionlib.SimpleActionServer('test_task', TestExecutionAction, execute_cb = self.execute, auto_start = False)        
+        self.cn_pub = rospy.Publisher('/current_node', String)
+        self.cl_pub = rospy.Publisher('/closest_node', String)
         self.cn = 'WayPoint1'
-        self.cn_pub.publish(String(self.cn))
+       
         
+    def start(self):
+        self.nav_server.start()         
+        # self.task_server.start() 
+        while not rospy.is_shutdown():
+             self.cn_pub.publish(String(self.cn))
+             self.cl_pub.publish(String(self.cn))
+             rospy.sleep(1)
 
     def execute(self, goal):
         print 'called with goal %s'%goal.some_goal_string
@@ -29,9 +35,6 @@ class TestTaskAction(object):
 
         while not rospy.is_shutdown() and rospy.get_rostime() < target and not self.task_server.is_preempt_requested():
             rospy.sleep(0.1)       
-        
-
-
 
         if self.task_server.is_preempt_requested():
             print "done preempted"
@@ -55,8 +58,7 @@ class TestTaskAction(object):
             self.nav_server.set_preempted(self.result)
         else:
             print "done normal"     
-            self.cn = goal.target
-            self.cn_pub.publish(String(self.cn))
+            self.cn = goal.target            
             self.result.success = True       
             self.nav_server.set_succeeded(self.result)
-
+        print "nav complete" 
