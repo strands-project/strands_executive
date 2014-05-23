@@ -169,7 +169,7 @@ class BaseTaskExecutor(object):
 
         # stop anything else
         if self.active_task:
-            self.cancel_active_task(None)
+            self.cancel_active_task()
 
         # and inform implementation to let it take action
         self.task_demanded(req.task, self.active_task)                        
@@ -184,7 +184,7 @@ class BaseTaskExecutor(object):
         """ Cancel the speficially requested task """        
         if self.active_task is not None and self.active_task.task_id == req.task_id:        
             self.log_task_event(self.active_task, TaskEvent.CANCELLED_MANUALLY, rospy.get_rostime())   
-            self.cancel_active_task(None)
+            self.cancel_active_task()
             return True
         else:
             self.log_task_event(Task(task_id=req.task_id), TaskEvent.CANCELLED_MANUALLY, rospy.get_rostime())   
@@ -194,7 +194,7 @@ class BaseTaskExecutor(object):
     def clear_schedule_ros_srv(self, req):
         """ Remove all scheduled tasks and active task """
         if self.active_task is not None:        
-            self.cancel_active_task(None)
+            self.cancel_active_task()
 
         self.clear_schedule()
         return EmptyResponse()
@@ -235,6 +235,30 @@ class BaseTaskExecutor(object):
         
         self.active_task_completes_by = now + total_task_duration    
 
+    def instantiate_from_string_pair(self, string_pair):
+        if len(string_pair.first) == 0:
+            return string_pair.second
+        elif string_pair.first == Task.INT_TYPE:
+            return int(string_pair.second)
+        elif string_pair.first == Task.FLOAT_TYPE:
+            return float(string_pair.second)     
+        elif string_pair.first == Task.TIME_TYPE:
+            return rospy.Time.from_sec(float(string_pair.second))
+        elif string_pair.first == Task.DURATION_TYPE:
+            return rospy.Duration.from_sec(float(string_pair.second))
+        elif string_pair.first == Task.BOOL_TYPE:   
+            return string_pair.second == 'True'
+        else:
+            msg = self.msg_store.query_id(string_pair.second, string_pair.first)[0]
+            # print msg
+            if msg == None:
+                raise RuntimeError("No matching object for id %s of type %s" % (string_pair.second, string_pair.first))
+            return msg
+
+    def get_arguments(self, argument_list):
+        return map(self.instantiate_from_string_pair, argument_list)
+
+
 
 class AbstractTaskExecutor(BaseTaskExecutor):
 
@@ -244,11 +268,6 @@ class AbstractTaskExecutor(BaseTaskExecutor):
         self.nav_client = None
         self.action_client = None
         
-        
-    
-
-
-
     def execute_task(self, task):
         self.prepare_task(task)
 
@@ -264,8 +283,10 @@ class AbstractTaskExecutor(BaseTaskExecutor):
             self.active_task = None
             self.active_task_id = Task.NO_TASK
 
+    def cancel_active_task(self):
+        self.cancel_active_task_cb(None)
 
-    def cancel_active_task(self, event):
+    def cancel_active_task_cb(self, event):
         """ Cancel any active nav or task action """
         if event is not None:
             rospy.logwarn("Cancelling task that has overrun %s" % self.active_task.task_id)
@@ -346,7 +367,7 @@ class AbstractTaskExecutor(BaseTaskExecutor):
             
             wiggle_room = rospy.Duration(5)
             # start a timer to kill off tasks that overrun
-            self.action_timeout_timer = rospy.Timer(self.active_task.max_duration + wiggle_room, self.cancel_active_task, oneshot=True)
+            self.action_timeout_timer = rospy.Timer(self.active_task.max_duration + wiggle_room, self.cancel_active_task_cb, oneshot=True)
 
         except Exception, e:
             rospy.logwarn('Exception in start_task_action: %s', e)
@@ -451,29 +472,6 @@ class AbstractTaskExecutor(BaseTaskExecutor):
 
     
 
-
-    def instantiate_from_string_pair(self, string_pair):
-        if len(string_pair.first) == 0:
-            return string_pair.second
-        elif string_pair.first == Task.INT_TYPE:
-            return int(string_pair.second)
-        elif string_pair.first == Task.FLOAT_TYPE:
-            return float(string_pair.second)     
-        elif string_pair.first == Task.TIME_TYPE:
-            return rospy.Time.from_sec(float(string_pair.second))
-        elif string_pair.first == Task.DURATION_TYPE:
-            return rospy.Duration.from_sec(float(string_pair.second))
-        elif string_pair.first == Task.BOOL_TYPE:   
-            return string_pair.second == 'True'
-        else:
-            msg = self.msg_store.query_id(string_pair.second, string_pair.first)[0]
-            # print msg
-            if msg == None:
-                raise RuntimeError("No matching object for id %s of type %s" % (string_pair.second, string_pair.first))
-            return msg
-
-    def get_arguments(self, argument_list):
-        return map(self.instantiate_from_string_pair, argument_list)
 
 
 
