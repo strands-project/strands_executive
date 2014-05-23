@@ -23,23 +23,6 @@ class ExecutorState(smach.State):
         self.executor = task_executor
 
 
-# class NavigationAborted(ExecutorState):
-#     def __init__(self, task_executor):
-#         ExecutorState.__init__(self, task_executor, outcomes=['aborted'])        
-
-#     def execute(self, userdata):
-#         rospy.logwarn('Navigation aborted for task')
-#         return 'aborted'
-
-# class NavigationPreempted(ExecutorState):
-#     def __init__(self, task_executor):
-#         ExecutorState.__init__(self, task_executor, outcomes=['preempted'])        
-
-#     def execute(self, userdata):
-#         rospy.logwarn('Navigation was preempted for task')
-#         return 'preempted'
-
-
 class TaskFailed(ExecutorState):
     def __init__(self, task_executor):
         ExecutorState.__init__(self, task_executor, outcomes=['aborted'])        
@@ -48,7 +31,7 @@ class TaskFailed(ExecutorState):
         rospy.logwarn('Task failed')
         completed = userdata.task
         self.executor.active_task = None
-        self.executor.active_task_id = Task.NO_TASK
+        
         self.executor.task_failed(completed)
         rospy.loginfo('Execution of task %s failed' % userdata.task.task_id)
         return 'aborted'
@@ -62,7 +45,7 @@ class TaskSucceeded(ExecutorState):
         # do bookkeeping before causing update
         completed = userdata.task
         self.executor.active_task = None
-        self.executor.active_task_id = Task.NO_TASK
+        
         self.executor.task_succeeded(completed)
         rospy.loginfo('Execution of task %s succeeded' % userdata.task.task_id)
         return 'succeeded'              
@@ -74,10 +57,12 @@ class TaskCancelled(ExecutorState):
 
     def execute(self, userdata):
         rospy.loginfo('Execution of task %s was cancelled' % userdata.task.task_id)
-        completed = userdata.task
-        self.executor.active_task = None
-        self.executor.active_task_id = Task.NO_TASK
-        self.executor.task_failed(completed)        
+
+        # it could be that a delayed cancellation signal causes this to get called out of turn, so check that this is the correct cancellation
+        if self.executor.active_task is not None and self.executor.active_task.task_id == userdata.task.task_id:
+            completed = userdata.task
+            self.executor.active_task = None            
+            self.executor.task_failed(completed)        
         return 'preempted'
 
 
@@ -129,10 +114,6 @@ class AbstractTaskExecutor(BaseTaskExecutor):
             smach.StateMachine.add('TASK_CANCELLED', TaskCancelled(self), transitions={'preempted':'preempted'})
             smach.StateMachine.add('TASK_FAILED', TaskFailed(self), transitions={'aborted':'aborted'})
 
-            # # # Non-success navigation states
-            # smach.StateMachine.add('NAVIGATION_PREEMMPTED', NavigationPreempted(self), transitions={'preempted':'TASK_CANCELLED'})
-            # smach.StateMachine.add('NAVIGATION_ABORTED', NavigationAborted(self), transitions={'aborted':'TASK_FAILED'})
-
             # navigation action
             if task.start_node_id != '':
 
@@ -176,10 +157,18 @@ class AbstractTaskExecutor(BaseTaskExecutor):
         self.smach_thread.start()
 
     def cancel_active_task(self):
+        preempt_timeout_secs = 10
         if self.task_sm is not None:
             rospy.loginfo('Requesting preempt on state machine in state %s' % self.task_sm.get_active_states())
             self.task_sm.request_preempt()
             rospy.loginfo('Waiting for exit')
-            self.smach_thread.join()
-            rospy.loginfo('And relax')
+            self.smach_thread.join(preempt_timeout_secs)
+            if self.smach_thread.is_alive():
+                rospy.logerr('Task action or navigation did not preempt after %s seconds. State at end was %s' % (preempt_timeout_secs, self.task_sm.get_active_states()))
+                # manually notify completeness in this case
+                completed = self.active_task
+                self.active_task = None                
+                self.task_failed(completed)        
+            else:                
+                rospy.loginfo('And relax')
             self.reset_sm()
