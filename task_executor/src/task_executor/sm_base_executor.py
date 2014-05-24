@@ -22,6 +22,26 @@ class ExecutorState(smach.State):
         super(ExecutorState , self ).__init__(outcomes=outcomes, input_keys=['task'])        
         self.executor = task_executor
 
+class TimerState(smach.State):
+    def __init__(self, duration, pause_secs=1):
+        super(TimerState , self ).__init__(outcomes=['succeeded', 'preempted', 'aborted'])        
+        self.duration = duration
+        self.pause = rospy.Duration(pause_secs)
+
+    def execute(self, userdata):
+        now = rospy.get_rostime()
+        target = now + self.duration
+        while now < target and not self.preempt_requested() and not rospy.is_shutdown():            
+            rospy.sleep(self.pause)
+            now = rospy.get_rostime()
+
+        if rospy.is_shutdown():
+            return 'aborted'
+        elif self.preempt_requested():
+            return 'preempted'
+        else:
+            return 'succeeded'
+
 
 class TaskFailed(ExecutorState):
     def __init__(self, task_executor):
@@ -126,12 +146,37 @@ class AbstractTaskExecutor(BaseTaskExecutor):
                 else:
                     nav_transitions['succeeded'] = 'TASK_EXECUTION'
 
-                nav_goal = ExecutePolicyGoal(task_type=ExecutePolicyGoal.GOTO_WAYPOINT, target_id=task.start_node_id, time_of_day='all_day')
-                smach.StateMachine.add('TASK_NAVIGATION',
-                                SimpleActionState('mdp_plan_exec/execute_policy',
-                                    ExecutePolicyAction,
-                                    goal=nav_goal),
-                                transitions=nav_transitions)
+
+                concurrence_outcome_map =  {
+                                    # if the monitored state succeeds the concurrence succeeds
+                                    'succeeded' : {'MONITORED':'succeeded'},
+                                    # if either abort, then the concurrence returns this
+                                    'aborted' : {'MONITORED':'aborted'},
+                                    'aborted' : {'MONITORING':'aborted'},
+                                    # if the monitoring state succeeds the we abort as nav timed out
+                                    'aborted' : {'MONITORING':'succeeded'},
+                                    # if both were preempted then we were prempted overall
+                                    'preempted' : {'MONITORED':'preempted', 'MONITORING':'preempted'}
+                                     }
+
+                # when one child terminates, preempt the others
+                concurrence_child_term_cb = lambda so: True
+
+                # create a concurrence which monitors execution time
+                nav_concurrence = smach.Concurrence(outcomes=['succeeded', 'preempted', 'aborted'],
+                                        default_outcome='succeeded',
+                                        outcome_map=concurrence_outcome_map,
+                                        child_termination_cb=concurrence_child_term_cb)
+
+                with nav_concurrence:
+                    nav_goal = ExecutePolicyGoal(task_type=ExecutePolicyGoal.GOTO_WAYPOINT, target_id=task.start_node_id, time_of_day='all_day')
+                    smach.Concurrence.add('MONITORED',
+                                            SimpleActionState('mdp_plan_exec/execute_policy',
+                                                ExecutePolicyAction,
+                                                goal=nav_goal))
+                    smach.Concurrence.add('MONITORING', TimerState(duration=self.expected_navigation_duration(task)))
+
+                smach.StateMachine.add('TASK_NAVIGATION', nav_concurrence, transitions=nav_transitions)
 
             # actual task action
             if task.action != '':
@@ -147,9 +192,7 @@ class AbstractTaskExecutor(BaseTaskExecutor):
                                     action_clz,
                                     goal=goal),
                                 transitions={'preempted':'TASK_CANCELLED', 'aborted':'TASK_FAILED', 'succeeded':'TASK_SUCCEEDED'})
-
-
-
+                
 
         self.task_sm.set_initial_state(['TASK_INITIALISATION'])
 
@@ -157,7 +200,7 @@ class AbstractTaskExecutor(BaseTaskExecutor):
         self.smach_thread.start()
 
     def cancel_active_task(self):
-        preempt_timeout_secs = 10
+        preempt_timeout_secs = 30
         if self.task_sm is not None:
             rospy.loginfo('Requesting preempt on state machine in state %s' % self.task_sm.get_active_states())
             self.task_sm.request_preempt()
