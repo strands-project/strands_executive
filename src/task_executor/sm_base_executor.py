@@ -107,6 +107,7 @@ class AbstractTaskExecutor(BaseTaskExecutor):
         self.task_sm = None
         self.smach_thread = None
         self.sis = None
+        self.join_lock = threading.Lock()
 
 
     def reset_sm(self):
@@ -275,13 +276,20 @@ class AbstractTaskExecutor(BaseTaskExecutor):
 
     def join_smach_thread(self, timeout):
         """ Returns true of the smach_thread has been terminated successfully """
+
+        self.join_lock.acquire()
+
+        successfully_joined = True
+
         # if we need to join
         if self.smach_thread is not None and self.smach_thread.is_alive():
             self.smach_thread.join(timeout)
-            return not self.smach_thread.is_alive()
-        else:
-            # else thread is not alive any more
-            return True
+            if self.smach_thread is not None:
+                successfully_joined = not self.smach_thread.is_alive()
+            
+        self.join_lock.release()
+
+        return successfully_joined
 
     def cancel_active_task(self):
         preempt_timeout_secs = 30
@@ -298,4 +306,4 @@ class AbstractTaskExecutor(BaseTaskExecutor):
                 self.task_failed(completed)        
             else:                
                 rospy.loginfo('And relax')
-            self.reset_sm()
+            
