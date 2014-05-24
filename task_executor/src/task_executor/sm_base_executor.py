@@ -126,13 +126,28 @@ class AbstractTaskExecutor(BaseTaskExecutor):
             else:
                 init_transition = {'succeeded': 'TASK_EXECUTION'}
 
-
             smach.StateMachine.add('TASK_INITIALISATION', TaskInitialisation(self), transitions=init_transition)
             
             # Final task outcomes
             smach.StateMachine.add('TASK_SUCCEEDED', TaskSucceeded(self), transitions={'succeeded':'succeeded'})
             smach.StateMachine.add('TASK_CANCELLED', TaskCancelled(self), transitions={'preempted':'preempted'})
             smach.StateMachine.add('TASK_FAILED', TaskFailed(self), transitions={'aborted':'aborted'})
+
+            # outcome map for monitored states
+            concurrence_outcome_map =  {
+                                # if the monitored state succeeds the concurrence succeeds
+                                'succeeded' : {'MONITORED':'succeeded'},
+                                # if either abort, then the concurrence returns this
+                                'aborted' : {'MONITORED':'aborted'},
+                                'aborted' : {'MONITORING':'aborted'},
+                                # if the monitoring state succeeds the we abort as nav timed out
+                                'aborted' : {'MONITORING':'succeeded'},
+                                # if both were preempted then we were prempted overall
+                                'preempted' : {'MONITORED':'preempted', 'MONITORING':'preempted'}
+                                 }
+
+            # when one child terminates, preempt the others
+            concurrence_child_term_cb = lambda so: True
 
             # navigation action
             if task.start_node_id != '':
@@ -147,21 +162,6 @@ class AbstractTaskExecutor(BaseTaskExecutor):
                     nav_transitions['succeeded'] = 'TASK_EXECUTION'
 
 
-                concurrence_outcome_map =  {
-                                    # if the monitored state succeeds the concurrence succeeds
-                                    'succeeded' : {'MONITORED':'succeeded'},
-                                    # if either abort, then the concurrence returns this
-                                    'aborted' : {'MONITORED':'aborted'},
-                                    'aborted' : {'MONITORING':'aborted'},
-                                    # if the monitoring state succeeds the we abort as nav timed out
-                                    'aborted' : {'MONITORING':'succeeded'},
-                                    # if both were preempted then we were prempted overall
-                                    'preempted' : {'MONITORED':'preempted', 'MONITORING':'preempted'}
-                                     }
-
-                # when one child terminates, preempt the others
-                concurrence_child_term_cb = lambda so: True
-
                 # create a concurrence which monitors execution time
                 nav_concurrence = smach.Concurrence(outcomes=['succeeded', 'preempted', 'aborted'],
                                         default_outcome='succeeded',
@@ -169,12 +169,16 @@ class AbstractTaskExecutor(BaseTaskExecutor):
                                         child_termination_cb=concurrence_child_term_cb)
 
                 with nav_concurrence:
+                    # where we want to go
                     nav_goal = ExecutePolicyGoal(task_type=ExecutePolicyGoal.GOTO_WAYPOINT, target_id=task.start_node_id, time_of_day='all_day')
+                    # let nav run for three times the length it usually takes before terminating
+                    monitor_duration = self.expected_navigation_duration(task) * 3
+
                     smach.Concurrence.add('MONITORED',
                                             SimpleActionState('mdp_plan_exec/execute_policy',
                                                 ExecutePolicyAction,
                                                 goal=nav_goal))
-                    smach.Concurrence.add('MONITORING', TimerState(duration=self.expected_navigation_duration(task)))
+                    smach.Concurrence.add('MONITORING', TimerState(duration=monitor_duration))
 
                 smach.StateMachine.add('TASK_NAVIGATION', nav_concurrence, transitions=nav_transitions)
 
@@ -187,13 +191,21 @@ class AbstractTaskExecutor(BaseTaskExecutor):
                 argument_list = self.get_arguments(task.arguments)
                 goal = goal_clz(*argument_list)         
 
-                smach.StateMachine.add('TASK_EXECUTION',
-                                SimpleActionState(task.action,
-                                    action_clz,
-                                    goal=goal),
-                                transitions={'preempted':'TASK_CANCELLED', 'aborted':'TASK_FAILED', 'succeeded':'TASK_SUCCEEDED'})
-                
+                # create a concurrence which monitors execution time along with doing the execution
+                action_concurrence = smach.Concurrence(outcomes=['succeeded', 'preempted', 'aborted'],
+                                        default_outcome='succeeded',
+                                        outcome_map=concurrence_outcome_map,
+                                        child_termination_cb=concurrence_child_term_cb)
 
+                with action_concurrence:
+                    smach.Concurrence.add('MONITORED', SimpleActionState(task.action, action_clz, goal=goal))
+                    wiggle_room = rospy.Duration(5)
+                    smach.Concurrence.add('MONITORING', TimerState(duration=(task.max_duration+wiggle_room)))
+
+                smach.StateMachine.add('TASK_EXECUTION',
+                                action_concurrence,
+                                transitions={'preempted':'TASK_CANCELLED', 'aborted':'TASK_FAILED', 'succeeded':'TASK_SUCCEEDED'})
+                                
         self.task_sm.set_initial_state(['TASK_INITIALISATION'])
 
         self.smach_thread = threading.Thread(target=self.task_sm.execute)
