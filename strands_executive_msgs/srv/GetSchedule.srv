@@ -1,7 +1,8 @@
 
 # the tasks to be scheduled
 Task[] tasks
-
+# the earliest time for the first execution
+time earliest_start
 ---
 
 # the order the tasks should be executed in
