@@ -222,8 +222,6 @@ class BaseTaskExecutor(object):
         self.active_task = task       
 
         now = rospy.get_rostime()
-                                
-        self.log_task_event(self.active_task, TaskEvent.TASK_STARTED, now)
 
         expected_nav_duration = rospy.Duration(0)
         if self.active_task.start_node_id != '':                    
@@ -267,6 +265,10 @@ class AbstractTaskExecutor(BaseTaskExecutor):
         self.action_client = None
         
     def execute_task(self, task):
+
+        self.log_task_event(task, TaskEvent.TASK_STARTED, rospy.get_rostime())
+
+
         self.prepare_task(task)
 
         if self.active_task.start_node_id != '':                    
