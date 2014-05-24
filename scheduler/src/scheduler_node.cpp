@@ -25,10 +25,17 @@ using namespace ros_datacentre_msgs;
 // }
 
 
-Task * createSchedulerTask(const strands_executive_msgs::Task & _task) {
+Task * createSchedulerTask(const strands_executive_msgs::Task & _task, const ros::Time & _earliestStart) {
+
+  auto startAfter = _earliestStart > _task.start_after ? _earliestStart : _task.start_after;
+
+  ROS_INFO_STREAM("" << _earliestStart);
+  ROS_INFO_STREAM("" << _task.start_after);
+  ROS_INFO_STREAM("" << startAfter);
+  
 
 	Task* t = new Task(_task.task_id,
-						_task.start_after.toSec(),
+						startAfter.toSec(),
 						_task.end_before.toSec(),
 						_task.max_duration.toSec(),
 						_task.start_node_id,
@@ -64,7 +71,7 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
     static string taskType(get_ros_type(task));
 
     stored.push_back( make_pair(taskType, messageStore.insert(task)) );
-  	tasks.push_back(createSchedulerTask(task));
+  	tasks.push_back(createSchedulerTask(task, req.earliest_start));
   }
 
   StringPairList spl;
@@ -73,7 +80,6 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
   }
 
   messageStore.insert(spl);
-
 
   Scheduler scheduler(&tasks);
   if(scheduler.solve()) {
