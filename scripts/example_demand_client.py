@@ -29,9 +29,21 @@ if __name__ == '__main__':
     demand_task, set_execution_status = get_services()
 
     # 
-    demanded_wait = Task(action='wait_action', max_duration=rospy.Duration(60), start_node_id='WayPoint0')
-
+    demanded_wait = Task(action='wait_action', max_duration=rospy.Duration(60), start_node_id='ChargingPoint')
     task_id = demand_task(demanded_wait)
+    
+    
+    #demanded_fire = Task(action='CheckObjectPresenceAction', max_duration=rospy.Duration(60), start_node_id='WayPoint22')
+    #pan=0
+    #tilt=29
+    #object_id='fire_extinguisher_co2.pcd'
+    #task_utils.add_string_argument(demanded_fire, object_id)
+    #task_utils.add_float_argument(demanded_fire, pan)
+    #task_utils.add_float_argument(demanded_fire, tilt)
+
+    #task_id = demand_task(demanded_fire)
+
+  
 
     # Set the task executor running (if it isn't already)
     set_execution_status(True)
