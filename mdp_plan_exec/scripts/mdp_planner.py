@@ -174,7 +174,7 @@ class MdpPlanner(object):
     def travel_time_to_node_cb(self,req):
         starting_node= req.start_id
         self.top_map_mdp.set_initial_state_from_name(starting_node)
-        # self.update_current_top_mdp(req.time_of_day,self.mdp_prism_file)
+        self.update_current_top_mdp(req.time_of_day,self.mdp_prism_file)
         specification='R{"time"}min=? [ ( F "' + req.target_id + '") ]'
         result=self.prism_client.check_model(req.time_of_day,specification)
         result=float(result)
@@ -440,7 +440,7 @@ class MdpPlanner(object):
             count += 1
             rospy.sleep(1)
             
-        e = RobblogEntry(title=datetime.datetime.now().strftime("%I:%M%p") + 'Possible Blocked Path')
+        e = RobblogEntry(title=datetime.datetime.now().strftime("%H:%M:%S") + ' - Possible Blocked Path')
         e.body = 'It took me a lot more time to go between ' + self.origin_waypoint + ' and ' + self.target_waypoint + ' than I was expecting. Something might be blocking the way.'
             
         if self.last_stuck_image != None:
