@@ -220,7 +220,7 @@ class AbstractTaskExecutor(object):
         rospy.logdebug("Created action client")
 
         # start a timer to kill off tasks that overrun
-        self.nav_timeout_timer = rospy.Timer(expected_duration, self.cancel_navigation, oneshot=True)
+        self.nav_timeout_timer = rospy.Timer(rospy.Duration(10*60.0), self.cancel_navigation, oneshot=True)
 
         #nav_goal = GotoNodeGoal(target = self.active_task.start_node_id)
         nav_goal = ExecutePolicyGoal(task_type=ExecutePolicyGoal.GOTO_WAYPOINT, target_id = self.active_task.start_node_id, time_of_day='all_day')
@@ -307,13 +307,16 @@ class AbstractTaskExecutor(object):
             try:
                 self.logging_msg_store.insert(te)
             except Exception, e:
-                rospy.loginfo('Caught exception when logging: %s' % e)
+                rospy.logwarn('Caught exception when logging: %s' % e)
 
 
 
     def log_task_event(self, task, event, time, description=""):
         te = TaskEvent(task=task, event=event, time=time, description=description)
-        self.logging_msg_store.insert(te)
+        try:
+            self.logging_msg_store.insert(te)
+        except Exception, e:
+            rospy.logwarn('Caught exception when logging: %s' % e)
 
 
     def add_task_ros_srv(self, req):
