@@ -119,6 +119,7 @@ class BaseTaskExecutor(object):
         # return rospy.Duration(120)
 
 
+        
     def log_task_events(self, tasks, event, time, description=""):
         for task in tasks:
             te = TaskEvent(task=task, event=event, time=time, description=description)
