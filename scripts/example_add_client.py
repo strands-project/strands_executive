@@ -35,11 +35,12 @@ if __name__ == '__main__':
     wait_task = Task(action='wait_action',start_node_id=sys.argv[1], max_duration=max_duration)
     task_utils.add_time_argument(wait_task, rospy.Time())
     task_utils.add_duration_argument(wait_task, max_duration)
+    
 
     # wait_task = Task(action='',start_node_id=sys.argv[1], max_duration=max_duration)
 
-
     task_id = add_task(wait_task)
+    
 
     # Set the task executor running (if it isn't already)
     set_execution_status(True)
