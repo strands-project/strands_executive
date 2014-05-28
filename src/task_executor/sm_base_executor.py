@@ -131,6 +131,13 @@ class AbstractTaskExecutor(BaseTaskExecutor):
         rospy.loginfo('Nav started to %s for task %s, action %s' % (task.start_node_id, task.task_id, task.action))
         self.log_task_event(task, TaskEvent.NAVIGATION_STARTED, rospy.get_rostime())                        
 
+        
+        
+        
+        
+        
+        
+        
     def nav_termination_cb(self, userdata, terminal_states, container_outcome):
         rospy.loginfo('Nav terminated with outcome %s' % container_outcome)
         if container_outcome == 'succeeded':
@@ -143,8 +150,32 @@ class AbstractTaskExecutor(BaseTaskExecutor):
     def action_start_cb(self, userdata, initial_states):
         task = userdata.task
         rospy.loginfo('Action %s started for task %s' % (task.action, task.task_id))
-        self.log_task_event(task, TaskEvent.EXECUTION_STARTED, rospy.get_rostime())                        
+        self.log_task_event(task, TaskEvent.EXECUTION_STARTED, rospy.get_rostime())
+        
+    def outcome_cb(self, outcome_map):
+        if outcome_map['MONITORED'] == 'succeeded':
+            return 'succeeded'
+        if outcome_map["MONITORED"] == "aborted" or outcome_map["MONITORING"] == "aborted":
+            return "aborted"
+        if outcome_map["MONITORING"] == "succeeded":
+            return "aborted"
+        if outcome_map["MONITORED"] == "preempted" or outcome_map["MONITORING"] == "preempted":
+            return "preempted"
 
+            
+            ## outcome map for monitored states
+            #concurrence_outcome_map =  {
+                                ## if the monitored state succeeds the concurrence succeeds
+                                #'succeeded' : {'MONITORED':'succeeded'},
+                                ## if either abort, then the concurrence returns this
+                                #'aborted' : {'MONITORED':'aborted'},
+                                #'aborted' : {'MONITORING':'aborted'},
+                                ## if the monitoring state succeeds the we abort as nav timed out
+                                #'aborted' : {'MONITORING':'succeeded'},
+                                ## if both were preempted then we were prempted overall
+                                #'preempted' : {'MONITORED':'preempted', 'MONITORING':'preempted'}
+                                 #}
+            
 
     def action_termination_cb(self, userdata, terminal_states, container_outcome):
         rospy.loginfo('Action terminated with outcome %s' % container_outcome)
@@ -183,18 +214,7 @@ class AbstractTaskExecutor(BaseTaskExecutor):
             smach.StateMachine.add('TASK_CANCELLED', TaskCancelled(self), transitions={'preempted':'preempted'})
             smach.StateMachine.add('TASK_FAILED', TaskFailed(self), transitions={'aborted':'aborted'})
 
-            # outcome map for monitored states
-            concurrence_outcome_map =  {
-                                # if the monitored state succeeds the concurrence succeeds
-                                'succeeded' : {'MONITORED':'succeeded'},
-                                # if either abort, then the concurrence returns this
-                                'aborted' : {'MONITORED':'aborted'},
-                                'aborted' : {'MONITORING':'aborted'},
-                                # if the monitoring state succeeds the we abort as nav timed out
-                                'aborted' : {'MONITORING':'succeeded'},
-                                # if both were preempted then we were prempted overall
-                                'preempted' : {'MONITORED':'preempted', 'MONITORING':'preempted'}
-                                 }
+
 
             # when one child terminates, preempt the others
             concurrence_child_term_cb = lambda so: True
@@ -215,8 +235,8 @@ class AbstractTaskExecutor(BaseTaskExecutor):
 
                 # create a concurrence which monitors execution time
                 nav_concurrence = smach.Concurrence(outcomes=['succeeded', 'preempted', 'aborted'],
-                                        default_outcome='succeeded',
-                                        outcome_map=concurrence_outcome_map,
+                                        default_outcome='aborted',
+                                        outcome_cb=self.outcome_cb,
                                         child_termination_cb=concurrence_child_term_cb)
                 # register callback for logging
                 nav_concurrence.register_start_cb(self.nav_start_cb)
@@ -248,8 +268,8 @@ class AbstractTaskExecutor(BaseTaskExecutor):
 
                 # create a concurrence which monitors execution time along with doing the execution
                 action_concurrence = smach.Concurrence(outcomes=['succeeded', 'preempted', 'aborted'],
-                                        default_outcome='succeeded',
-                                        outcome_map=concurrence_outcome_map,
+                                        default_outcome='aborted',
+                                        outcome_cb=self.outcome_cb,
                                         child_termination_cb=concurrence_child_term_cb)
 
                 # register callback for logging
