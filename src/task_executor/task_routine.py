@@ -126,7 +126,7 @@ class DailyRoutineRunner(object):
             daily_end (datetime.time): The time of day by when all tasks should end, local time.
             pre_start_window (datetime.timedelta): The duration before a task's start that it should be passed to the scheduler. Defaults to 1 hour.
     """
-    def __init__(self, daily_start, daily_end, add_tasks_srv, pre_start_window=timedelta(hours=1), day_start_cb=None, day_end_cb=None, tasks_allowed_fn=None):
+    def __init__(self, daily_start, daily_end, add_tasks_srv, pre_start_window=timedelta(hours=0.25), day_start_cb=None, day_end_cb=None, tasks_allowed_fn=None):
         super(DailyRoutineRunner, self).__init__()
         self.daily_start = daily_start
         self.daily_end = daily_end
