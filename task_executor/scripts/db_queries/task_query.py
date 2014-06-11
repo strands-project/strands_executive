@@ -74,6 +74,11 @@ def task_event_string(te):
         return 'TASK_PREEMPTED'    
 
 def summarise(results):
+
+    if len(results) == 0:
+        print 'No task events match the query'
+        return 
+        
     # events in chronological order
     results.sort(key=lambda x: x[1]["inserted_at"])
 
@@ -112,32 +117,27 @@ if __name__ == '__main__':
     msg_store = MessageStoreProxy(collection='task_events')
 
     parser = argparse.ArgumentParser(description='Prints a summary of tasks executed within the queried time window.')
-    parser.add_argument('start', metavar='S', type=mkdatetime, nargs='?',
+    parser.add_argument('start', metavar='S', type=mkdatetime, nargs='?', default=task_routine.start_of_the_day(),
                    help='start datetime of query, defaults to the midnight just passed. Formatted "d/m/y H:M" e.g. "06/07/14 06:38"')
     parser.add_argument('end', metavar='E', type=mkdatetime, nargs='?',
                    help='end datetime of query, defaults to no end. Formatted "d/m/y H:M" e.g. "06/07/14 06:38"')
 
     
     args = parser.parse_args()
-    print args.start
 
 
      
     try:
 
 
-
-
-        # start = task_routine.start_of_the_day()
-        # print start
-        start = datetime(2014, 6, 5)        
-        # end = datetime(2014, 6, 11)       
+        start = args.start
+        end = args.end
 
         results = query_tasks(msg_store, 
                         # event=TaskEvent.ADDED, 
                         # action='check_door',
                         start_date=start,
-                        # end_date=end,
+                        end_date=end,
                         )
         # print len(results)
         # print results
