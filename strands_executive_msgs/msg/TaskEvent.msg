@@ -20,8 +20,10 @@ uint8 EXECUTION_PREEMPTED=11
 uint8 CANCELLED_MANUALLY=12
 uint8 DROPPED=13
 
+# Finished was used by the early versions of executor
 uint8 TASK_FINISHED=14
 
+# These three are more modern
 uint8 TASK_FAILED=15
 uint8 TASK_SUCCEEDED=16
 uint8 TASK_PREEMPTED=17
