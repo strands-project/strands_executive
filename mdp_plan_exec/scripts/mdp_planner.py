@@ -174,7 +174,7 @@ class MdpPlanner(object):
     def travel_time_to_node_cb(self,req):
         starting_node= req.start_id
         self.top_map_mdp.set_initial_state_from_name(starting_node)
-        self.update_current_top_mdp(req.time_of_day,self.mdp_prism_file)
+        self.update_current_top_mdp(req.time_of_day,self.mdp_prism_file, False)
         specification='R{"time"}min=? [ ( F "' + req.target_id + '") ]'
         result=self.prism_client.check_model(req.time_of_day,specification)
         result=float(result)
@@ -199,8 +199,9 @@ class MdpPlanner(object):
         return True
     
     
-    def update_current_top_mdp(self,time_of_day,mdp_file):
-        self.top_map_mdp.update_nav_statistics()
+    def update_current_top_mdp(self,time_of_day,mdp_file,update_stats=True):
+        if update_stats:
+            self.top_map_mdp.update_nav_statistics()
         self.top_map_mdp.write_prism_model(mdp_file)
         result=self.prism_client.update_model(time_of_day,self.mdp_prism_file)
     
