@@ -24,6 +24,7 @@ using namespace ros_datacentre_msgs;
 //   cond = false;
 // }
 
+bool save_problems = true;
 
 Task * createSchedulerTask(const strands_executive_msgs::Task & _task, const ros::Time & _earliestStart) {
 
@@ -56,6 +57,7 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
   ROS_INFO_STREAM("Got a request for a schedule " << req.tasks.size() << " tasks ");
 
   static ros::NodeHandle nh;
+
   static MessageStoreProxy messageStore(nh, "scheduling_problems");
 
 
@@ -68,18 +70,21 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
     // ROS_INFO_STREAM(task.task_id << " start " << task.start_after << ", end " << task.end_before
         // << ", duration " << task.max_duration);
 
-    static string taskType(get_ros_type(task));
-
-    stored.push_back( make_pair(taskType, messageStore.insert(task)) );
+    if(save_problems) {
+      static string taskType(get_ros_type(task));
+      stored.push_back( make_pair(taskType, messageStore.insert(task)) );
+    }
   	tasks.push_back(createSchedulerTask(task, req.earliest_start));
   }
 
-  StringPairList spl;
-  for(auto & pair : stored) {
-    spl.pairs.push_back(ros_datacentre::makePair(pair.first, pair.second));
-  }
 
-  messageStore.insert(spl);
+  if(save_problems) { 
+    StringPairList spl;
+    for(auto & pair : stored) {
+      spl.pairs.push_back(ros_datacentre::makePair(pair.first, pair.second));
+    }
+    messageStore.insert(spl);
+  }
 
   Scheduler scheduler(&tasks);
   if(scheduler.solve(version, filename)) {
@@ -103,10 +108,22 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
   return true;
 }
 
+
+
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "schedule_server");
-	ros::NodeHandle nh;
+
+
+  if(ros::param::has("~save_problems")) {
+    ros::param::get("~save_problems", save_problems);
+  } 
+
+  if(save_problems) {
+    ROS_INFO("Writing scheduling problems to ros_datacentre");
+  }
+
+  	ros::NodeHandle nh;
 
   	ros::ServiceServer service = nh.advertiseService("get_schedule", getSchedule);
   	ROS_INFO("Ready to serve schedules");
