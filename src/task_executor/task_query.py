@@ -8,7 +8,6 @@ from ros_datacentre.message_store import MessageStoreProxy
 from strands_executive_msgs.msg import Task, TaskEvent
 from datetime import datetime
 from task_executor import task_routine
-import argparse
 
 def query_tasks(msg_store, task_id=None, action=None, start_date=None, end_date=None, event=None):
     msg_query = {}
@@ -108,44 +107,3 @@ def summarise(results):
 def mkdatetime(date_string):
     return datetime.strptime(date_string, '%d/%m/%y %H:%M')
 
-
-if __name__ == '__main__':
-
-    rospy.init_node("example_message_store_client")
-
-
-    msg_store = MessageStoreProxy(collection='task_events')
-
-    parser = argparse.ArgumentParser(description='Prints a summary of tasks executed within the queried time window.')
-    parser.add_argument('start', metavar='S', type=mkdatetime, nargs='?', default=task_routine.start_of_the_day(),
-                   help='start datetime of query, defaults to the midnight just passed. Formatted "d/m/y H:M" e.g. "06/07/14 06:38"')
-    parser.add_argument('end', metavar='E', type=mkdatetime, nargs='?',
-                   help='end datetime of query, defaults to no end. Formatted "d/m/y H:M" e.g. "06/07/14 06:38"')
-
-    
-    args = parser.parse_args()
-
-
-     
-    try:
-
-
-        start = args.start
-        end = args.end
-
-        results = query_tasks(msg_store, 
-                        # event=TaskEvent.ADDED, 
-                        # action='check_door',
-                        start_date=start,
-                        end_date=end,
-                        )
-        # print len(results)
-        # print results
-        summarise(results)
-
-        
-    except rospy.ServiceException, e:
-        print "Service call failed: %s"%e
-
-
-        
