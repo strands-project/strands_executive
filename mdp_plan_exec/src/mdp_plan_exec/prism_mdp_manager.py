@@ -11,7 +11,7 @@ from prism_client import PrismClient
 class PrismMdpManager(object):
     
     def __init__(self,port, work_dir, top_map):
-        self.directory = os.path.expanduser("~") + '/tmp/prism/' + work_dir
+        self.directory = os.path.expanduser("~") + '/tmp/prism/' + work_dir + "/"
         try:
             os.makedirs(self.directory)
         except OSError as ex:
@@ -21,7 +21,7 @@ class PrismMdpManager(object):
         self.top_map_mdp=TopMapMdp(top_map)
         self.top_map_mdp.update_nav_statistics()
                 
-        self.mdp_prism_file=self.directory + "/" + top_map + '.prism'    
+        self.mdp_prism_file=self.directory + top_map + '.prism'    
         
         self.top_map_mdp.write_prism_model(self.mdp_prism_file)
         

@@ -7,6 +7,7 @@ import os
 
 #from mdp_plan_exec.prism_client import PrismClient
 #from mdp_plan_exec.mdp import TopMapMdp, ProductMdp
+from mdp_plan_exec.mdp import ProductMdp
 from mdp_plan_exec.prism_mdp_manager import PrismMdpManager
 
 from strands_executive_msgs.srv import AddMdpModel, GetExpectedTravelTime, UpdateNavStatistics, AddDeleteSpecialWaypoint, AddDeleteSpecialWaypointRequest
@@ -251,6 +252,7 @@ class MdpPlanner(object):
             
             self.policy_handler.top_map_mdp.transitions_transversal_count[current_waypoint][current_min_index]+=1
             
+        self.exp_times_handler.update_current_top_mdp(req.time_of_day)    
         timer.shutdown()    
 
         
@@ -382,7 +384,7 @@ class MdpPlanner(object):
                     rospy.logerr("The goal is unattainable with the current forbidden nodes. Aborting...")
                     self.mdp_navigation_action.set_aborted()
                     return
-                product_mdp=ProductMdp(self.top_map_mdp,result_dir + '/prod.sta',result_dir + '/prod.lab',result_dir + '/prod.tra')
+                product_mdp=ProductMdp(self.policy_handler.top_map_mdp,result_dir + '/prod.sta',result_dir + '/prod.lab',result_dir + '/prod.tra')
                 product_mdp.set_policy(result_dir + '/adv.tra')
                 current_mdp_state=product_mdp.initial_state
                 if current_mdp_state in product_mdp.goal_states:
@@ -405,12 +407,15 @@ class MdpPlanner(object):
                 return
                 
         
+        self.exp_times_handler.update_current_top_mdp(req.time_of_day)
+        
         self.monitored_nav_result=None
         timeout_counter=0
-        while self.monitored_nav_result is None and self.executing_policy and self.timeout_counter < self.get_to_exact_pose_timeout:     
+        while self.monitored_nav_result is None and self.executing_policy and timeout_counter < self.get_to_exact_pose_timeout:     
             rospy.sleep(0.5)
             timeout_counter=timeout_counter+1
-            
+        
+        
         if self.executing_policy:
             self.executing_policy=False
             if self.monitored_nav_result==GoalStatus.PREEMPTED:
