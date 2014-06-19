@@ -5,8 +5,9 @@ import rospy
 import os
 
 
-from mdp_plan_exec.prism_client import PrismClient
-from mdp_plan_exec.mdp import TopMapMdp, ProductMdp
+#from mdp_plan_exec.prism_client import PrismClient
+#from mdp_plan_exec.mdp import TopMapMdp, ProductMdp
+from mdp_plan_exec.prism_mdp_manager import PrismMdpManager
 
 from strands_executive_msgs.srv import AddMdpModel, GetExpectedTravelTime, UpdateNavStatistics, AddDeleteSpecialWaypoint, AddDeleteSpecialWaypointRequest
 
@@ -31,7 +32,10 @@ class MdpPlanner(object):
 
     def __init__(self,top_map):
     
-        self.prism_client=PrismClient()
+        self.exp_times_handler=PrismMdpManager(8085,'exp_times', top_map)
+        self.policy_handler=PrismMdpManager(8086,'policy',top_map)
+        
+        
         self.travel_time_to_node_service = rospy.Service('/mdp_plan_exec/get_expected_travel_time_to_node', GetExpectedTravelTime, self.travel_time_to_node_cb)
         self.add_mdp_service = rospy.Service('/mdp_plan_exec/add_mdp_model', AddMdpModel, self.add_mdp_cb)
         #self.generate_policy=rospy.Service('/mdp_plan_exec/generate_policy', GeneratePolicy, self.policy_cb)
@@ -61,30 +65,33 @@ class MdpPlanner(object):
         self.learn_travel_times_action.register_preempt_callback(self.preempt_learning_cb)
         self.learn_travel_times_action.start()
 
-        self.top_map_mdp=TopMapMdp(top_map)
-        self.top_map_mdp.update_nav_statistics()
+        #self.top_map_mdp=TopMapMdp(top_map)
+        #self.top_map_mdp.update_nav_statistics()
         
-        self.directory = os.path.expanduser("~") + '/tmp/prism'
-        try:
-            os.makedirs(self.directory)
-        except OSError as ex:
-            print 'error creating PRISM directory:',  ex
+        #self.directory = os.path.expanduser("~") + '/tmp/prism'
+        #try:
+            #os.makedirs(self.directory)
+        #except OSError as ex:
+            #print 'error creating PRISM directory:',  ex
             
-        self.mdp_prism_file=self.directory+'/'+top_map+'.prism'    
+        #self.mdp_prism_file=self.directory+'/'+top_map+'.prism'    
         
-        self.top_map_mdp.write_prism_model(self.mdp_prism_file)
+        #self.top_map_mdp.write_prism_model(self.mdp_prism_file)
         
-        self.prism_client.add_model('all_day',self.mdp_prism_file)
+        #self.prism_client.add_model('all_day',self.mdp_prism_file)
         
         self.closest_node=None
         self.current_node=None
         self.nav_action_outcome=''
         self.closest_state_subscriber=rospy.Subscriber('/closest_node', String, self.closest_node_cb)
         self.current_state_subscriber=rospy.Subscriber('/current_node', String, self.current_node_cb)
-        self.nav_stats_subscriber = rospy.Subscriber('/topological_navigation/Statistics', NavStatistics, self.get_nav_time_cb)
+        self.nav_stats_subscriber = rospy.Subscriber('/topological_navigation/Statistics', NavStatistics, self.get_nav_status_cb)
         
         self.nonitored_nav_result=None
         self.monitored_nav_sub=rospy.Subscriber('/monitored_navigation/result', MonitoredNavigationActionResult, self.get_monitored_nav_status_cb)
+        
+        self.get_to_exact_pose_timeout=120 #60 secs
+        
         
         self.forbidden_waypoints=[]
         self.forbidden_waypoints_ltl_string=''
@@ -97,7 +104,7 @@ class MdpPlanner(object):
         self.msg_store_blog = MessageStoreProxy(collection='robblog')
         self.origin_waypoint=''
         self.target_waypoint=''
-        self.last_stuck_image=None
+        #self.last_stuck_image=None
 
         
     def add_delete_special_waypoint_cb(self,req):
@@ -169,45 +176,40 @@ class MdpPlanner(object):
             self.safe_waypoints_ltl_string='(' + self.safe_waypoints_ltl_string[:-3] + ')'
             
         print self.safe_waypoints_ltl_string
-    
-        
-    def travel_time_to_node_cb(self,req):
-        starting_node= req.start_id
-        self.top_map_mdp.set_initial_state_from_name(starting_node)
-        self.update_current_top_mdp(req.time_of_day,self.mdp_prism_file, False)
-        specification='R{"time"}min=? [ ( F "' + req.target_id + '") ]'
-        result=self.prism_client.check_model(req.time_of_day,specification)
-        result=float(result)
-        return result
-        
+ 
+ 
+ 
+#-------------------------updating models for both expected time and policy generation 
     def add_mdp_cb(self,req):
-        self.prism_client.add_model(req.time_of_day,req.mdp_file)
+        self.exp_times_handler.prism_client.add_model(req.time_of_day,req.mdp_file)
+        self.policy_handler.prism_client.add_model(req.time_of_day,req.mdp_file)
         return True
      
     
-    #def policy_cb(self,req):
-        #starting_node= req.start_id
-        #self.top_map_mdp.set_initial_state_from_name(starting_node)
-        #self.top_map_mdp.write_prism_model(self.mdp_prism_file)
-        #result=self.prism_client.update_model(req.time_of_day,self.mdp_prism_file)
-        #specification='R{"time"}min=? [ (' + req.ltl_task + ') ]'
-        #result=self.prism_client.get_policy(req.time_of_day,specification)
-        #return result
-        
     def update_cb(self,req): 
-        self.update_current_top_mdp(req.time_of_day,self.mdp_prism_file)
+        self.exp_times_handler.update_current_top_mdp(req.time_of_day)
+        self.policy_handler.update_current_top_mdp(req.time_of_day)
         return True
-    
-    
-    def update_current_top_mdp(self,time_of_day,mdp_file,update_stats=True):
-        if update_stats:
-            self.top_map_mdp.update_nav_statistics()
-        self.top_map_mdp.write_prism_model(mdp_file)
-        result=self.prism_client.update_model(time_of_day,self.mdp_prism_file)
-    
-    
-    
+ 
+ 
+#-------------------------expected times     
+    def travel_time_to_node_cb(self,req):
+        starting_node= req.start_id
+        self.exp_times_handler.top_map_mdp.set_initial_state_from_name(starting_node)
+        self.exp_times_handler.update_current_top_mdp(req.time_of_day, False)
+        specification='R{"time"}min=? [ ( F "' + req.target_id + '") ]'
+        result=self.exp_times_handler.prism_client.check_model(req.time_of_day,specification)
+        result=float(result)
+        return result
+        
+        
+
+#-------------------------policy generation/execution    
     def execute_learn_travel_times_cb(self,goal):
+        
+        if self.executing_policy:
+            self.preempt_policy_execution_cb()
+        
         rospy.set_param('/topological_navigation/mode', 'Node_by_node')
         self.learning_travel_times=True
         timer=rospy.Timer(rospy.Duration(goal.timeout), self.finish_learning_callback,oneshot=True)
@@ -215,16 +217,15 @@ class MdpPlanner(object):
         
         while self.learning_travel_times:
             if self.current_node == 'none' or self.current_node is None:
-                self.top_map_mdp.set_initial_state_from_name(self.closest_node) 
+                self.policy_handler.top_map_mdp.set_initial_state_from_name(self.closest_node) 
             else:
-                self.top_map_mdp.set_initial_state_from_name(self.current_node)
-            
-            current_waypoint=self.top_map_mdp.initial_state
-            current_waypoint_trans=self.top_map_mdp.transitions[current_waypoint]
-            current_trans_count=self.top_map_mdp.transitions_transversal_count[current_waypoint]
+                self.policy_handler.top_map_mdp.set_initial_state_from_name(self.current_node)
+            current_waypoint=self.policy_handler.top_map_mdp.initial_state
+            current_waypoint_trans=self.policy_handler.top_map_mdp.transitions[current_waypoint]
+            current_trans_count=self.policy_handler.top_map_mdp.transitions_transversal_count[current_waypoint]
             current_min=-1
             current_min_index=-1
-            for i in range(0,self.top_map_mdp.n_actions):
+            for i in range(0,self.policy_handler.top_map_mdp.n_actions):
                 if current_waypoint_trans[i] is not False:
                     if current_min==-1:
                         current_min=current_trans_count[i]
@@ -232,7 +233,7 @@ class MdpPlanner(object):
                     elif current_trans_count[i]<current_min:
                         current_min=current_trans_count[i]
                         current_min_index=i
-            current_action=self.top_map_mdp.actions[current_min_index]
+            current_action=self.policy_handler.top_map_mdp.actions[current_min_index]
             top_nav_goal=GotoNodeGoal()
             top_nav_goal.target=current_action.split('_')[2]
             self.top_nav_action_client.send_goal(top_nav_goal)
@@ -244,24 +245,24 @@ class MdpPlanner(object):
                 n_successive_fails=0
             
             if n_successive_fails>1:
-                self.update_current_top_mdp('all_day',self.mdp_prism_file)
+                self.policy_handler.update_current_top_mdp('all_day')
                 self.learn_travel_times_action.set_aborted()
                 return
             
-            self.top_map_mdp.transitions_transversal_count[current_waypoint][current_min_index]+=1
+            self.policy_handler.top_map_mdp.transitions_transversal_count[current_waypoint][current_min_index]+=1
             
         timer.shutdown()    
 
         
         
     def finish_learning_callback(self,event):
-        self.update_current_top_mdp('all_day',self.mdp_prism_file)
+        self.policy_handler.update_current_top_mdp('all_day')
         self.learn_travel_times_action.set_succeeded()
         self.learning_travel_times=False
         
     def preempt_learning_cb(self):
         self.learning_travel_times=False
-        self.update_current_top_mdp('all_day',self.mdp_prism_file)
+        self.policy_handler.update_current_top_mdp('all_day')
         self.top_nav_action_client.cancel_all_goals()
         self.learn_travel_times_action.set_preempted()
         
@@ -271,12 +272,16 @@ class MdpPlanner(object):
    
     def execute_policy_cb(self,goal):
         
+        if self.learning_travel_times:
+            self.preempt_learning_cb()
+        
+        
         rospy.set_param('/topological_navigation/mode', 'Node_to_IZ')
         if self.current_node == 'none' or self.current_node is None:
-            self.top_map_mdp.set_initial_state_from_name(self.closest_node) 
+            self.policy_handler.top_map_mdp.set_initial_state_from_name(self.closest_node) 
         else:
-            self.top_map_mdp.set_initial_state_from_name(self.current_node)
-        self.update_current_top_mdp(goal.time_of_day,self.mdp_prism_file)
+            self.policy_handler.top_map_mdp.set_initial_state_from_name(self.current_node)
+        self.policy_handler.update_current_top_mdp(goal.time_of_day)
         if goal.task_type==ExecutePolicyGoal.GOTO_WAYPOINT:
             if goal.target_id in self.forbidden_waypoints:
                 rospy.logerr("The goal is a forbidden waypoint. Aborting")
@@ -311,14 +316,14 @@ class MdpPlanner(object):
                 
             
         feedback=ExecutePolicyFeedback()
-        feedback.expected_time=float(self.prism_client.get_policy(goal.time_of_day,specification))
+        feedback.expected_time=float(self.policy_handler.prism_client.get_policy(goal.time_of_day,specification))
         self.mdp_navigation_action.publish_feedback(feedback)
         if feedback.expected_time==float("inf"):
             rospy.logerr("The goal is unattainable with the current forbidden nodes. Aborting...")
             self.mdp_navigation_action.set_aborted()
             return
-        result_dir=self.directory + '/' + goal.time_of_day 
-        product_mdp=ProductMdp(self.top_map_mdp,result_dir + '/prod.sta',result_dir + '/prod.lab',result_dir + '/prod.tra')
+        result_dir=self.policy_handler.get_working_dir() + '/' + goal.time_of_day 
+        product_mdp=ProductMdp(self.policy_handler.top_map_mdp,result_dir + '/prod.sta',result_dir + '/prod.lab',result_dir + '/prod.tra')
         product_mdp.set_policy(result_dir + '/adv.tra')
         
         self.executing_policy=True
@@ -367,11 +372,11 @@ class MdpPlanner(object):
                 self.mon_nav_action_client.cancel_all_goals()
                 self.top_nav_action_client.cancel_all_goals()
                 if self.current_node == 'none' or self.current_node is None:
-                    self.top_map_mdp.set_initial_state_from_name(self.closest_node) 
+                    self.policy_handler.top_map_mdp.set_initial_state_from_name(self.closest_node) 
                 else:
-                    self.top_map_mdp.set_initial_state_from_name(self.current_node)
-                self.update_current_top_mdp(goal.time_of_day,self.mdp_prism_file)
-                feedback.expected_time=float(self.prism_client.get_policy(goal.time_of_day,specification))
+                    self.policy_handler.top_map_mdp.set_initial_state_from_name(self.current_node)
+                self.policy_handler.update_current_top_mdp(goal.time_of_day)
+                feedback.expected_time=float(self.policy_handler.prism_client.get_policy(goal.time_of_day,specification))
                 self.mdp_navigation_action.publish_feedback(feedback)
                 if feedback.expected_time==float("inf"):
                     rospy.logerr("The goal is unattainable with the current forbidden nodes. Aborting...")
@@ -401,18 +406,24 @@ class MdpPlanner(object):
                 
         
         self.monitored_nav_result=None
-        while self.monitored_nav_result is None and self.executing_policy:     
+        timeout_counter=0
+        while self.monitored_nav_result is None and self.executing_policy and self.timeout_counter < self.get_to_exact_pose_timeout:     
             rospy.sleep(0.5)
+            timeout_counter=timeout_counter+1
             
         if self.executing_policy:
-            self.executing_policy=False 
-            if self.monitored_nav_result==GoalStatus.SUCCEEDED:
-                self.mdp_navigation_action.set_succeeded()
-            if self.monitored_nav_result==GoalStatus.ABORTED:
-                rospy.logerr("Failure in getting to exact pose in goal waypoint")
-                self.mdp_navigation_action.set_aborted()
+            self.executing_policy=False
             if self.monitored_nav_result==GoalStatus.PREEMPTED:
                 self.mdp_navigation_action.set_preempted()
+                return
+            if self.monitored_nav_result==GoalStatus.SUCCEEDED and self.current_node == goal.target_id:
+                self.mdp_navigation_action.set_succeeded()
+                return
+            if self.monitored_nav_result==GoalStatus.ABORTED or self.monitored_nav_result is None or not self.current_node == goal.target_id:
+                rospy.logerr("Failure in getting to exact pose in goal waypoint")
+                self.mdp_navigation_action.set_aborted()
+                return
+            
 
  
     def get_monitored_nav_status_cb(self,msg):
@@ -429,29 +440,30 @@ class MdpPlanner(object):
         
         
     def unexpected_trans_time_cb(self,event):
-        self.last_stuck_image = None
+        last_stuck_image = None
         image_topic =  '/head_xtion/rgb/image_color'
         #image_topic =  '/head_xtion/rgb/image_mono'  #simulation topic
-        image_sub = rospy.Subscriber(image_topic, Image, self.img_callback)
         
-        count = 0
-        while self.last_stuck_image == None and  not rospy.is_shutdown() and count < 10:
-            rospy.loginfo('waiting for image of possible blocked path %s' % count)
-            count += 1
-            rospy.sleep(1)
+        #count = 0
+        #while self.last_stuck_image == None and  not rospy.is_shutdown() and count < 10:
+            #rospy.loginfo('waiting for image of possible blocked path %s' % count)
+            #count += 1
+            #rospy.sleep(1)
+            
+        last_stuck_image=rospy.wait_for_message(image_topic, Image , timeout=10.0)
             
         e = RobblogEntry(title=datetime.datetime.now().strftime("%H:%M:%S") + ' - Possible Blocked Path')
         e.body = 'It took me a lot more time to go between ' + self.origin_waypoint + ' and ' + self.target_waypoint + ' than I was expecting. Something might be blocking the way.'
             
-        if self.last_stuck_image != None:
-            img_id = self.msg_store_blog.insert(self.last_stuck_image)
+        if last_stuck_image != None:
+            img_id = self.msg_store_blog.insert(last_stuck_image)
             rospy.loginfo('adding possible blockage image to blog post')
             e.body += ' Here is what I saw: \n\n![Image of the door](ObjectID(%s))' % img_id
         self.msg_store_blog.insert(e)
         
         
-    def img_callback(self, img):
-        self.last_stuck_image = img
+    #def img_callback(self, img):
+        #self.last_stuck_image = img
     
         
     
@@ -461,7 +473,7 @@ class MdpPlanner(object):
     def current_node_cb(self,msg):
         self.current_node=msg.data
 
-    def get_nav_time_cb(self,msg):   
+    def get_nav_status_cb(self,msg):   
         self.nav_action_outcome=msg.status
     
     def main(self):
@@ -471,7 +483,8 @@ class MdpPlanner(object):
         rospy.spin()
         
         if rospy.is_shutdown():
-            self.prism_client.shutdown(True)
+            self.exp_times_handler.prism_client.shutdown(True)
+            self.policy_handler.prism_client.shutdown(True)
 
 
 if __name__ == '__main__':
