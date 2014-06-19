@@ -240,19 +240,19 @@ class MdpPlanner(object):
             self.top_nav_action_client.send_goal(top_nav_goal)
             self.top_nav_action_client.wait_for_result()
             
-            if self.nav_action_outcome=='fatal'  or self.nav_action_outcome=='failed':
+            if self.nav_action_outcome=='fatal' or self.nav_action_outcome=='failed':
                 n_successive_fails=n_successive_fails+1
             else:
                 n_successive_fails=0
             
-            if n_successive_fails>1:
+            if n_successive_fails>10:
                 self.policy_handler.update_current_top_mdp('all_day')
                 self.learn_travel_times_action.set_aborted()
                 return
             
             self.policy_handler.top_map_mdp.transitions_transversal_count[current_waypoint][current_min_index]+=1
             
-        self.exp_times_handler.update_current_top_mdp(req.time_of_day)    
+        self.exp_times_handler.update_current_top_mdp("all_day")    
         timer.shutdown()    
 
         
@@ -407,7 +407,7 @@ class MdpPlanner(object):
                 return
                 
         
-        self.exp_times_handler.update_current_top_mdp(req.time_of_day)
+        self.exp_times_handler.update_current_top_mdp(goal.time_of_day)
         
         self.monitored_nav_result=None
         timeout_counter=0
