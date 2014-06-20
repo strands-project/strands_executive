@@ -50,6 +50,7 @@ if __name__ == '__main__':
         charge_wait_count = 0
         unstarted_count = 0
         start_count = 0
+        day_durations = {}
 
 
 
@@ -79,7 +80,8 @@ if __name__ == '__main__':
                 # if we're closing the previous event
                 if task_event.task.task_id == started_task_event.task.task_id:
             
-                    task_duration = datetime.utcfromtimestamp(task_event.time.to_sec()) - datetime.utcfromtimestamp(started_task_event.time.to_sec())
+                    end_time = datetime.utcfromtimestamp(task_event.time.to_sec())
+                    task_duration = end_time - datetime.utcfromtimestamp(started_task_event.time.to_sec())
 
                     if task_event.task.action == 'wait_action' and task_event.task.start_node_id == 'ChargingPoint':
                         charge_wait_duration += task_duration
@@ -88,10 +90,18 @@ if __name__ == '__main__':
                         
                         if task_duration > timedelta(hours=3):
                             dubious.append((started_task_event, task_event))
-                            task_query.print_event(started_task_event)
-                            task_query.print_event(task_event)                            
-                            print '%s\n' % task_duration                  
+                            # task_query.print_event(started_task_event)
+                            # task_query.print_event(task_event)                            
+                            # print '%s\n' % task_duration                  
                         else:
+
+                            task_date = end_time.date()
+
+                            if task_date in day_durations:
+                                day_durations[task_date].append(task_duration)
+                            else:
+                                day_durations[task_date] = [task_duration]
+
                             duration += task_duration
                             count += 1
 
@@ -125,6 +135,17 @@ if __name__ == '__main__':
         print 'End: %s' % datetime.utcfromtimestamp(end.to_sec())
 
         print 'Total activity: %s ' % timedelta(seconds=(end - start).to_sec())
+
+        days = day_durations.keys()
+        days.sort()
+
+        for day in days:
+            durations = day_durations[day]
+            total = timedelta()
+            for d in durations:
+                total += d
+            print '%s:\t%s\t%s' % (day, len(durations), total)
+
 
 
     except rospy.ServiceException, e:
