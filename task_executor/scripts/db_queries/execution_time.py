@@ -139,12 +139,17 @@ if __name__ == '__main__':
         days = day_durations.keys()
         days.sort()
 
+
+        total_possible = timedelta()
         for day in days:
+            total_possible += timedelta(hours=8)
             durations = day_durations[day]
             total = timedelta()
             for d in durations:
                 total += d
             print '%s:\t%s\t%s' % (day, len(durations), total)
+
+        print 'Autonomy percentage: %.2f' % ((duration.total_seconds()/total_possible.total_seconds()) * 100)
 
 
 

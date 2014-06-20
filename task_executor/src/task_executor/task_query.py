@@ -49,12 +49,10 @@ def query_tasks(msg_store, task_id=None, action=None, start_date=None, end_date=
                             meta_query=meta_query, single=False)
 
 
-
-
     # results.sort(key=lambda x: x[1]["inserted_at"])
     results.sort(key=lambda x: x[0].time.to_sec())
 
-    return remove_duplicates(results)
+    return results
 
 def task_event_string(te):
     if te == TaskEvent.ADDED:
