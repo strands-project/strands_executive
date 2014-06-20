@@ -58,8 +58,7 @@ if __name__ == '__main__':
                 started_task_event = task_event
                 start_count += 1
 
-            elif task_event.event == TaskEvent.TASK_FINISHED or \
-                    (task_event.task.action == '' and task_event.event == TaskEvent.NAVIGATION_SUCCEEDED):
+            elif (task_event.event == TaskEvent.TASK_FINISHED or (task_event.task.action == '' and task_event.event == TaskEvent.NAVIGATION_SUCCEEDED)) and started_task_event.task.task_id != 0:
 
                 # if we're closing the previous event
                 if task_event.task.task_id == started_task_event.task.task_id:
@@ -74,10 +73,16 @@ if __name__ == '__main__':
                         else:
                             duration += task_duration
                             count += 1
-                    
+
+                    # make sure we don't look for another end to this task
+                    started_task_event = TaskEvent()
+
                 else:
                     # print 'Finished an unstarted task: %s' % task_event
                     unstarted_count += 1
+                    task_query.print_event(started_task_event)
+                    task_query.print_event(task_event)
+                    print '\n'
             
         start = results[0][0].time
         end = results[-1][0].time

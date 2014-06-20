@@ -86,6 +86,9 @@ def task_event_string(te):
 
 
 
+def print_event(task_event):
+    """ Prints a single event """
+    print 'task %s\t%s\t%s\t%s\t%s' % (task_event.task.task_id, task_event.task.action, task_event.task.start_node_id, task_event_string(task_event.event), datetime.utcfromtimestamp(task_event.time.to_sec()).strftime('%d/%m/%y %H:%M:%S'))
 
 def summarise(results):
 
@@ -105,7 +108,7 @@ def summarise(results):
                 tid = task_event.task.task_id
                 output.append('\n')
                        
-            output.append(['task %s' % task_event.task.task_id, task_event.task.action, task_event.task.start_node_id, task_event_string(task_event.event), meta["inserted_at"].strftime('%d/%m/%y %H:%M:%S')])
+            output.append(['task %s' % task_event.task.task_id, task_event.task.action, task_event.task.start_node_id, task_event_string(task_event.event), datetime.utcfromtimestamp(task_event.time.to_sec()).strftime('%d/%m/%y %H:%M:%S')])
 
     # http://stackoverflow.com/a/9989441/135585
     col_width = max(len(word) for row in output for word in row) + 4  # padding for row in output:
