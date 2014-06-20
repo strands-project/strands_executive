@@ -125,21 +125,21 @@ if __name__ == '__main__':
         print 'Unstarted: %s' % unstarted_count
         print 'Dubious: %s' % len(dubious)
 
-        print 'Finished: %s' % count        
-        print 'Duration: %s' % duration
+        print 'Tasks Completed: %s' % count        
+        print 'Task Duration: %s' % duration
 
-        print 'Charge Wait Finished: %s' % charge_wait_count        
-        print 'Charge Wait Duration: %s' % charge_wait_duration
+        print 'Charge Waits Finished: %s' % charge_wait_count        
+        print 'Charge Waits Duration: %s' % charge_wait_duration
 
-        print 'Start: %s' % datetime.utcfromtimestamp(start.to_sec())
-        print 'End: %s' % datetime.utcfromtimestamp(end.to_sec())
+        print 'Tasks Start: %s' % datetime.utcfromtimestamp(start.to_sec())
+        print 'Tasks End: %s' % datetime.utcfromtimestamp(end.to_sec())
 
-        print 'Total activity: %s ' % timedelta(seconds=(end - start).to_sec())
+        print 'Total activity span: %s ' % timedelta(seconds=(end - start).to_sec())
 
         days = day_durations.keys()
         days.sort()
 
-
+        print 'Tasks and duration each day'
         total_possible = timedelta()
         for day in days:
             total_possible += timedelta(hours=8)
