@@ -49,12 +49,14 @@ if __name__ == '__main__':
         dubious = []
         charge_wait_count = 0
         unstarted_count = 0
+        start_count = 0
 
         for task_event, meta in results:
 
             if task_event.event == TaskEvent.TASK_STARTED:
                 start_time = task_event.time                
                 started_task_event = task_event
+                start_count += 1
 
             elif task_event.event == TaskEvent.TASK_FINISHED or \
                     (task_event.task.action == '' and task_event.event == TaskEvent.NAVIGATION_SUCCEEDED):
@@ -81,6 +83,8 @@ if __name__ == '__main__':
         end = results[-1][0].time
 
 
+        print 'Starts: %s' % start_count
+        print 'Ends: %s (%s + %s + %s)' % (count + charge_wait_count  +  len(dubious), count, charge_wait_count, len(dubious))
 
         print 'Unstarted: %s' % unstarted_count
         print 'Dubious: %s' % len(dubious)

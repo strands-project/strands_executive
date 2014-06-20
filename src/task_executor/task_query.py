@@ -43,7 +43,8 @@ def query_tasks(msg_store, task_id=None, action=None, start_date=None, end_date=
     results = msg_store.query(TaskEvent._type, message_query=msg_query, 
                             meta_query=meta_query, single=False)
 
-    results.sort(key=lambda x: x[1]["inserted_at"])
+    # results.sort(key=lambda x: x[1]["inserted_at"])
+    results.sort(key=lambda x: x[0].time.to_sec())
 
     return results
 
@@ -82,6 +83,9 @@ def task_event_string(te):
         return 'TASK_SUCCEEDED'
     elif te == TaskEvent.TASK_PREEMPTED:
         return 'TASK_PREEMPTED'    
+
+
+
 
 def summarise(results):
 
