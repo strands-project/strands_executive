@@ -13,6 +13,7 @@ def query_tasks(msg_store, task_id=None, action=None, start_date=None, end_date=
     msg_query = {}
     meta_query = {}
 
+
     if task_id is not None:
         msg_query["task.task_id"] = task_id
 
@@ -20,7 +21,15 @@ def query_tasks(msg_store, task_id=None, action=None, start_date=None, end_date=
         msg_query["task.action"] = action        
 
     if event is not None:
-        msg_query["event"] = event
+        if not isinstance(event, list):
+            event = [event]
+
+        # create a disjunctive query over events
+        event_qs = []
+        for e in event:
+            event_qs.append({'event': e})        
+
+        msg_query['$or'] = event_qs
 
     if start_date is not None:
         if end_date is None:
@@ -33,6 +42,8 @@ def query_tasks(msg_store, task_id=None, action=None, start_date=None, end_date=
 
     results = msg_store.query(TaskEvent._type, message_query=msg_query, 
                             meta_query=meta_query, single=False)
+
+    results.sort(key=lambda x: x[1]["inserted_at"])
 
     return results
 
@@ -78,9 +89,6 @@ def summarise(results):
         print 'No task events match the query'
         return 
         
-    # events in chronological order
-    results.sort(key=lambda x: x[1]["inserted_at"])
-
     output = []
     tid = 0
 
