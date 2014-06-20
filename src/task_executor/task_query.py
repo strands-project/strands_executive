@@ -9,6 +9,11 @@ from strands_executive_msgs.msg import Task, TaskEvent
 from datetime import datetime
 from task_executor import task_routine
 
+def remove_duplicates(results):
+    seen = set()
+    seen_add = seen.add
+    return [ x for x in results if x[0] not in seen and not seen_add(x[0])]
+
 def query_tasks(msg_store, task_id=None, action=None, start_date=None, end_date=None, event=None):
     msg_query = {}
     meta_query = {}
@@ -43,10 +48,13 @@ def query_tasks(msg_store, task_id=None, action=None, start_date=None, end_date=
     results = msg_store.query(TaskEvent._type, message_query=msg_query, 
                             meta_query=meta_query, single=False)
 
+
+
+
     # results.sort(key=lambda x: x[1]["inserted_at"])
     results.sort(key=lambda x: x[0].time.to_sec())
 
-    return results
+    return remove_duplicates(results)
 
 def task_event_string(te):
     if te == TaskEvent.ADDED:
