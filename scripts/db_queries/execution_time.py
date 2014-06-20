@@ -41,8 +41,8 @@ if __name__ == '__main__':
                         )
 
 
-        duration = rospy.Duration()
-        charge_wait_duration = rospy.Duration()
+        duration = timedelta()
+        charge_wait_duration = timedelta()
 
         started_task_event = TaskEvent()
         count = 0
@@ -51,25 +51,46 @@ if __name__ == '__main__':
         unstarted_count = 0
         start_count = 0
 
-        for task_event, meta in results:
 
-            if task_event.event == TaskEvent.TASK_STARTED:
-                start_time = task_event.time                
+
+        for i in range(0, len(results)):
+
+            if i > 0:
+                previous = results[i-1][0]
+            
+            task_event = results[i][0]
+            
+            if i < len(results) - 1:
+                next = results[i+1][0]
+
+            start = False
+            end = False
+
+            if task_event.event == TaskEvent.TASK_STARTED or task_event.task.task_id != previous.task.task_id:
+                start = True
+            elif (task_event.event == TaskEvent.TASK_FINISHED or task_event.task.task_id != next.task.task_id or (task_event.task.action == '' and task_event.event == TaskEvent.NAVIGATION_SUCCEEDED)) and started_task_event.task.task_id != 0:
+                end = True
+
+            if start:
                 started_task_event = task_event
                 start_count += 1
-
-            elif (task_event.event == TaskEvent.TASK_FINISHED or (task_event.task.action == '' and task_event.event == TaskEvent.NAVIGATION_SUCCEEDED)) and started_task_event.task.task_id != 0:
+            elif end:
 
                 # if we're closing the previous event
                 if task_event.task.task_id == started_task_event.task.task_id:
-                    task_duration = task_event.time - start_time
+            
+                    task_duration = datetime.utcfromtimestamp(task_event.time.to_sec()) - datetime.utcfromtimestamp(started_task_event.time.to_sec())
 
                     if task_event.task.action == 'wait_action' and task_event.task.start_node_id == 'ChargingPoint':
                         charge_wait_duration += task_duration
                         charge_wait_count += 1
                     else:
-                        if duration.to_sec() > 60 * 60 * 10:
+                        
+                        if task_duration > timedelta(hours=3):
                             dubious.append((started_task_event, task_event))
+                            task_query.print_event(started_task_event)
+                            task_query.print_event(task_event)                            
+                            print '%s\n' % task_duration                  
                         else:
                             duration += task_duration
                             count += 1
@@ -80,9 +101,9 @@ if __name__ == '__main__':
                 else:
                     # print 'Finished an unstarted task: %s' % task_event
                     unstarted_count += 1
-                    task_query.print_event(started_task_event)
-                    task_query.print_event(task_event)
-                    print '\n'
+                    # task_query.print_event(started_task_event)
+                    # task_query.print_event(task_event)
+                    # print '\n'
             
         start = results[0][0].time
         end = results[-1][0].time
@@ -95,10 +116,10 @@ if __name__ == '__main__':
         print 'Dubious: %s' % len(dubious)
 
         print 'Finished: %s' % count        
-        print 'Duration: %s' % timedelta(seconds=duration.to_sec())
+        print 'Duration: %s' % duration
 
         print 'Charge Wait Finished: %s' % charge_wait_count        
-        print 'Charge Wait Duration: %s' % timedelta(seconds=charge_wait_duration.to_sec())
+        print 'Charge Wait Duration: %s' % charge_wait_duration
 
         print 'Start: %s' % datetime.utcfromtimestamp(start.to_sec())
         print 'End: %s' % datetime.utcfromtimestamp(end.to_sec())
