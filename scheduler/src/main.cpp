@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <ctime>
 
 #include "task.h"
 #include "scheduler.h"
@@ -14,11 +15,21 @@ int main (int argc, char** argv)
 
   unsigned int task_count;
 
-  if(argc > 1) {
+  //getting time stamp
+  time_t now = time(0);
+  tm *ltm = localtime(&now);  
+  string filename = "../result/real" + to_string(ltm->tm_hour)+"_"+to_string(ltm->tm_min)+"_"+to_string(ltm->tm_sec) + ".csv";
+
+  if(argc == 1)
+  {  
+    task_count = 10; 
+  }
+  else if(argc == 2) {
     task_count = stoi(argv[1]);
   }
   else {
-    task_count = 10;
+    task_count = stoi(argv[1]);
+    filename=argv[2];   
   }
 
   double one_hour = 60 * 6;
@@ -39,7 +50,7 @@ int main (int argc, char** argv)
 
 
   Scheduler scheduler(&tasks);
-  bool worked = scheduler.solve();
+  bool worked = scheduler.solve(2,filename);
 
   if(worked)  {
     cout<< "Schedule found" << worked << "\n";
