@@ -7,8 +7,11 @@
 #include "objscip/objscipdefplugins.h"
 
 #include <vector>
-#include <map>
+
+#include <chrono>
+
 #include <iostream> //TODO:delete this
+#include <fstream>
 
 using namespace scip;
 using namespace std;
@@ -25,11 +28,6 @@ ScipUser::ScipUser()
   catchEr = SCIPsetIntParam(scip, "display/verblevel", 5);
   /* create empty problem */
   catchEr = SCIPcreateProb(scip, "Scheduler", 0, 0, 0, 0, 0, 0, 0);
-
-  f= (SCIP_VAR*)NULL;
-  pre_var = new vector<SCIP_VAR *>(0,(SCIP_VAR*) NULL); 
-  num_preVar = 0;
-
 }
 
 ScipUser::~ScipUser()
@@ -41,49 +39,6 @@ ScipUser::~ScipUser()
 SCIP_Retcode ScipUser::getEr()
 {
   return catchEr;
-}
-
-SCIP_VAR * ScipUser::getF() {return f;}
-
-vector<SCIP_VAR*> * ScipUser::getPreVar() {return pre_var;}
-
-SCIP_Retcode ScipUser::fakeVar()
-{
-  /*creating of fake variable, it is always 1, needed in some constraints*/
-   char fn[255];
-   SCIPsnprintf(fn, 255, "f");
-   SCIP_CALL( SCIPcreateVar(scip,
-		&f,
-		fn,
-		1.0,
-		1.0,
-		0.0,
-		SCIP_VARTYPE_INTEGER,
-		true,
-		false,
-		0, 0, 0, 0, 0));  
-   SCIP_CALL(SCIPaddVar(scip, f)); 
-   return SCIP_OKAY; 
-}
-
-SCIP_Retcode ScipUser::fakeVarReturn(SCIP_VAR * g)
-{
-  /*creating of fake variable, it is always 1, needed in some constraints*/
-   char gn[255];
-   SCIPsnprintf(gn, 255, "g");
-   SCIP_CALL( SCIPcreateVar(scip,
-		&g,
-		gn,
-		1.0,
-		1.0,
-		0.0,
-		SCIP_VARTYPE_INTEGER,
-		true,
-		false,
-		0, 0, 0, 0, 0)); 
-   
-   SCIP_CALL(SCIPaddVar(scip, g)); 
-   return SCIP_OKAY; 
 }
 
 SCIP_Retcode ScipUser::tVar(int num_tasks, vector<SCIP_VAR *> * t_var)
@@ -114,34 +69,7 @@ SCIP_Retcode ScipUser::tVar(int num_tasks, vector<SCIP_VAR *> * t_var)
    return SCIP_OKAY;
 }
 
-SCIP_Retcode ScipUser::preVar(int i, int j, SCIP_Real low, SCIP_Real up, int * order)
-{
-  /* add one pre_ij variable (pre_ij = 1 if a task i precede task j) */
-   char var_name[255];
-   vector<SCIP_VAR*>::iterator it;
-   it = pre_var-> begin()+num_preVar;
-   SCIPsnprintf(var_name, 255, "pre_i%d_j%d", i,j);
-   SCIP_VAR* var;
-   SCIP_CALL( SCIPcreateVar(scip,
-                     &var,                   // returns new index
-                     var_name,               // name
-                     low,                    // lower bound
-                     up,                    // upper bound
-                     0.0,         // objective ??
-                     SCIP_VARTYPE_BINARY,   // variable type
-                     true,                   // initial
-                     false,                  // 
-                     0, 0, 0, 0, 0) );
-    SCIP_CALL( SCIPaddVar(scip, var) );
-    *order = num_preVar;
-    num_preVar++;
-    pre_var->insert(it,var);  
-
-  
-  return SCIP_OKAY;
-}
-
-SCIP_Retcode ScipUser::setTcons(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t_var, SCIP_VAR * g)
+SCIP_Retcode ScipUser::setTcons(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t_var)
 {
   /* add constraint s<= t + d <=e */
    char con_name[255];
@@ -234,18 +162,15 @@ SCIP_Retcode ScipUser::setTcons(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t
 }
 
 
-SCIP_Retcode ScipUser::setFinalCons_long(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t_var, SCIP_VAR * g, vector<vector<int>> * pairs)
+SCIP_Retcode ScipUser::setFinalCons(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t_var, vector<vector<int>> * pairs, double maxDist)
 {
-
-  map<pair<string, string>, SCIP_Real> distCache;
-
   char con_name[255]; 
   for(int x=0; x<(int)pairs->size(); x++)
   {
      vector<int> p = pairs->at(x);
      int i = p.at(0);
      int j = p.at(1);
-     int k = p.at(2);
+     //int k = p.at(2);
      int type = p.at(3);
 
      SCIP_VAR* ti;
@@ -261,21 +186,24 @@ SCIP_Retcode ScipUser::setFinalCons_long(vector<Task*> * tasksToS, vector<SCIP_V
      {   
        //creating a constraint ti + di + dist - tj <= 0     
        SCIP_Real d = tasksToS->at(i)->getDuration();
-       
        SCIP_Real dist;
-       pair<string, string> nodes = make_pair(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
-       map<pair<string, string>, SCIP_Real>::iterator it = distCache.find(nodes);
-       if(it == distCache.end()) {
-        dist = DistWrapper::dist(nodes.first, nodes.second);
-        distCache.insert(it, make_pair(nodes, dist));
+       if(tasksToS->at(i)->getEndPos().empty()) //if first task has no location, that the travel to following task might take maxDist;
+       {
+         dist = maxDist;
        }
-       else {
-        //cout<<"WOOoOOOOOOOoOO\n";
-        dist = it->second;
+       else if(tasksToS->at(j)->getStartPos().empty()) //if second task in pair has no location, travel dist is zero, should start immediately
+       {
+         dist = 0; 
        }
-
-        
-
+       else
+       {        
+         dist = DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
+       }
+        //two following tasks with no loc
+       if((tasksToS->at(i)->getEndPos().empty())&&(tasksToS->at(j)->getStartPos().empty()))
+       { 
+         dist =0;
+       }
        SCIP_Real vals[2]; //array of values
        vals[0] = 1;
        vals[1] = -1; 
@@ -315,17 +243,23 @@ SCIP_Retcode ScipUser::setFinalCons_long(vector<Task*> * tasksToS, vector<SCIP_V
 
        SCIP_Real dj = tasksToS->at(j)->getDuration();
        SCIP_Real distj;
-       pair<string, string> nodes = make_pair(tasksToS->at(j)->getEndPos(),tasksToS->at(i)->getStartPos());
-       map<pair<string, string>, SCIP_Real>::iterator it = distCache.find(nodes);
-       if(it == distCache.end()) {
-        distj = DistWrapper::dist(nodes.first, nodes.second);
-        distCache.insert(it, make_pair(nodes, distj));
+       if(tasksToS->at(j)->getEndPos().empty()) //if first task has no location, that the travel to following task might take maxDist;
+       {
+         distj = maxDist;
        }
-       else {       
-        //cout<<"WOOoOOOOOOOoOO\n";
-        distj = it->second;
+       else if(tasksToS->at(i)->getStartPos().empty()) //if second task in pair has no location, travel dist is zero, should start immediately
+       {
+         distj = 0; 
        }
-
+       else
+       {        
+         distj = DistWrapper::dist(tasksToS->at(j)->getEndPos(),tasksToS->at(i)->getStartPos());
+       }
+       if((tasksToS->at(j)->getEndPos().empty())&&(tasksToS->at(i)->getStartPos().empty()))
+       {
+         distj = 0;
+       }
+       
 
        SCIP_Real vals3[2]; //array of values
        vals3[0] = 1;
@@ -399,19 +333,34 @@ SCIP_Retcode ScipUser::setFinalCons_long(vector<Task*> * tasksToS, vector<SCIP_V
   return SCIP_OKAY;
 }
 
-SCIP_Retcode ScipUser::scipSolve(vector<Task*> * tasksToS, SCIP_VAR * vars[], bool * worked)
+SCIP_Retcode ScipUser::scipSolve(vector<Task*> * tasksToS, SCIP_VAR * vars[], bool * worked, string filename)
 {
   int num_tasks = tasksToS -> size();
+  //std::chrono::time_point<std::chrono::system_clock> start, end;
+  std::chrono::high_resolution_clock::time_point start, end;
+  ofstream results;
 
   SCIP_Real vals[num_tasks]; //array to save execution times
-
+  start = std::chrono::high_resolution_clock::now();
   SCIP_CALL( SCIPsolve(scip) );
+  end = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> elapsed_seconds = end-start;
+ 
   //SCIP_CALL( SCIPprintBestSol(scip, NULL, FALSE) );
   SCIP_SOL* sol = SCIPgetBestSol(scip);
-  
+  if(!filename.empty())
+  {
+    results.open (filename,std::ios_base::app);
+    results << SCIPgetSolOrigObj(scip,sol) << " " << elapsed_seconds.count();
+  }
+
   if(sol == NULL)
   {
     *worked = false;
+    if(!filename.empty())
+    {
+      results << " " << 0 << "\n";
+    }
     for(int i=0; i < num_tasks; i++)
     {
       tasksToS->at(i)->setExecTime(-1.0);
@@ -420,11 +369,16 @@ SCIP_Retcode ScipUser::scipSolve(vector<Task*> * tasksToS, SCIP_VAR * vars[], bo
   else
   {
     *worked = true;
+    if(!filename.empty())
+    {
+      results << " " << 1 << "\n";
+    }
     SCIP_CALL(SCIPgetSolVals(scip,sol, num_tasks, vars, vals)); 
     for(int i=0; i < num_tasks; i++)
     {
       tasksToS->at(i)->setExecTime(vals[i]);
     }
   }	
+  results.close();
   return SCIP_OKAY;
 }
