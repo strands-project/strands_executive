@@ -32,9 +32,9 @@ Task * createSchedulerTask(const strands_executive_msgs::Task & _task, const ros
 
   auto startAfter = _earliestStart > _task.start_after ? _earliestStart : _task.start_after;
 
-  ROS_INFO_STREAM("" << _earliestStart);
-  ROS_INFO_STREAM("" << _task.start_after);
-  ROS_INFO_STREAM("" << startAfter);
+  // ROS_INFO_STREAM("" << _earliestStart);
+  // ROS_INFO_STREAM("" << _task.start_after);
+  // ROS_INFO_STREAM("" << startAfter);
   
 
 	Task* t = new Task(_task.task_id,
@@ -89,6 +89,8 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
   }
 
   Scheduler scheduler(&tasks);
+
+
   if(scheduler.solve(scheduler_version, output_file)) {
   	std::sort(tasks.begin(), tasks.end(), compareTasks);
 
@@ -116,17 +118,18 @@ int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "schedule_server");
 
-
   if(ros::param::has("~save_problems")) {
     ros::param::get("~save_problems", save_problems);
   } 
 
   if(ros::param::has("~scheduler_version")) {
     ros::param::get("~scheduler_version", scheduler_version);
+    ROS_INFO_STREAM("Running scheduler version " << scheduler_version);
   } 
 
   if(ros::param::has("~output_file")) {
     ros::param::get("~output_file", output_file);
+    ROS_INFO_STREAM("Saving experimental output to " << output_file);
   } 
 
 

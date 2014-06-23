@@ -281,7 +281,7 @@ int Scheduler::setPreVar(ScipUser * solver)
   return 0;
 }
 
-bool Scheduler::solve(int version,string filename)
+bool Scheduler::solve(int version, string filename)
 {
   SCIP_Retcode err;
   vector<bool> pairUsed;
@@ -291,17 +291,30 @@ bool Scheduler::solve(int version,string filename)
   if (err != SCIP_OKAY)
     return -1;
 
+
+  cout<<"Solving with: "<<version<<endl;
+
   Pairs * pr = new Pairs(tasksToS);
-  if(version==1) //Brian Coltin
+  if(version==1)  {
+    //Brian Coltin
     numPairs = pr->setPairs_BC();
-  else if(version==2) //mine
+  }
+  else if(version==2) {
+    //mine
     numPairs = pr->setPairs_mine();
-  else if(version==3) //robot version
+  }
+  else if(version==3) {
+    //robot version
     numPairs = pr->setPairs();
-  else if(version==4) //mine specific approach
+  }
+  else if(version==4) {
+    //mine specific approach
     numPairs = pr->setPairs_new();
-  else //if parameter is not set
+  }
+  else {
+    //if parameter is not set
     numPairs = pr->setPairs_new();
+  }
 
   pr->getPairs(&pairs);
 

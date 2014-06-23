@@ -51,13 +51,24 @@ if __name__ == "__main__":
     solved_count = 0
     for message, meta in scheduling_problems:
         tasks = []
-        earliest_start = rospy.Time()
-        for pair in message.pairs:
-             task = msg_store.query_id(message.pairs[0].second, Task._type)[0]
-             tasks.append(task)
+        earliest_start = rospy.get_rostime()
 
-        if task.start_after < earliest_start:
-            earliest_start = task.start_after
+
+
+        for pair in message.pairs:
+            task = msg_store.query_id(message.pairs[0].second, Task._type)[0]
+            tasks.append(task)
+
+            if task.start_after < earliest_start:
+                earliest_start = task.start_after
+
+        #set earliest task to start at 0
+        for task in tasks:
+            task.start_after = task.start_after - earliest_start
+            task.end_before = task.end_before - earliest_start
+
+        # reset to 0
+        earliest_start = rospy.Time()
 
         resp = schedule_srv(tasks, earliest_start)
         solved = True if (len(resp.task_order) > 0 or len(tasks) == 0) else False
