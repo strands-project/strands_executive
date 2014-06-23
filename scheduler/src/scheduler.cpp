@@ -294,11 +294,13 @@ bool Scheduler::solve(int version,string filename)
   Pairs * pr = new Pairs(tasksToS);
   if(version==1) //Brian Coltin
     numPairs = pr->setPairs_BC();
-  if(version==2) //mine
+  else if(version==2) //mine
     numPairs = pr->setPairs_mine();
-  if(version==3) //robot version
+  else if(version==3) //robot version
     numPairs = pr->setPairs();
-  if(version==4) //mine specific approach
+  else if(version==4) //mine specific approach
+    numPairs = pr->setPairs_new();
+  else //if parameter is not set
     numPairs = pr->setPairs_new();
 
   pr->getPairs(&pairs);

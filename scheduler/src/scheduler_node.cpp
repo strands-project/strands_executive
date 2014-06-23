@@ -82,7 +82,7 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
   messageStore.insert(spl);
 
   Scheduler scheduler(&tasks);
-  if(scheduler.solve()) {
+  if(scheduler.solve(version, filename)) {
   	std::sort(tasks.begin(), tasks.end(), compareTasks);
 
   	for(auto & tp : tasks) {
