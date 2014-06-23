@@ -342,10 +342,12 @@ SCIP_Retcode ScipUser::scipSolve(vector<Task*> * tasksToS, SCIP_VAR * vars[], bo
 
   SCIP_Real vals[num_tasks]; //array to save execution times
   start = std::chrono::high_resolution_clock::now();
+  SCIP_CALL( SCIPsetRealParam(scip, "limits/time", 60) );
   SCIP_CALL( SCIPsolve(scip) );
   end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed_seconds = end-start;
  
+
   //SCIP_CALL( SCIPprintBestSol(scip, NULL, FALSE) );
   SCIP_SOL* sol = SCIPgetBestSol(scip);
   if(!filename.empty())
