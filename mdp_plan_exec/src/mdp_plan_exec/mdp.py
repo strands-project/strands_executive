@@ -320,8 +320,7 @@ class ProductMdp(Mdp):
                 
         f.close()                
     
-    
-    
+        
     
     def read_states(self,product_sta,product_lab):
         f = open(product_sta, 'r')
