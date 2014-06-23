@@ -25,6 +25,8 @@ using namespace ros_datacentre_msgs;
 // }
 
 bool save_problems = true;
+int scheduler_version = -1;
+string output_file = "";
 
 Task * createSchedulerTask(const strands_executive_msgs::Task & _task, const ros::Time & _earliestStart) {
 
@@ -87,7 +89,7 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
   }
 
   Scheduler scheduler(&tasks);
-  if(scheduler.solve(version, filename)) {
+  if(scheduler.solve(scheduler_version, output_file)) {
   	std::sort(tasks.begin(), tasks.end(), compareTasks);
 
   	for(auto & tp : tasks) {
@@ -119,8 +121,20 @@ int main(int argc, char **argv)
     ros::param::get("~save_problems", save_problems);
   } 
 
+  if(ros::param::has("~scheduler_version")) {
+    ros::param::get("~scheduler_version", scheduler_version);
+  } 
+
+  if(ros::param::has("~output_file")) {
+    ros::param::get("~output_file", output_file);
+  } 
+
+
   if(save_problems) {
     ROS_INFO("Writing scheduling problems to ros_datacentre");
+  }
+  else{
+    ROS_INFO("Not writing scheduling problems to ros_datacentre");
   }
 
   	ros::NodeHandle nh;

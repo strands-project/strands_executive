@@ -36,7 +36,7 @@ int main (int argc, char** argv)
 
 
   Scheduler scheduler(&tasks);
-  bool worked = scheduler.solve();
+  bool worked = scheduler.solve(-1, "");
 
   if(worked)  {
     cout<< "Schedule found" << worked << "\n";
