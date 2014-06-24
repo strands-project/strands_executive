@@ -6,6 +6,8 @@
 #include <iostream> //TODO: delete
 #include "scipUser.h"
 #include <math.h>  
+#include <chrono>
+#include <fstream>
 /* scip includes */
 #include "objscip/objscip.h"
 #include "objscip/objscipdefplugins.h"
@@ -285,23 +287,51 @@ bool Scheduler::solve(int version,string filename)
 {
   SCIP_Retcode err;
   vector<bool> pairUsed;
+  ofstream results;
 
   ScipUser * solver = new ScipUser();
   err = solver->getEr();
   if (err != SCIP_OKAY)
     return -1;
 
+  std::chrono::high_resolution_clock::time_point start, end;
   Pairs * pr = new Pairs(tasksToS);
+
   if(version==1) //Brian Coltin
+  {
+    start = std::chrono::high_resolution_clock::now();
     numPairs = pr->setPairs_BC();
+    end = std::chrono::high_resolution_clock::now();
+  }
   else if(version==2) //mine
+  {
+    start = std::chrono::high_resolution_clock::now();
     numPairs = pr->setPairs_mine();
+    end = std::chrono::high_resolution_clock::now();
+  }
   else if(version==3) //robot version
+  {
+    start = std::chrono::high_resolution_clock::now();
     numPairs = pr->setPairs();
+    end = std::chrono::high_resolution_clock::now();
+  }
   else if(version==4) //mine specific approach
+  { 
+    start = std::chrono::high_resolution_clock::now();
     numPairs = pr->setPairs_new();
+    end = std::chrono::high_resolution_clock::now();
+  }
   else //if parameter is not set
+  {
+    start = std::chrono::high_resolution_clock::now();
     numPairs = pr->setPairs_new();
+    end = std::chrono::high_resolution_clock::now();
+  }
+
+  std::chrono::duration<double> elapsed_seconds = end-start;
+  results.open (filename,std::ios_base::app);
+  results << elapsed_seconds.count() << " ";
+  results.close();
 
   pr->getPairs(&pairs);
 
@@ -324,9 +354,16 @@ bool Scheduler::solve(int version,string filename)
 
   double maxDist = getMaxDist();
 //for all pairs we need to set condition
+  start = std::chrono::high_resolution_clock::now();
   err = solver->setFinalCons(tasksToS, t_var, &pairs, maxDist);
+  end = std::chrono::high_resolution_clock::now();
   if (err != SCIP_OKAY)
     return -1; 
+
+  elapsed_seconds = end-start;
+  results.open (filename,std::ios_base::app);
+  results << elapsed_seconds.count() << " ";
+  results.close();
 
 //conversion from vector to "array"
   SCIP_VAR * array_tvar[numTasks];
