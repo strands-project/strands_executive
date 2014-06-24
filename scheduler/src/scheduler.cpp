@@ -329,9 +329,12 @@ bool Scheduler::solve(int version,string filename)
   }
 
   std::chrono::duration<double> elapsed_seconds = end-start;
-  results.open (filename,std::ios_base::app);
-  results << elapsed_seconds.count() << " ";
-  results.close();
+  if(!filename.empty())
+  {
+    results.open (filename,std::ios_base::app);
+    results << elapsed_seconds.count() << " ";
+    results.close();
+  }
 
   pr->getPairs(&pairs);
 
@@ -361,9 +364,12 @@ bool Scheduler::solve(int version,string filename)
     return -1; 
 
   elapsed_seconds = end-start;
-  results.open (filename,std::ios_base::app);
-  results << elapsed_seconds.count() << " ";
-  results.close();
+  if(!filename.empty())
+  {
+    results.open (filename,std::ios_base::app);
+    results << elapsed_seconds.count() << " ";
+    results.close();
+  }
 
 //conversion from vector to "array"
   SCIP_VAR * array_tvar[numTasks];
