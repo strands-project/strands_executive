@@ -97,13 +97,13 @@ int Scheduler::setPreVar(ScipUser * solver)
 {
   vector<bool> pairSet;
   pairSet.resize(numPairs,false);
-  //int i;
+  int i;
   int j;
   int * order = new int();
   //setting pre variables, first testing now and conditions
   //if task now exist, we need to set pre variables first
 
-  /*i = findTaskNow();
+  i = findTaskNow();
   if(i != -1)
   {
     unsigned int tid = tasksToS->at(i)->getID();
@@ -171,7 +171,7 @@ int Scheduler::setPreVar(ScipUser * solver)
       }
     }   
   }
-  
+  /*
   //then solve conditions
   vector<int> taskWithCond = findConditions();
   if(taskWithCond.size() != 0)
