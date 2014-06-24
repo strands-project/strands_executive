@@ -3,7 +3,7 @@ import actionlib
 from std_msgs.msg import String
 from strands_executive_msgs.msg import Task
 from task_executor.msg import *
-from topological_navigation.msg import GotoNodeAction, GotoNodeResult
+from topological_navigation.msg import GotoNodeAction, GotoNodeResult, GotoNodeFeedback
 from strands_navigation_msgs.msg import NavStatistics, MonitoredNavigationAction, MonitoredNavigationResult, MonitoredNavigationGoal
 from actionlib_msgs.msg import GoalStatus
 
@@ -14,7 +14,8 @@ class TestTaskAction(object):
     def __init__(self, expected_action_duration=rospy.Duration(1), expected_drive_duration=rospy.Duration(20)):
         self.expected_action_duration = expected_action_duration
         self.expected_drive_duration = expected_drive_duration
-        self.nav_result   =  GotoNodeResult()    
+        self.nav_result   =  GotoNodeResult()   
+        self.nav_feedback = GotoNodeFeedback() 
         self.mon_nav_result =  MonitoredNavigationResult()    
         self.nav_server = actionlib.SimpleActionServer('topological_navigation', GotoNodeAction, execute_cb = self.nav_callback, auto_start = False)
         self.mon_nav_server = actionlib.SimpleActionServer('monitored_navigation', MonitoredNavigationAction, execute_cb = self.mon_nav_callback, auto_start = False)
@@ -71,10 +72,17 @@ class TestTaskAction(object):
     def nav_callback(self, goal):
         print 'called with nav goal %s'%goal.target
 
+        self.nav_feedback.route = 'Starting...'
+        self.nav_server.publish_feedback(self.nav_feedback)
+
         self.mon_nav_action_client = actionlib.SimpleActionClient('monitored_navigation', MonitoredNavigationAction)
         rospy.loginfo('waiting for mon nav server')
         self.mon_nav_action_client.wait_for_server()
         rospy.loginfo('done')
+
+
+        self.nav_feedback.route = '%s to %s by %s' % (self.cn, goal.target, 'fake_action')
+        self.nav_server.publish_feedback(self.nav_feedback)
 
         mon_goal = MonitoredNavigationGoal()
         self.mon_nav_action_client.send_goal(mon_goal)
@@ -99,6 +107,7 @@ class TestTaskAction(object):
             self.nav_result.success = True       
             self.nav_server.set_succeeded(self.nav_result)
         
-
+        self.nav_feedback.route = goal.target
+        self.nav_server.publish_feedback(self.nav_feedback)
 
         print "nav complete" 
