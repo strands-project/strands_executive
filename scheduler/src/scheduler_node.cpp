@@ -27,6 +27,7 @@ using namespace ros_datacentre_msgs;
 bool save_problems = true;
 int scheduler_version = -1;
 string output_file = "";
+int timeout = 0;
 
 Task * createSchedulerTask(const strands_executive_msgs::Task & _task, const ros::Time & _earliestStart) {
 
@@ -91,7 +92,7 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
   Scheduler scheduler(&tasks);
 
 
-  if(scheduler.solve(scheduler_version, output_file)) {
+  if(scheduler.solve(scheduler_version, output_file, timeout)) {
   	std::sort(tasks.begin(), tasks.end(), compareTasks);
 
   	for(auto & tp : tasks) {
@@ -132,6 +133,10 @@ int main(int argc, char **argv)
     ROS_INFO_STREAM("Saving experimental output to " << output_file);
   } 
 
+  if(ros::param::has("~timeout")) {
+    ros::param::get("~timeout", timeout);
+    ROS_INFO_STREAM("Using timeout " << timeout);
+  } 
 
   if(save_problems) {
     ROS_INFO("Writing scheduling problems to ros_datacentre");

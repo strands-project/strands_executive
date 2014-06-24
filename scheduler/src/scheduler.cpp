@@ -281,7 +281,7 @@ int Scheduler::setPreVar(ScipUser * solver)
   return 0;
 }
 
-bool Scheduler::solve(int version, string filename)
+bool Scheduler::solve(int version, string filename, const int & timeout)
 {
   SCIP_Retcode err;
   vector<bool> pairUsed;
@@ -351,7 +351,7 @@ bool Scheduler::solve(int version, string filename)
 
 //----------------------- 
 
-  err = solver->scipSolve(tasksToS, array_tvar, worked, filename);
+  err = solver->scipSolve(tasksToS, array_tvar, worked, filename, timeout);
    if (err != SCIP_OKAY)
     return -1; 
 
