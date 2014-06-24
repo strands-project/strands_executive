@@ -6,6 +6,8 @@
 #include <iostream> //TODO: delete
 #include "scipUser.h"
 #include <math.h>  
+#include <chrono>
+#include <fstream>
 /* scip includes */
 #include "objscip/objscip.h"
 #include "objscip/objscipdefplugins.h"
@@ -95,13 +97,13 @@ int Scheduler::setPreVar(ScipUser * solver)
 {
   vector<bool> pairSet;
   pairSet.resize(numPairs,false);
-  //int i;
+  int i;
   int j;
   int * order = new int();
   //setting pre variables, first testing now and conditions
   //if task now exist, we need to set pre variables first
 
-  /*i = findTaskNow();
+  i = findTaskNow();
   if(i != -1)
   {
     unsigned int tid = tasksToS->at(i)->getID();
@@ -169,7 +171,7 @@ int Scheduler::setPreVar(ScipUser * solver)
       }
     }   
   }
-  
+  /*
   //then solve conditions
   vector<int> taskWithCond = findConditions();
   if(taskWithCond.size() != 0)
@@ -285,16 +287,18 @@ bool Scheduler::solve(int version, string filename, const int & timeout)
 {
   SCIP_Retcode err;
   vector<bool> pairUsed;
+  ofstream results;
 
   ScipUser * solver = new ScipUser();
   err = solver->getEr();
   if (err != SCIP_OKAY)
     return -1;
 
-
   cout<<"Solving with: "<<version<<endl;
-
+  std::chrono::high_resolution_clock::time_point start, end;
   Pairs * pr = new Pairs(tasksToS);
+  
+  start = std::chrono::high_resolution_clock::now();
   if(version==1)  {
     //Brian Coltin
     numPairs = pr->setPairs_BC();
@@ -314,6 +318,15 @@ bool Scheduler::solve(int version, string filename, const int & timeout)
   else {
     //if parameter is not set
     numPairs = pr->setPairs_new();
+  }
+  end = std::chrono::high_resolution_clock::now();
+  
+  std::chrono::duration<double> elapsed_seconds = end-start;
+  if(!filename.empty())
+  {
+    results.open (filename,std::ios_base::app);
+    results << elapsed_seconds.count() << " ";
+    results.close();
   }
 
   pr->getPairs(&pairs);
@@ -337,9 +350,19 @@ bool Scheduler::solve(int version, string filename, const int & timeout)
 
   double maxDist = getMaxDist();
 //for all pairs we need to set condition
+  start = std::chrono::high_resolution_clock::now();
   err = solver->setFinalCons(tasksToS, t_var, &pairs, maxDist);
+  end = std::chrono::high_resolution_clock::now();
   if (err != SCIP_OKAY)
     return -1; 
+
+  elapsed_seconds = end-start;
+  if(!filename.empty())
+  {
+    results.open (filename,std::ios_base::app);
+    results << elapsed_seconds.count() << " ";
+    results.close();
+  }
 
 //conversion from vector to "array"
   SCIP_VAR * array_tvar[numTasks];
