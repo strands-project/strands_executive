@@ -72,6 +72,8 @@ class BaseTaskExecutor(object):
         self.active_task = None
         self.active_task_completes_by = rospy.get_rostime()
         self.service_lock = threading.Lock()
+        self.task_event_publisher = rospy.Publisher('/task_executor/events', TaskEvent)
+
 
 
     def get_active_task_completion_time(self):
@@ -125,16 +127,16 @@ class BaseTaskExecutor(object):
             te = TaskEvent(task=task, event=event, time=time, description=description)
 
             try:
+                self.task_event_publisher.publish(te)
                 self.logging_msg_store.insert(te)
             except Exception, e:
                 rospy.logwarn('Caught exception when logging: %s' % e)
 
 
-
-
     def log_task_event(self, task, event, time, description=""):
         te = TaskEvent(task=task, event=event, time=time, description=description)
         try:
+            self.task_event_publisher.publish(te)
             self.logging_msg_store.insert(te)
         except Exception, e:
             rospy.logwarn('Caught exception when logging: %s' % e)

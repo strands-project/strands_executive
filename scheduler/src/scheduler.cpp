@@ -283,7 +283,7 @@ int Scheduler::setPreVar(ScipUser * solver)
   return 0;
 }
 
-bool Scheduler::solve(int version,string filename)
+bool Scheduler::solve(int version, string filename, const int & timeout)
 {
   SCIP_Retcode err;
   vector<bool> pairUsed;
@@ -294,40 +294,33 @@ bool Scheduler::solve(int version,string filename)
   if (err != SCIP_OKAY)
     return -1;
 
+  cout<<"Solving with: "<<version<<endl;
   std::chrono::high_resolution_clock::time_point start, end;
   Pairs * pr = new Pairs(tasksToS);
-
-  if(version==1) //Brian Coltin
-  {
-    start = std::chrono::high_resolution_clock::now();
+  
+  start = std::chrono::high_resolution_clock::now();
+  if(version==1)  {
+    //Brian Coltin
     numPairs = pr->setPairs_BC();
-    end = std::chrono::high_resolution_clock::now();
   }
-  else if(version==2) //mine
-  {
-    start = std::chrono::high_resolution_clock::now();
+  else if(version==2) {
+    //mine
     numPairs = pr->setPairs_mine();
-    end = std::chrono::high_resolution_clock::now();
   }
-  else if(version==3) //robot version
-  {
-    start = std::chrono::high_resolution_clock::now();
+  else if(version==3) {
+    //robot version
     numPairs = pr->setPairs();
-    end = std::chrono::high_resolution_clock::now();
   }
-  else if(version==4) //mine specific approach
-  { 
-    start = std::chrono::high_resolution_clock::now();
+  else if(version==4) {
+    //mine specific approach
     numPairs = pr->setPairs_new();
-    end = std::chrono::high_resolution_clock::now();
   }
-  else //if parameter is not set
-  {
-    start = std::chrono::high_resolution_clock::now();
+  else {
+    //if parameter is not set
     numPairs = pr->setPairs_new();
-    end = std::chrono::high_resolution_clock::now();
   }
-
+  end = std::chrono::high_resolution_clock::now();
+  
   std::chrono::duration<double> elapsed_seconds = end-start;
   if(!filename.empty())
   {
@@ -381,7 +374,7 @@ bool Scheduler::solve(int version,string filename)
 
 //----------------------- 
 
-  err = solver->scipSolve(tasksToS, array_tvar, worked, filename);
+  err = solver->scipSolve(tasksToS, array_tvar, worked, filename, timeout);
    if (err != SCIP_OKAY)
     return -1; 
 

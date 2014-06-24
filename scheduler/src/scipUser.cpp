@@ -333,7 +333,7 @@ SCIP_Retcode ScipUser::setFinalCons(vector<Task*> * tasksToS, vector<SCIP_VAR *>
   return SCIP_OKAY;
 }
 
-SCIP_Retcode ScipUser::scipSolve(vector<Task*> * tasksToS, SCIP_VAR * vars[], bool * worked, string filename)
+SCIP_Retcode ScipUser::scipSolve(vector<Task*> * tasksToS, SCIP_VAR * vars[], bool * worked, string filename, const int & timeout)
 {
   int num_tasks = tasksToS -> size();
   //std::chrono::time_point<std::chrono::system_clock> start, end;
@@ -342,16 +342,23 @@ SCIP_Retcode ScipUser::scipSolve(vector<Task*> * tasksToS, SCIP_VAR * vars[], bo
 
   SCIP_Real vals[num_tasks]; //array to save execution times
   start = std::chrono::high_resolution_clock::now();
+
+
+  if(timeout > 0) {
+    SCIP_CALL( SCIPsetRealParam(scip, "limits/time", timeout) );
+  }
+  
   SCIP_CALL( SCIPsolve(scip) );
   end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed_seconds = end-start;
  
+
   //SCIP_CALL( SCIPprintBestSol(scip, NULL, FALSE) );
   SCIP_SOL* sol = SCIPgetBestSol(scip);
   if(!filename.empty())
   {
     results.open (filename,std::ios_base::app);
-    results << SCIPgetSolOrigObj(scip,sol) << " " << elapsed_seconds.count();
+    results << SCIPgetSolOrigObj(scip,sol) << " " << elapsed_seconds.count() << " " << num_tasks;
   }
 
   if(sol == NULL)

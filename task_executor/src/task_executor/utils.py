@@ -22,7 +22,7 @@ class TestTaskAction(object):
         # self.task_server = actionlib.SimpleActionServer('test_task', TestExecutionAction, execute_cb = self.execute, auto_start = False)        
         self.cn_pub = rospy.Publisher('/current_node', String)
         self.cl_pub = rospy.Publisher('/closest_node', String)
-        self.cn = 'WayPoint1'
+        self.cn = 'ChargingPoint'
        
         
     def start(self):
