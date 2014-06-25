@@ -29,7 +29,8 @@ int scheduler_version = -1;
 string output_file = "";
 int timeout = 0;
 
-Task * createSchedulerTask(const strands_executive_msgs::Task & _task, const ros::Time & _earliestStart) {
+Task * createSchedulerTask(const strands_executive_msgs::Task & _task, const ros::Time & _earliestStart, const bool & _demand=false) {
+
 
   auto startAfter = _earliestStart > _task.start_after ? _earliestStart : _task.start_after;
 
@@ -43,7 +44,8 @@ Task * createSchedulerTask(const strands_executive_msgs::Task & _task, const ros
 						_task.end_before.toSec(),
 						_task.max_duration.toSec(),
 						_task.start_node_id,
-						_task.end_node_id);
+						_task.end_node_id, 
+            _demand);
 
 	return t;
 }
@@ -77,7 +79,14 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
       static string taskType(get_ros_type(task));
       stored.push_back( make_pair(taskType, messageStore.insert(task)) );
     }
-  	tasks.push_back(createSchedulerTask(task, req.earliest_start));
+
+
+    bool first = task.task_id == req.first_task ? true : false;
+
+  	tasks.push_back(createSchedulerTask(task, req.earliest_start, first));
+    if(first) {
+      ROS_INFO_STREAM(task.task_id << " is first");
+    }
   }
 
 

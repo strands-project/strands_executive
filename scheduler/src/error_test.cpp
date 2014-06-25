@@ -1,3 +1,5 @@
+#include "ros/ros.h"
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -9,40 +11,36 @@ using namespace std;
 
 int main (int argc, char** argv) 
 {   
-  string s1("home");
-  string s2("office");
+  ros::init(argc, argv, "error_test");
 
-  unsigned int task_count;
+  string s1("ChargingPoint");
+  string s2("Lobby");
 
-  if(argc > 1) {
-    task_count = stoi(argv[1]);
-  }
-  else {
-    task_count = 10;
-  }
+  int task_count = 4;
 
   double one_hour = 60 * 60 * 60;
   double task_duration = one_hour / 2.0;
-
+  double nav_time = 300;
   double window_start = 0;
-  double window_end = window_start + (task_duration * task_count * task_count);
+  double window_end = window_start + ((task_duration + nav_time) * task_count * task_count * task_count);
 
   vector<Task*> tasks;
 
-  for (int i = 0; i < task_count; ++i)
-  {
-    tasks.push_back(new Task(i, window_start, window_end, task_duration, s1, s2));
-  }
+  tasks.push_back(new Task(1, window_start, window_end, task_duration, s2, s2, true));
+  tasks.push_back(new Task(2, window_start, window_end, task_duration, s1, s1));
+  tasks.push_back(new Task(3, window_start, window_end, task_duration, s2, s2));
+  
 
 
   Scheduler scheduler(&tasks);
-  bool worked = scheduler.solve(-1, "");
+  bool worked = scheduler.solve(4, "");
 
   if(worked)  {
     cout<< "Schedule found" << worked << "\n";
     for(auto & tp : tasks) {
-      cout<< "Is start time "<<tp->getExecTime() << " after start? "
-       << (tp->getExecTime() >= tp->getStart()) << "\n";
+      cout<<"task "<<tp->getID()<<endl;
+      cout<< "start time "<<tp->getExecTime()<<endl;
+
     } 
   }
   else {
