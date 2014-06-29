@@ -8,6 +8,7 @@ import rospy
 from ros_datacentre.message_store import MessageStoreProxy
 from strands_navigation_msgs.msg import TopologicalNode
 from strands_navigation_msgs.msg import NavStatistics
+from strands_navigation_msgs.msg import NavRoute
 
 class Mdp(object):
     
@@ -254,6 +255,8 @@ class ProductMdp(Mdp):
         self.set_rewards_and_trans_count()
         self.set_props()
         
+        self.policy_publisher = rospy.Publisher('/mdp_plan_exec/current_policy_mode', NavRoute)
+        
         
     def set_rewards_and_trans_count(self):
         
@@ -385,7 +388,8 @@ class ProductMdp(Mdp):
         for line in f:
             line=line.split(' ')
             self.policy[int(line[0])]=line[3].strip('\n')
-        print self.policy    
+        print self.policy
+        self.publish_current_policy_mode(self.initial_state)
         f.close()    
                     
     
@@ -406,6 +410,32 @@ class ProductMdp(Mdp):
         for i in range(0,n_possible_next_states):
             next_possible_state=possible_next_states[i][0]
             if self.prop_map[next_possible_state][final_node_prop_index]:
+                self.publish_current_policy_mode(next_possible_state)
                 return next_possible_state
         return -1
+        
+    def publish_current_policy_mode(self, current_state):
+        sources = []
+        targets = []
+        current_mode = self.state_labels[current_state][0]
+        policy_msg = NavRoute()
+        print current_mode
+        for i in range(0,self.n_states):
+            current_action = self.policy[i]
+            if current_action is not None and self.state_labels[i][0] == current_mode:
+                action_split = current_action.split('_')
+                source = action_split[1]
+                target = action_split[2]
+                policy_msg.source.append(source)
+                policy_msg.target.append(target)
+                
+        self.policy_publisher.publish(policy_msg)
+                
+        
+        
+        
+        
+        
+        
+        
     
