@@ -83,7 +83,7 @@ if __name__ == '__main__':
 
     routine = task_routine.DailyRoutine(start, end)
    
-    routine.repeat_every_hour(task, times=10)
+    routine.repeat_every_mins(task, times=1)
 
     # create the object which will talk to the scheduler
     runner = task_routine.DailyRoutineRunner(start, end, add_tasks, day_start_cb=on_day_start, day_end_cb=on_day_end)

@@ -79,6 +79,41 @@ class DailyRoutine(object):
         """
         self.repeat_every(tasks, self.daily_start, self.daily_end, times)
 
+    def repeat_every_mins(self, tasks, mins=30, times=1):
+        """
+        Repeat the given tasks x times every n minutes
+        """
+
+        window_start = self.daily_start
+        new_end_mins = window_start.minute + mins
+        if new_end_mins <= 59: 
+            window_end =  window_start.replace(minute=(new_end_mins))
+        else:
+            window_end =  window_start.replace(minute=(new_end_mins-59), hour=(window_start.hour + 1))
+
+        while window_end <= self.daily_end:
+
+            if window_start == window_end:
+                return
+           
+            print '%s.%s - %s.%s' % (window_start.hour, window_start.minute, window_end.hour, window_end.minute)
+            self.repeat_every(tasks, window_start, window_end, times)
+    
+
+            window_start = window_end
+
+            new_end = window_start
+            new_end_mins = new_end.minute + mins
+            if new_end_mins <= 59: 
+                new_end =  new_end.replace(minute=(new_end_mins))
+            else:                
+                new_end =  new_end.replace(minute=(new_end_mins-59), hour=(new_end.hour + 1))
+
+            if new_end.hour < 23:
+                window_end = new_end
+            else:
+                window_end = self.daily_end 
+
 
     def repeat_every_hour(self, tasks, hours=1, times=1):
         """
