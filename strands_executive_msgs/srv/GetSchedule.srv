@@ -3,6 +3,8 @@
 Task[] tasks
 # the earliest time for the first execution
 time earliest_start
+# the id of a task which must be placed first in the schedule, if not in tasks then ignored
+uint64 first_task
 ---
 
 # the order the tasks should be executed in

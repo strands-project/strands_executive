@@ -8,6 +8,7 @@ from task_executor.sm_base_executor import AbstractTaskExecutor
 from threading import Thread
 from task_executor.execution_schedule import ExecutionSchedule
 from operator import attrgetter
+import copy
 
 class ScheduledTaskExecutor(AbstractTaskExecutor):
 
@@ -83,6 +84,9 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
     def task_demanded(self, demanded_task, currently_active_task):
         """ Called when a task is demanded. self.active_task is the demanded task (and is being executed) and previously_active_task was the task that was being executed (which could be None) """
 
+        if demanded_task.end_node_id == '':
+            demanded_task.end_node_id = demanded_task.start_node_id 
+
         rospy.loginfo('Task %s, %s demanded from scheduler' % (demanded_task.task_id, demanded_task.action))
 
         # save the tasks we had previously
@@ -118,24 +122,28 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
                 rospy.loginfo('Was NOT able to reinstate tasks after demand')
 
 
-    def call_scheduler(self, tasks, earliest_start):
+    def call_scheduler(self, tasks, earliest_start, current_id=0):
         """ 
         
         Calls scheduler. Reorders the list of tasks in execution order with their execution times set. 
         
         """
-        resp = self.schedule_srv(tasks, earliest_start)
+        resp = self.schedule_srv(tasks, earliest_start, current_id)
+
+        rospy.loginfo(resp)
 
         if len(resp.task_order) > 0:
 
             # add start times to a dictionary for fast lookup
             task_times = {}
             for (task_id, start_time) in zip(resp.task_order, resp.execution_times):
+                print task_id, start_time
                 task_times[task_id] = start_time
 
             # set start times inside of tasks
             for task in tasks:
                 # add min_window back on to starting times
+                print task.task_id, task_times[task.task_id] 
                 task.execution_time = task_times[task.task_id] 
 
                 # taking out as rescheduling demanded tasks have an issue here I think
@@ -220,12 +228,29 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         # and the ones we have just been given
         to_schedule.extend(additional_tasks)                
 
+        # if we are currently executing something, including this for the start of the schedule too
+        current_id = 0
+        current_task = copy.deepcopy(self.execution_schedule.get_current_task())
+        if current_task is not None:
+            current_id = current_task.task_id
+            rospy.loginfo('Including current task %s in scheduling problem' % current_id)
+            # assuming this executed when requested (may not be!) update how much time is left
+            current_task.max_duration = rospy.Time(1)
+            current_task.end_before = lower_bound
+            current_task.start_after = lower_bound - rospy.Time(2)
+            to_schedule.append(current_task)
+
         # reorder tasks and add execution information
-        if self.call_scheduler(to_schedule, lower_bound):
+        if self.call_scheduler(to_schedule, lower_bound, current_id):
             # if this was successful, add new tasks into execution schedule
             self.execution_schedule.add_new_tasks(additional_tasks)
+
+            # and remove the current task from the new schedule
+            to_schedule = [t for t in to_schedule if t.task_id != current_id]
+
             # put scheduled tasks back into execution. this will trigger a change in execution if necessary
             self.execution_schedule.set_schedule(to_schedule)
+
             rospy.loginfo('Added %s tasks into the schedule to get total of %s' % (len(additional_tasks), self.execution_schedule.get_execution_queue_length()))
             return True, additional_tasks
         else:
