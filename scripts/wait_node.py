@@ -4,7 +4,7 @@ import rospy
 import actionlib
 from wait_action.msg import *
 from datetime import *
-from std_srvs.srv import Empty
+from std_srvs.srv import Empty, EmptyResponse
 
 class WaitServer:
     def __init__(self):         
@@ -19,6 +19,8 @@ class WaitServer:
         if self.server.is_active():
             rospy.loginfo("Preempting sleep")
             self.server.preempt_request = True
+            self.server.set_preempted()
+        return EmptyResponse()
 
     def execute(self, goal):
         # rospy.loginfo("waiting: %s" % goal) 
