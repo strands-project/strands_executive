@@ -19,6 +19,9 @@ if __name__ == "__main__":
     rospy.init_node("schedule_replay")
 
     parser = argparse.ArgumentParser(description='Replays saved scheduling problems from ros_datacentre.')
+
+    parser.add_argument('instances', metavar='I', type=int, nargs='?', default=0,
+                   help='Number of instances of scheduler to use.')
     
     parser.add_argument('start', metavar='S', type=mkdatetime, nargs='?', default=datetime.utcfromtimestamp(0),
                    help='start datetime of query, defaults to no start. Formatted "d/m/y H:M" e.g. "06/07/14 06:38"')
@@ -45,7 +48,9 @@ if __name__ == "__main__":
 
     services = []
 
-    for i in range(1, 3):
+    max_int = 1 + args.instances
+
+    for i in range(1, max_int):
         # service for scheduler
         schedule_srv_name = 'get_schedule_' + str(i)
         rospy.logdebug('Waiting for %s service' % schedule_srv_name)
@@ -82,9 +87,11 @@ if __name__ == "__main__":
                 service(tasks, earliest_start, 0)
             threads.append(Thread(target=call))
             threads[-1].start()
+            rospy.sleep(0.1)
 
         for thread in threads:
             thread.join()
+            rospy.sleep(0.1)
 
         count += 1
         print '%s/%s' % (count, len(scheduling_problems))
