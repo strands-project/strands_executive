@@ -142,7 +142,7 @@ if __name__ == '__main__':
         print 'Tasks and duration each day'
         total_possible = timedelta()
         for day in days:
-            total_possible += timedelta(hours=8)
+            total_possible += timedelta(hours=9)
             durations = day_durations[day]
             total = timedelta()
             for d in durations:
