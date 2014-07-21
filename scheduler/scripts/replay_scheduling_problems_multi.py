@@ -82,9 +82,11 @@ if __name__ == "__main__":
                 service(tasks, earliest_start, 0)
             threads.append(Thread(target=call))
             threads[-1].start()
+            rospy.sleep(0.1)
 
         for thread in threads:
             thread.join()
+            rospy.sleep(0.1)
 
         count += 1
         print '%s/%s' % (count, len(scheduling_problems))
