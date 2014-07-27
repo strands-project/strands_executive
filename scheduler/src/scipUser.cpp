@@ -171,19 +171,20 @@ SCIP_Retcode ScipUser::setOneTcons(int i, vector<SCIP_VAR *> * t_var, vector<SCI
   ));
 
   SCIP_CALL( SCIPaddCons(scip, conj) );
+  SCIP_CALL( SCIPreleaseCons(scip, &con));
+  SCIP_CALL( SCIPreleaseCons(scip, &con2));
+
+  SCIP_CALL(SCIPprintCons(scip,	conj, NULL));
+  cout << "\n"; 	
   t_con->at(i) = conj;	
 
-  /*
-  delete ti;
-  ti = NULL;
+  
   delete con;
   con = NULL;
   delete con2;
   con2 = NULL;
-  delete vars0;
-  vars = NULL;
-  delete conj;
-  conj = NULL;*/
+
+
   
   return SCIP_OKAY;
 }
@@ -398,8 +399,16 @@ SCIP_Retcode ScipUser::editExistingTcons(int i, int j, vector<SCIP_CONS*> * t_co
   }
 
   //everything went successful, we can delete original constraint and create a new one
+  SCIP_CALL(SCIPsetConsChecked(scip,t_con->at(j),FALSE));
   SCIP_CALL(SCIPdelCons(scip, t_con->at(j)));
   t_con->at(j) = NULL;
+
+  char con_name[255];
+  SCIPsnprintf(con_name, 255, "junse_%d", j);
+  SCIP_CONS * conx = SCIPfindCons(scip, con_name);
+  if (conx == NULL)
+   cout << "smazano\n";
+
   SCIP_CALL(setOneTcons(j, t_var, t_con, sj, xj));
 
   /*---------------------------------*/
@@ -412,14 +421,14 @@ SCIP_Retcode ScipUser::editExistingTcons(int i, int j, vector<SCIP_CONS*> * t_co
     //this means, that we need to end before start, this is not feasible
     *result = 2;
     return SCIP_OKAY;
-  }
-  
+  }  
+
   //everything went successful, we can delete original constraint and create a new one
+  SCIP_CALL(SCIPsetConsChecked(scip,t_con->at(i),FALSE));
   SCIP_CALL(SCIPdelCons(scip, t_con->at(i)));
   t_con->at(i) = NULL;
   SCIP_CALL(setOneTcons(i, t_var, t_con, si, xi));
-  
-
+    
   return SCIP_OKAY;
 }
 
@@ -457,10 +466,22 @@ SCIP_Retcode ScipUser::checkConstraint(SCIP_CONS * con, int i, int j, vector<SCI
 		TRUE,//  	printreason,
 		res //  	result 
     ));
+    SCIP_CALL(SCIPsetConsChecked(scip,con,FALSE));
+	
+
     //we need to free solution to be able to add the constraint
-    SCIP_CALL( SCIPfreeTransform(scip));
-        
+
     int result = *res;
+
+    //delete pointers
+     delete res;
+     res = NULL;
+     delete sol;
+     sol = NULL;
+
+    SCIP_CALL( SCIPfreeTransform(scip));
+
+        
     if(result == 4) //constrain is feasible with existing problem
     {
       SCIP_CALL( SCIPaddCons(scip, con));
@@ -468,26 +489,35 @@ SCIP_Retcode ScipUser::checkConstraint(SCIP_CONS * con, int i, int j, vector<SCI
     }
     else if(result == 5) //constraint violates existing problem
     {
+
       if(runs ==0) //first run
       {
-        int * resExistCons;
+
+        int * resExistCons = new int;
         *resExistCons = 0;
+cout << "ij" << i << " " << j << " " << dist << "\n";
 
         SCIP_CALL(editExistingTcons(i, j, t_con, t_var, tasksToS, dist, resExistCons));
         if(*resExistCons == 0)
         {
           //try to check the original constraint again, should proceed smooth
           //recursive call
+          delete resExistCons;
+          resExistCons = NULL;
           checkConstraint(con, i, j, t_con, t_var, tasksToS, dist, 1, ret_val);
+ cout << "stagex\n";       
         }
         else //infeasibility occured
         {
           *ret_val = 1;
           return SCIP_OKAY;
         }
+
+
       }
       else //the constraint was changed, but still it is violated. this should not happen
       {
+
         *ret_val = 2; 
         return SCIP_OKAY;
       }
@@ -496,12 +526,6 @@ SCIP_Retcode ScipUser::checkConstraint(SCIP_CONS * con, int i, int j, vector<SCI
     {
       *ret_val = 3;
     }
-
-    //delete pointers
-    delete res;
-    res = NULL;
-    delete sol;
-    sol = NULL;
   }
   return SCIP_OKAY;
 }
@@ -589,9 +613,12 @@ SCIP_Retcode ScipUser::setFinalCons_new(vector<Task*> * tasksToS, vector<SCIP_VA
      if(type==0) //task j precedes task i
      {
        //creating a constraint tj + dj + dist - ti <= 0
+       
 
        SCIP_Real dj = tasksToS->at(j)->getDuration();
- 
+cout<<"stage11\n" << j << "\n";
+cout<<tasksToS->at(j)->getStart();
+
        if(tasksToS->at(j)->getEndPos().empty()) //if first task has no location, that the travel to following task might take maxDist;
        {
          distji = maxDist;
@@ -601,14 +628,15 @@ SCIP_Retcode ScipUser::setFinalCons_new(vector<Task*> * tasksToS, vector<SCIP_VA
          distji = 0; 
        }
        else
-       {        
+       {  
+      
          distji = DistWrapper::dist(tasksToS->at(j)->getEndPos(),tasksToS->at(i)->getStartPos());
+cout<<"stage12\n"; 
        }
        if((tasksToS->at(j)->getEndPos().empty())&&(tasksToS->at(i)->getStartPos().empty()))
        {
          distji = 0;
        }
-       
 
        SCIP_Real vals2[2]; //array of values
        vals2[0] = 1;
@@ -650,45 +678,16 @@ SCIP_Retcode ScipUser::setFinalCons_new(vector<Task*> * tasksToS, vector<SCIP_VA
       
       delete result;
       result = NULL;
+
     }
     if(type==0)
     {
-      SCIP_CALL(SCIPpresolve(scip));
-      SCIP_CALL(SCIPprintStatus(scip,NULL)); 
-      SCIP_SOL * sol = SCIPgetBestSol(scip);
-      SCIP_RESULT * res = new SCIP_RESULT();
-      SCIP_Retcode retu = SCIPcheckCons(scip,
-		con2, //  	cons,
-		sol,//  	sol,
-		TRUE,// 	checkintegrality,
-		TRUE,//  	checklprows,
-		TRUE,//  	printreason,
-		res //  	result 
-	);
-
- int a= retu;
-cout <<"return code" << a << "\n";
-
-      SCIP_CALL( SCIPfreeTransform(scip));
-      int result2 = *res;
-cout << "result" << result2 << "\n";
+      int * result = new int;
+      *result = 0;
+      SCIP_CALL(checkConstraint(con2, j, i, t_con, t_var, tasksToS, distji,0,result)); 
       
-      if((result2 == 4)||(result2==5))
-      {
-        SCIP_CALL( SCIPaddCons(scip, con2));
-        SCIP_CALL( SCIPreleaseCons(scip, &con2));
-      }
-      else
-      {
-        int temp = cin.get();
-        numinfeas++;
-      }
-
-
-      delete res;
-      res = NULL;
-      delete sol;
-      sol = NULL;
+      delete result;
+      result = NULL;
 
     }
     if(type==2)
