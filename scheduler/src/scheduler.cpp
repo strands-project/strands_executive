@@ -285,6 +285,8 @@ int Scheduler::setPreVar(ScipUser * solver)
 
 bool Scheduler::solve(int version, string filename, const int & timeout)
 {
+  //scheduler save to file: 
+  //preprocessing time to create pairs, setting the constraints, infeas, objective criteria, time to solve, number of tasks, if it worked
   SCIP_Retcode err;
   vector<bool> pairUsed;
   ofstream results;
@@ -315,11 +317,17 @@ bool Scheduler::solve(int version, string filename, const int & timeout)
     //mine specific approach
     numPairs = pr->setPairs_new();
   }
+  else if(version==5)
+  {
+   //Brian Coltin
+    numPairs = pr->setPairs_BC();    
+  } 
   else {
     //if parameter is not set
     numPairs = pr->setPairs_new();
   }
   end = std::chrono::high_resolution_clock::now();
+
   
   std::chrono::duration<double> elapsed_seconds = end-start;
   if(!filename.empty())
@@ -331,11 +339,18 @@ bool Scheduler::solve(int version, string filename, const int & timeout)
 
   pr->getPairs(&pairs);
 
+  for(int i=0; i <pairs.size();i++)
+  {
+    cout << pairs.at(i).at(0) << " " << pairs.at(i).at(1) << " " << pairs.at(i).at(3) << "\n";
+  }
+
 //creating a vector for variables
   vector<SCIP_VAR *> * t_var = new vector<SCIP_VAR *>(numTasks,(SCIP_VAR*) NULL); 
+
   err = solver->tVar(numTasks,t_var);
   if (err != SCIP_OKAY)
     return -1;
+
 
 
   int e = setPreVar(solver);
@@ -351,7 +366,20 @@ bool Scheduler::solve(int version, string filename, const int & timeout)
   double maxDist = getMaxDist();
 //for all pairs we need to set condition
   start = std::chrono::high_resolution_clock::now();
-  err = solver->setFinalCons(tasksToS, t_var, &pairs, maxDist);
+
+
+  if(version != 5)
+  {
+    //err = solver->setFinalCons(tasksToS, t_var, &pairs, maxDist);
+    err = solver->setFinalCons_new(tasksToS, t_var, &pairs, maxDist,filename);
+  }
+  else
+  {
+    err = solver->setFinalCons_preVar(tasksToS, t_var, &pairs, maxDist);
+  }
+
+cout << "constraint set\n\n\n\n";
+
   end = std::chrono::high_resolution_clock::now();
   if (err != SCIP_OKAY)
     return -1; 
