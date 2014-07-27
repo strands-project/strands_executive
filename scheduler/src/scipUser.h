@@ -24,9 +24,14 @@ class ScipUser
   SCIP_Retcode getEr();
   SCIP_Retcode tVar(int, vector<SCIP_VAR *> *);
   SCIP_Retcode preVar(vector<SCIP_VAR *> *, int, int);
-  SCIP_Retcode setTcons(vector<Task*> *, vector<SCIP_VAR *> *);
+  SCIP_Retcode setOneTcons(int, vector<SCIP_VAR *> *, vector<SCIP_CONS*> *, int, int);
+  SCIP_Retcode setTcons(vector<Task*> *, vector<SCIP_VAR *> *, vector<SCIP_CONS*> *);
   SCIP_Retcode setFinalCons(vector<Task*> *, vector<SCIP_VAR *> *, vector<vector<int>> *, double);
-  SCIP_Retcode setFinalCons_new(vector<Task*> *, vector<SCIP_VAR *> *, vector<vector<int>> *, double, string);
+
+  SCIP_Retcode editExistingTcons(int, int, vector<SCIP_CONS*> *, vector<SCIP_VAR *> *, vector<Task*> *, int, int *);
+  SCIP_Retcode checkConstraint(SCIP_CONS *, int, int, vector<SCIP_CONS*> *, vector<SCIP_VAR *> *, vector<Task*> *, SCIP_Real, int, int *);
+
+  SCIP_Retcode setFinalCons_new(vector<Task*> *, vector<SCIP_VAR *> *, vector<vector<int>> *, double, string, vector<SCIP_CONS*> *);
   SCIP_Retcode setFullConstr(vector<Task*> *, vector<SCIP_VAR *> *, int, int, double);
   SCIP_Retcode setFinalCons_preVar(vector<Task*> *, vector<SCIP_VAR *> *, vector<vector<int>> *, double);
   SCIP_Retcode scipSolve(vector<Task*> *, SCIP_VAR *[],bool*,string, const int & timeout = 0);
