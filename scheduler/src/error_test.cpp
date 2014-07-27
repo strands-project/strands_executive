@@ -15,8 +15,9 @@ int main (int argc, char** argv)
 
   string s1("ChargingPoint");
   string s2("Lobby");
-
-  int task_count = 4;
+  
+  
+  int task_count = 10;
 
   double one_hour = 60 * 60 * 60;
   double task_duration = one_hour / 2.0;
@@ -26,10 +27,16 @@ int main (int argc, char** argv)
 
   vector<Task*> tasks;
 
-  tasks.push_back(new Task(1, window_start, window_end, task_duration, s2, s2, true));
-  tasks.push_back(new Task(2, window_start, window_end, task_duration, s1, s1));
-  tasks.push_back(new Task(3, window_start, window_end, task_duration, s2, s2));
-  
+  //for (int i=0; i< task_count; i++)
+  //{
+   // tasks.push_back(new Task(1, window_start, window_end, task_duration, s2, s2));
+    //tasks.push_back(new Task(2, window_start, window_end, task_duration, s1, s1));
+   // tasks.push_back(new Task(3, window_start, window_end, task_duration, s2, s2));
+  //}
+
+   tasks.push_back(new Task(1, 0, 8, 2, "s1", "s1"));
+   tasks.push_back(new Task(2, 2, 8, 2, "s2", "s2"));
+   tasks.push_back(new Task(3, 0, 8, 1, "s3", "s3"));
 
 
   Scheduler scheduler(&tasks);

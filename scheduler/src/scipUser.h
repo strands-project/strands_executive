@@ -23,8 +23,12 @@ class ScipUser
   ~ScipUser();
   SCIP_Retcode getEr();
   SCIP_Retcode tVar(int, vector<SCIP_VAR *> *);
+  SCIP_Retcode preVar(vector<SCIP_VAR *> *, int, int);
   SCIP_Retcode setTcons(vector<Task*> *, vector<SCIP_VAR *> *);
   SCIP_Retcode setFinalCons(vector<Task*> *, vector<SCIP_VAR *> *, vector<vector<int>> *, double);
+  SCIP_Retcode setFinalCons_new(vector<Task*> *, vector<SCIP_VAR *> *, vector<vector<int>> *, double, string);
+  SCIP_Retcode setFullConstr(vector<Task*> *, vector<SCIP_VAR *> *, int, int, double);
+  SCIP_Retcode setFinalCons_preVar(vector<Task*> *, vector<SCIP_VAR *> *, vector<vector<int>> *, double);
   SCIP_Retcode scipSolve(vector<Task*> *, SCIP_VAR *[],bool*,string, const int & timeout = 0);
 };
 

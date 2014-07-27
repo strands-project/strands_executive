@@ -1,3 +1,5 @@
+#include "ros/ros.h"
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -10,6 +12,7 @@ using namespace std;
 
 int main (int argc, char** argv) 
 {   
+  ros::init(argc, argv, "error_test");
   string s1("home");
   string s2("office");
 
@@ -39,6 +42,8 @@ int main (int argc, char** argv)
   double window_end = window_start + (task_duration * task_count * task_count);
 
   vector<Task*> tasks;
+
+cout << "this is a test!";
 
   for (int i = 0; i < task_count; ++i)
   {
