@@ -9,10 +9,10 @@ from topological_navigation.msg import GotoNodeAction
 from task_executor import task_routine
 from datetime import *
 from threading import Thread
-import ros_datacentre_msgs.srv as dc_srv
-from ros_datacentre_msgs.msg import StringPair
-import ros_datacentre.util as dc_util
-from ros_datacentre.message_store import MessageStoreProxy
+import mongodb_store_msgs.srv as dc_srv
+from mongodb_store_msgs.msg import StringPair
+import mongodb_store.util as dc_util
+from mongodb_store.message_store import MessageStoreProxy
 from geometry_msgs.msg import Pose, Point, Quaternion
 from dateutil.tz import tzlocal
 
