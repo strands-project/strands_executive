@@ -22,7 +22,7 @@ from actionlib_msgs.msg import GoalStatus
 
 from strands_navigation_msgs.msg import NavStatistics, MonitoredNavigationAction, MonitoredNavigationActionResult
 
-from ros_datacentre.message_store import MessageStoreProxy
+from mongodb_store.message_store import MessageStoreProxy
 from robblog.msg import RobblogEntry
 import robblog.utils
 from sensor_msgs.msg import Image

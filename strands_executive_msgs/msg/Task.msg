@@ -37,4 +37,4 @@ duration max_duration
 time execution_time
 
 # Additional arguments to the action server. These are interpreted in two ways, either "","string" is interpreted as a string or "ros message type", "datacentre id" is a reference to the ObjectID of an entry in the datacentre obtained from the result of MongoInsertMsg.srv. 
-ros_datacentre_msgs/StringPair[] arguments
+mongodb_store_msgs/StringPair[] arguments

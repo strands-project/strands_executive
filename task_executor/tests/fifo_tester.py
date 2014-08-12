@@ -11,7 +11,7 @@ from strands_executive_msgs.msg import Task
 from task_executor.msg import *
 from Queue import Queue
 from random import randrange
-from ros_datacentre.message_store import MessageStoreProxy
+from mongodb_store.message_store import MessageStoreProxy
 from geometry_msgs.msg import Pose, Point, Quaternion
 from strands_executive_msgs import task_utils
 from strands_executive_msgs.msg import Task

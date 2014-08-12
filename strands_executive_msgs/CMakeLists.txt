@@ -5,7 +5,7 @@ project(strands_executive_msgs)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  message_generation ros_datacentre_msgs geometry_msgs actionlib std_msgs
+  message_generation mongodb_store_msgs geometry_msgs actionlib std_msgs
 )
 
 catkin_python_setup()
@@ -50,7 +50,7 @@ add_action_files(
 # Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-  ros_datacentre_msgs
+  mongodb_store_msgs
   std_msgs
   actionlib_msgs
 )
@@ -67,7 +67,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES strands_executive_msgs
- CATKIN_DEPENDS ros_datacentre_msgs geometry_msgs actionlib
+ CATKIN_DEPENDS mongodb_store_msgs geometry_msgs actionlib
 #  DEPENDS system_lib
 )
 

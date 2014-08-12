@@ -6,7 +6,7 @@ from strands_executive_msgs.msg import Task
 from strands_executive_msgs.srv import AddTasks, SetExecutionStatus
 from std_msgs.msg import String
 from random import shuffle
-from ros_datacentre.message_store import MessageStoreProxy
+from mongodb_store.message_store import MessageStoreProxy
 from strands_navigation_msgs.msg import TopologicalNode
 
 def load_nodes():
