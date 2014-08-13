@@ -8,7 +8,7 @@ Executive control code for STRANDS robots. The basic unit of behaviour is a *tas
 Notes, before you can run any of the scheduling stuff, you must run have the datacentre running, e.g.
 
 ```bash
-roslaunch ros_datacentre datacentre.launch
+roslaunch mongodb_store datacentre.launch
 ```
 
 and you need to be offering a 'topological_navigation', GotoNodeAction action. If you're not running the full topological navigation system, you can run
@@ -72,7 +72,7 @@ dishes_duration = 60 * 60
 task.max_duration = rospy.Duration(dishes_duration)
 ```
 
-If your actionlib goal type needs arguments, you must then add them to the task **in the order they are used in your goal type constructor**. You can either add plain string arguments (which are stored in the task itself) or ROS message instances (which are stored in the [ros_datacentre](https://github.com/strands-project/ros_datacentre)). For example, for the following action which is available under [task_executor/action/TestExecution.action](https://github.com/strands-project/strands_executive/blob/hydro-devel/task_executor/action/TestExecution.action)
+If your actionlib goal type needs arguments, you must then add them to the task **in the order they are used in your goal type constructor**. You can either add plain string arguments (which are stored in the task itself) or ROS message instances (which are stored in the [mongodb_store](https://github.com/strands-project/mongodb_store)). For example, for the following action which is available under [task_executor/action/TestExecution.action](https://github.com/strands-project/strands_executive/blob/hydro-devel/task_executor/action/TestExecution.action)
 
 ```
 # something to print
@@ -95,7 +95,7 @@ from strands_executive_msgs import task_utils
 task_utils.add_string_argument(task, 'my string argumment goes here')
 ```
 
-For the pose, this must be added to the ros_datacentre message store and then the `ObjectID` of the pose is used to communicate its location. This is done as follows
+For the pose, this must be added to the mongodb_store message store and then the `ObjectID` of the pose is used to communicate its location. This is done as follows
 
 ```python
 p = Pose()

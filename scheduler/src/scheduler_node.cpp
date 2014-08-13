@@ -4,12 +4,12 @@
 #include "scheduler.h"
 #include <vector>
 #include <algorithm>
-#include "ros_datacentre_msgs/StringPairList.h"
-#include "ros_datacentre/message_store.h"
+#include "mongodb_store_msgs/StringPairList.h"
+#include "mongodb_store/message_store.h"
 
 using namespace std;
-using namespace ros_datacentre;
-using namespace ros_datacentre_msgs;
+using namespace mongodb_store;
+using namespace mongodb_store_msgs;
 
 // /*constructor without parameter now, automatically set now to false*/
 // Task::Task(unsigned int ID, double s, double e, double d, string start_pos, string end_pos)
@@ -93,7 +93,7 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
   if(save_problems) { 
     StringPairList spl;
     for(auto & pair : stored) {
-      spl.pairs.push_back(ros_datacentre::makePair(pair.first, pair.second));
+      spl.pairs.push_back(mongodb_store::makePair(pair.first, pair.second));
     }
     messageStore.insert(spl);
   }
@@ -148,10 +148,10 @@ int main(int argc, char **argv)
   } 
 
   if(save_problems) {
-    ROS_INFO("Writing scheduling problems to ros_datacentre");
+    ROS_INFO("Writing scheduling problems to mongodb_store");
   }
   else{
-    ROS_INFO("Not writing scheduling problems to ros_datacentre");
+    ROS_INFO("Not writing scheduling problems to mongodb_store");
   }
 
   	ros::NodeHandle nh;

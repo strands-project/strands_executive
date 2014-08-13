@@ -5,7 +5,7 @@ import sys
 import rospy
 
 
-from ros_datacentre.message_store import MessageStoreProxy
+from mongodb_store.message_store import MessageStoreProxy
 from strands_navigation_msgs.msg import TopologicalNode
 from strands_navigation_msgs.msg import NavStatistics
 from strands_navigation_msgs.msg import NavRoute

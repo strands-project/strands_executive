@@ -1,5 +1,5 @@
 import rospy
-from ros_datacentre_msgs.msg import StringPair
+from mongodb_store_msgs.msg import StringPair
 from strands_executive_msgs.msg import Task
 
 def add_string_argument(task, string_arg):

@@ -4,8 +4,8 @@ import rospy
 import argparse
 import numpy
 
-from ros_datacentre.message_store import MessageStoreProxy
-from ros_datacentre_msgs.msg import StringPairList
+from mongodb_store.message_store import MessageStoreProxy
+from mongodb_store_msgs.msg import StringPairList
 from datetime import datetime
 from strands_executive_msgs.msg import Task
 from strands_executive_msgs.srv import GetSchedule
@@ -16,7 +16,7 @@ def mkdatetime(date_string):
 if __name__ == "__main__":
     rospy.init_node("schedule_replay")
 
-    parser = argparse.ArgumentParser(description='Replays saved scheduling problems from ros_datacentre.')
+    parser = argparse.ArgumentParser(description='Replays saved scheduling problems from mongodb_store.')
     
     parser.add_argument('start', metavar='S', type=mkdatetime, nargs='?', default=datetime.utcfromtimestamp(0),
                    help='start datetime of query, defaults to no start. Formatted "d/m/y H:M" e.g. "06/07/14 06:38"')

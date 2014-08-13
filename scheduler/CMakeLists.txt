@@ -8,7 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
 	  roscpp 
 	  scipoptsuite 
 	  strands_executive_msgs
-    ros_datacentre_cpp_client
+    mongodb_store_cpp_client
 )
 
 ## System dependencies are found with CMake's conventions
