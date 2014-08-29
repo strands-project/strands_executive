@@ -189,40 +189,29 @@ int decidedInterval(Task * i, Task * j, int logOrder)
   double ij = di+dj+distij;
   double ji = di+dj+distji;
 
-  double overlap = min(ei,ej) - max(si,sj);
+  //old version
+  //double overlap = min(ei,ej) - max(si,sj);
+  double overlap1 = ej-si;
+  double overlap2 = ei-sj;
 
   
-  if((ij<=overlap)&&(ji<=overlap)) //both combinations are possible
+  if((ij<=overlap1)&&(ji<=overlap2)) //both combinations are possible
   {
     return 2;
   }
   else
   {
-    if(ij<=overlap) //only combination that i precedes j is possbile during overlap
+    if(ij<=overlap1) //only combination that i precedes j is possbile during overlap
     {
-      if(logOrder==1) //if logic order correspondence to this, return it
-      {
-        return 1;
-      }
-      else //logic order should be i precedes j, but there is also option for j precedes i... so theoretically both are possible
-      { 
-        return 2;
-      }
+      return 1;
     }
-    else if(ji<=overlap) //only combination that j precedes i
+    else if(ji<=overlap2) //only combination that j precedes i
     {
-      if(logOrder==0) 
-      {
-        return 0;
-      }
-      else
-      { 
-        return 2;
-      }
+      return 0;
     }
     else
     {
-      return logOrder; //the overlapp is too small, none combination can be there, therefore follow logic order
+      return -1; //there is a flaw in input data, both combinations are not possible
     }
   }
 
@@ -426,7 +415,7 @@ int Pairs::setPairs_new()
         {
           opairs[3] = decidedInterval(i,j,1);
           if(opairs[3] == 2)
-            opairs[3] = chooseInt(time_ij, time_ji);
+            opairs[3] = 1;
           
           set = true;
         }
@@ -438,7 +427,7 @@ int Pairs::setPairs_new()
           {
             opairs[3]=decidedInterval(i,j,1);
             if(opairs[3] == 2)
-              opairs[3] = chooseInt(time_ij, time_ji);
+              opairs[3] = 1; 
             set = true;
           }
           
@@ -460,6 +449,9 @@ int Pairs::setPairs_new()
         else if((si<sj)&&(ei>ej))
         {
            opairs[3]=decidedInterval(i,j,2);
+           //this is really pruning, maybe put this away if causing issues
+            if(opairs[3] == 2)
+              opairs[3] = chooseInt(time_ij, time_ji);
            set = true;
         }
         //i finish j
@@ -467,7 +459,7 @@ int Pairs::setPairs_new()
         {
           opairs[3]=decidedInterval(i,j,1);
           if(opairs[3] == 2)
-            opairs[3] = chooseInt(time_ij, time_ji);
+            opairs[3] = 1;
           set = true;
         }
       }
@@ -478,7 +470,7 @@ int Pairs::setPairs_new()
         {
           opairs[3] = decidedInterval(i,j,0);
           if(opairs[3] == 2)
-            opairs[3] = chooseInt(time_ij, time_ji);
+            opairs[3] = 0; 
           set = true;
         }
         
@@ -486,20 +478,23 @@ int Pairs::setPairs_new()
         {
           opairs[3]= decidedInterval(i,j,0);
           if(opairs[3] == 2)
-            opairs[3] = chooseInt(time_ij, time_ji);
+            opairs[3] = 0; 
           set = true;
         }
        //i during j
         else if((sj<si)&&(ej>ei))
         {
           opairs[3]= decidedInterval(i,j,2);
+          //this is really pruning, maybe put this away if causing issues
+          if(opairs[3] == 2)
+            opairs[3] = chooseInt(time_ij, time_ji);
           set = true;
         }
         else if((ei == ej)&&(sj<si))
         {
           opairs[3]= decidedInterval(i,j,0);
           if(opairs[3] == 2)
-            opairs[3] = chooseInt(time_ij, time_ji);
+            opairs[3] = 0; 
           set = true;
         }
       }
