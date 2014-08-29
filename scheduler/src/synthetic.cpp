@@ -10,7 +10,7 @@
 using namespace std;
 
 //set these parameters
-double ratio[][4] = {{0.01, 0.25},{0.25, 0.5}, {0.5,0.75}, {0.75,1}}; //ratio of task duration/time window
+double ratio[4][2] = {{0.01, 0.25},{0.25, 0.5}, {0.5,0.75}, {0.75,1.00}}; //ratio of task duration/time window
 int kind_over[] = {0,1,2}; // only j precedes k fits to overlap, only k precedes j fits to overlap, both are possible
 
 
@@ -18,12 +18,12 @@ int const mind = 2; //minimal duration of tasks
 int const maxd = 30; //maximal duration of tasks
 int const maxw = 20; //maximum waiting time between two tasks
 int const minsp = 2;
-int type = 0;
+int type = 3;
 int over = kind_over[2];
-int amount_over = 3; //how many tasks should overlap with existing task 
+int amount_over = 2; //how many tasks should overlap with existing task 
 
 
-double act_r[2] = {ratio[0][type], ratio[1][type]}; //actual used ratio
+double act_r[2] = {ratio[type][0], ratio[type][1]}; //actual used ratio
 int r=0,s=0,d=0,p=0;
 vector<Task*> tasks;
 vector<vector<string>> locations;
@@ -63,6 +63,45 @@ void noOverlap(int num, int initial_time, int order)
   }
 }
 
+void equals(int num, int initial_time, int order)
+{
+  int space, time_win;
+  double rand_rat;
+  
+
+  for(int i=0; i< num; i++)
+  {
+    string s1 = locations.at(i).at(0);
+    string s2 = locations.at(i).at(1);
+
+    space = (int) round(rand() % maxw)+minsp; 
+    rand_rat = (rand() % ((int)((act_r[1] - act_r[0])*100))+act_r[0]*100)/100.0;
+
+    r = initial_time; 
+    s =r+space + DistWrapper::dist(s1,s2);
+    p = (int) round(rand() % (maxd-mind)+mind);
+    time_win = (int) round(p / rand_rat);
+    d = max(max(r + time_win, s+p), d+1); //to gurantee that new deadline is bigger
+
+    if(order == 1)
+    {
+      vector<Task*>::iterator iter = tasks.begin() + i;
+      tasks.insert(iter,new Task(i, r, d, p, s1, s2));
+    }
+    else
+    {
+      vector<Task*>::iterator iter = tasks.end() - i;
+      tasks.insert(iter,new Task(i, r, d, p, s1, s2));
+    }
+  }
+
+  //to set the same deadline to all of them
+  for(int i=0;i<num;i++)
+  {
+    tasks.at(i)->setEnd(d);
+  }
+}
+
 void overlap(int num, int initial_time, int order)
 {
     int aover=0; //counting how many tasks overlap
@@ -70,6 +109,8 @@ void overlap(int num, int initial_time, int order)
     double rand_rat;
     int min_overlap = 0;
     int max_overlap = 0;
+
+    int pom;
   
     vector<Task*> previous;
     previous.resize(amount_over-1,(Task*)NULL);
@@ -82,8 +123,12 @@ void overlap(int num, int initial_time, int order)
       string s2 = locations.at(i).at(1);
       if(aover < amount_over) //we would like to create overlapping tasks
       {
-        space = (int) round(rand() % maxw)+minsp;     
-        rand_rat = (rand() % ((int)((act_r[1] - act_r[0])*100))+act_r[0]*100)/100.0;
+        space = (int) round(rand() % maxw+minsp);  
+
+        pom = (int)((act_r[1] - act_r[0])*100);
+
+        rand_rat = (rand() % (pom)+(int)(act_r[0]*100))/100.0;
+
 
         if(aover == 0) //generation of first task
         {
@@ -91,10 +136,40 @@ void overlap(int num, int initial_time, int order)
           r = initial_time; 
           s =r+space + DistWrapper::dist(s1,s2);
           p = (int) round(rand() % (maxd-mind)+mind);
-          time_win = (int) round(p / rand_rat);             
+          time_win = (int) round(p / rand_rat);           
         }
         else
-        {    
+        {  
+          if(over == 0) //only j precedes k is p
+          {
+            s =s+p+space + DistWrapper::dist(s1,s2);
+            p = (int) round(rand() % (maxd-mind)+mind); 
+            
+            //for first overlap
+            t =previous.at(0); 
+            max_overlap = t->getEnd();
+            min_overlap = t->getEnd() - (p);; //to set some min_overlap, we dont care too much about size, it just needs to be small that two tasks cannot fit there
+            s1 = t->getEndPos();
+
+            for(int j=1; j<aover; j++)
+            {
+              t =previous.at(j); 
+              int maxv = t->getEnd();
+              if (maxv < max_overlap)
+                max_overlap = maxv;
+            
+              int minv = t->getEnd() - (p);
+              if (minv > min_overlap)
+                min_overlap = minv;
+
+              s1 = t->getEndPos();
+            }
+
+            r = (int) round(rand() % (max_overlap - min_overlap) + min_overlap);      
+            time_win = (int) round(p / rand_rat);
+                           
+          }  
+          
           if(over == 2) //both tasks needs to fit to overlap
           {
             s =s+p+space + DistWrapper::dist(s1,s2);
@@ -104,6 +179,10 @@ void overlap(int num, int initial_time, int order)
             t =previous.at(0); 
             max_overlap = t->getEnd() - (t->getDuration() +p+DistWrapper::dist(s1,s2));
             min_overlap = t->getStart()+1; //+1 to ensure that it will start always after first task
+            if(max_overlap < min_overlap)
+            {
+              max_overlap = min_overlap;
+            }
             s1 = t->getEndPos();
 
             for(int j=1; j<aover; j++)
@@ -120,10 +199,16 @@ void overlap(int num, int initial_time, int order)
               s1 = t->getEndPos();
             }
 
-            r = (int) round(rand() % (max_overlap - min_overlap) + min_overlap);      
+            if(min_overlap == max_overlap)
+            {
+              r = min_overlap;
+            }
+            else
+              r = (int) round(rand() % (max_overlap - min_overlap) + min_overlap);      
+          
             time_win = (int) round(p / rand_rat);
                            
-          }        
+          }    
         }
         d = max(max(r + time_win, s+p), d+1); //to gurantee that new deadline is bigger
 
@@ -272,9 +357,10 @@ void writeTofile(int num, string name_file)
   for(int i=0; i< num; i++)
   {
     t = tasks.at(i);
-    cout << t->getStart() << ";" << t->getEnd() << ";" << t->getDuration() << "\n";
+    myfile << t->getStart() << " " << t->getEnd() << " " << t->getDuration() << "\n";
   }
   t = (Task*)NULL;
+  myfile << "\n";
   delete t;
   tasks.clear();
   myfile.close();
@@ -301,26 +387,36 @@ int main (int argc, char** argv)
     task_count = 10;
   }
   
-  task_count = task_count*amount_over;
+  //task_count = task_count*amount_over;
   vector<string> fake_loc;
   fake_loc.resize(2,"office");
   locations.resize(task_count,fake_loc);
   locations.at(0).at(0) = "";
   locations.at(task_count-1).at(1) = "";
 
-  srand(time(NULL));
-  /*noOverlap(task_count, initial_time, 1);
-  initial_time = tasks.at(task_count-1) -> getEnd()+1;
-  writeTofile(task_count, name_file);
+  for(int i=0; i< 10; i++)
+  {
+    srand(time(NULL));
+
+
+
+    /*noOverlap(task_count, initial_time, 1);
+    initial_time = tasks.at(task_count-1) -> getEnd()+1;
+    writeTofile(task_count, name_file);*/
   
 
-  overlap(task_count, initial_time, -1);
-  initial_time = tasks.at(task_count-1) -> getEnd()+1;
-  writeTofile(task_count, name_file);*/
+    overlap(task_count, initial_time, 1);
+    initial_time = tasks.at(task_count-1) -> getEnd()+1;
+    writeTofile(task_count, name_file);
 
-  starts(task_count, initial_time, 1);
-  initial_time = tasks.at(task_count-1) -> getEnd()+1;
-  writeTofile(task_count, name_file);
+    /*starts(task_count, initial_time, 1);
+    initial_time = tasks.at(task_count-1) -> getEnd()+1;
+    writeTofile(task_count, name_file);*/
+
+    /*equals(task_count, initial_time, 1);
+    initial_time = tasks.at(task_count-1) -> getEnd()+1;
+    writeTofile(task_count, name_file);*/
+  }
   return 0;
 
 }

@@ -359,7 +359,9 @@ bool Scheduler::solve(int version, string filename, const int & timeout)
 
 
 //create constraints for starting and ending time
-  err = solver->setTcons(tasksToS, t_var);
+  vector<SCIP_CONS *> * t_con = new vector<SCIP_CONS *>(numTasks,(SCIP_CONS *) NULL); 
+
+  err = solver->setTcons(tasksToS, t_var, t_con);
   if (err != SCIP_OKAY)
     return -1; 
 
@@ -370,15 +372,15 @@ bool Scheduler::solve(int version, string filename, const int & timeout)
 
   if(version != 5)
   {
+    //uncomment here to use previous version withou pre variables
     //err = solver->setFinalCons(tasksToS, t_var, &pairs, maxDist);
-    err = solver->setFinalCons_new(tasksToS, t_var, &pairs, maxDist,filename);
+    err = solver->setFinalCons_new(tasksToS, t_var, &pairs, maxDist,filename, t_con);
   }
   else
   {
     err = solver->setFinalCons_preVar(tasksToS, t_var, &pairs, maxDist);
   }
 
-cout << "constraint set\n\n\n\n";
 
   end = std::chrono::high_resolution_clock::now();
   if (err != SCIP_OKAY)

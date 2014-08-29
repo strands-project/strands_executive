@@ -174,8 +174,8 @@ SCIP_Retcode ScipUser::setOneTcons(int i, vector<SCIP_VAR *> * t_var, vector<SCI
   SCIP_CALL( SCIPreleaseCons(scip, &con));
   SCIP_CALL( SCIPreleaseCons(scip, &con2));
 
-  SCIP_CALL(SCIPprintCons(scip,	conj, NULL));
-  cout << "\n"; 	
+  //SCIP_CALL(SCIPprintCons(scip,	conj, NULL));
+  //cout << "\n"; 	
   t_con->at(i) = conj;	
 
   
@@ -498,6 +498,8 @@ SCIP_Retcode ScipUser::checkConstraint(SCIP_CONS * con, int i, int j, vector<SCI
 cout << "ij" << i << " " << j << " " << dist << "\n";
 
         SCIP_CALL(editExistingTcons(i, j, t_con, t_var, tasksToS, dist, resExistCons));
+
+
         if(*resExistCons == 0)
         {
           //try to check the original constraint again, should proceed smooth
@@ -609,6 +611,8 @@ SCIP_Retcode ScipUser::setFinalCons_new(vector<Task*> * tasksToS, vector<SCIP_VA
 		false,//  	removable,
 		false//  	stickingatnode
 	) );
+       SCIP_CALL( SCIPaddCons(scip, con));
+       SCIP_CALL( SCIPreleaseCons(scip, &con));
      }
      if(type==0) //task j precedes task i
      {
@@ -616,8 +620,6 @@ SCIP_Retcode ScipUser::setFinalCons_new(vector<Task*> * tasksToS, vector<SCIP_VA
        
 
        SCIP_Real dj = tasksToS->at(j)->getDuration();
-cout<<"stage11\n" << j << "\n";
-cout<<tasksToS->at(j)->getStart();
 
        if(tasksToS->at(j)->getEndPos().empty()) //if first task has no location, that the travel to following task might take maxDist;
        {
@@ -631,7 +633,6 @@ cout<<tasksToS->at(j)->getStart();
        {  
       
          distji = DistWrapper::dist(tasksToS->at(j)->getEndPos(),tasksToS->at(i)->getStartPos());
-cout<<"stage12\n"; 
        }
        if((tasksToS->at(j)->getEndPos().empty())&&(tasksToS->at(i)->getStartPos().empty()))
        {
@@ -669,8 +670,10 @@ cout<<"stage12\n";
 		false,//  	removable,
 		false//  	stickingatnode
 	) );
+       SCIP_CALL( SCIPaddCons(scip, con2));
+       SCIP_CALL( SCIPreleaseCons(scip, &con2));
     }
-    if(type==1)
+    /*if(type==1)
     {
       int * result = new int;
       *result = 0;
@@ -679,8 +682,8 @@ cout<<"stage12\n";
       delete result;
       result = NULL;
 
-    }
-    if(type==0)
+    }*/
+   /* if(type==0)
     {
       int * result = new int;
       *result = 0;
@@ -689,7 +692,7 @@ cout<<"stage12\n";
       delete result;
       result = NULL;
 
-    }
+    }*/
     if(type==2)
     {
       SCIP_CALL( setFullConstr(tasksToS, t_var, i, j, maxDist));
@@ -892,7 +895,7 @@ SCIP_Retcode ScipUser::setFinalCons_preVar(vector<Task*> * tasksToS, vector<SCIP
      int type = p.at(3);
 
 
-     if(type == 2)
+     if(type == 2) //this method is called for BC original algorithm, all pairs are of type 2
      {
        setFullConstr(tasksToS, t_var, i, j, maxDist);
      }
@@ -906,13 +909,13 @@ SCIP_Retcode ScipUser::scipSolve(vector<Task*> * tasksToS, SCIP_VAR * vars[], bo
   int num_tasks = tasksToS -> size();
   //std::chrono::time_point<std::chrono::system_clock> start, end;
   std::chrono::high_resolution_clock::time_point start, end;
-  ofstream results;
+  ofstream results, schedule_file;
 
   SCIP_Real vals[num_tasks]; //array to save execution times
   start = std::chrono::high_resolution_clock::now();
 
   //cancel the output to the terminal
-  SCIPsetMessagehdlr(scip, NULL);
+  //SCIPsetMessagehdlr(scip, NULL);
 
   if(timeout > 0) {
     SCIP_CALL( SCIPsetRealParam(scip, "limits/time", timeout) );
@@ -957,10 +960,14 @@ SCIP_Retcode ScipUser::scipSolve(vector<Task*> * tasksToS, SCIP_VAR * vars[], bo
       results << " " << 1 << "\n";
     }
     SCIP_CALL(SCIPgetSolVals(scip,sol, num_tasks, vars, vals)); 
+    schedule_file.open(filename+"schedule.txt",std::ios_base::app);
     for(int i=0; i < num_tasks; i++)
     {
       tasksToS->at(i)->setExecTime(vals[i]);
+      schedule_file << vals[i] << " ";
     }
+    schedule_file <<"\n";
+    schedule_file.close();
   }	
   results.close();
   return SCIP_OKAY;
