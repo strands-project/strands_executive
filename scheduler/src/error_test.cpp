@@ -34,9 +34,12 @@ int main (int argc, char** argv)
    // tasks.push_back(new Task(3, window_start, window_end, task_duration, s2, s2));
   //}
 
+
    tasks.push_back(new Task(1, 0, 8, 2, "s1", "s1"));
    tasks.push_back(new Task(2, 2, 8, 2, "s2", "s2"));
    tasks.push_back(new Task(3, 0, 8, 1, "s3", "s3"));
+
+
 
 
   Scheduler scheduler(&tasks);

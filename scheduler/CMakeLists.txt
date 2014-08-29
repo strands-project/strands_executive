@@ -135,6 +135,11 @@ target_link_libraries(random_test
   scheduler
 )
 
+add_executable(synthetic src/synthetic.cpp)
+target_link_libraries(synthetic
+  scheduler
+)
+
 add_executable(replay_test src/replay.cpp)
 target_link_libraries(replay_test
   scheduler
