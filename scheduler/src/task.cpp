@@ -49,6 +49,7 @@ Task::Task(unsigned int ID, double s, double e, double d, string start_pos, stri
 unsigned int Task::getID() {return id;}
 double Task::getStart() {return start;}
 double Task::getEnd() {return end;}
+void Task::setEnd(double new_end){end = new_end;}
 double Task::getDuration() {return duration;}
 string Task::getStartPos() {return s_pos;}
 string Task::getEndPos() {return e_pos;}

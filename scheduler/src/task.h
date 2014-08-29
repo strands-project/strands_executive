@@ -27,6 +27,7 @@ class Task
   unsigned int getID();
   double getStart();
   double getEnd();
+  void setEnd(double);
   double getDuration();
   string getStartPos();
   string getEndPos();
