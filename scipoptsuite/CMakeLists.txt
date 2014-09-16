@@ -6,7 +6,12 @@ find_package(catkin REQUIRED COMPONENTS)
 
 MESSAGE("providing scipopt_libs from " ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext/scip-3.0.2/lib/)
 MESSAGE("scipopt_libs " ${scipopt_libs})
-set(scipopt_external_libs "gmp readline zlib m")
+
+
+find_library(GMP_LIB gmp)
+find_library(READLINE_LIB readline)
+find_library(Z_LIB z)
+find_library(M_LIB m)
 
 ###########
 ## Build ##
@@ -93,9 +98,7 @@ file(MAKE_DIRECTORY ${HEADER_DIRECTORY})
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
  INCLUDE_DIRS ${HEADER_DIRECTORY}
- LIBRARIES ${scipopt_libs} 
- # CATKIN_DEPENDS 
- # DEPENDS gmp readline zlib m 
+ LIBRARIES ${scipopt_libs} ${GMP_LIB} ${READLINE_LIB} ${Z_LIB} ${M_LIB}
  EXPORTED_TARGETS scipoptsuite_ext
 )
 
