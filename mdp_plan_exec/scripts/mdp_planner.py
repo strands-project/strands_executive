@@ -353,6 +353,8 @@ class MdpPlanner(object):
                 return
             else:
                 specification='R{"time"}min=? [ (F ' + self.safe_waypoints_ltl_string + ') ]'
+        elif goal.task_type==ExecutePolicyGoal.COSAFE_LTL:
+            specification = 'R{"time"}min=? [ (' + goal.target_id + ') ]'
                 
             
 
@@ -382,6 +384,8 @@ class MdpPlanner(object):
                 #check that mdp still knows where it is
                 if self.current_prod_mdp_state==None:
                     rospy.logwarn('State transition is not in MDP model! Replanning...')
+                    if goal.task_type==ExecutePolicyGoal.COSAFE_LTL:
+                        rospy.logwarn("The co-safe LTL task will restart from scratch")
                     replanned = True
                     self.top_nav_policy_exec.cancel_all_goals()
                     self.generate_prod_mdp_policy(specification,goal.time_of_day)
@@ -429,7 +433,6 @@ class MdpPlanner(object):
             self.current_node = feedback.route_status
             current_action=self.policy_handler.product_mdp.policy[self.current_prod_mdp_state]
             self.current_prod_mdp_state = self.policy_handler.product_mdp.get_new_state(self.current_prod_mdp_state,current_action, self.current_node)
-            print self.current_prod_mdp_state
             if self.current_prod_mdp_state in self.policy_handler.product_mdp.goal_states:
                 self.finishing_policy_mode_execution=True
         
