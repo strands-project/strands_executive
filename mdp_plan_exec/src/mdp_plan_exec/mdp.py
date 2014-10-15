@@ -412,7 +412,7 @@ class ProductMdp(Mdp):
             if self.prop_map[next_possible_state][final_node_prop_index]:
                 self.publish_current_policy_mode(next_possible_state)
                 return next_possible_state
-        return -1
+        return None
         
     def publish_current_policy_mode(self, current_state):
         sources = []

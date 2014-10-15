@@ -278,16 +278,22 @@ class MdpPlanner(object):
     
     
     def generate_prod_mdp_policy(self,specification, time_of_day):
+        #update initial state
+        if self.current_node == 'none' or self.current_node is None:
+            self.policy_handler.top_map_mdp.set_initial_state_from_name(self.closest_node) 
+        else:
+            self.policy_handler.top_map_mdp.set_initial_state_from_name(self.current_node)
+        self.policy_handler.update_current_top_mdp(time_of_day)
+        
         feedback=ExecutePolicyFeedback()
         feedback.expected_time=float(self.policy_handler.prism_client.get_policy(time_of_day,specification))
         self.mdp_navigation_action.publish_feedback(feedback)
-        if feedback.expected_time==float("inf"):
-            return None
+        if feedback.expected_time==float("inf"):            
+            self.policy_handler.product_mdp=None
         else:
             result_dir=self.policy_handler.get_working_dir() + '/' + time_of_day 
-            product_mdp=ProductMdp(self.policy_handler.top_map_mdp,result_dir + '/prod.sta',result_dir + '/prod.lab',result_dir + '/prod.tra')
-            product_mdp.set_policy(result_dir + '/adv.tra')
-            return product_mdp
+            self.policy_handler.product_mdp=ProductMdp(self.policy_handler.top_map_mdp,result_dir + '/prod.sta',result_dir + '/prod.lab',result_dir + '/prod.tra')
+            self.policy_handler.product_mdp.set_policy(result_dir + '/adv.tra')
     
 
     def execute_policy_cb(self,goal):
@@ -295,11 +301,26 @@ class MdpPlanner(object):
         if self.learning_travel_times:
             self.preempt_learning_cb()
                 
-        if self.current_node == 'none' or self.current_node is None:
-            self.policy_handler.top_map_mdp.set_initial_state_from_name(self.closest_node) 
-        else:
-            self.policy_handler.top_map_mdp.set_initial_state_from_name(self.current_node)
-        self.policy_handler.update_current_top_mdp(goal.time_of_day)
+        
+        if goal.target_id == self.closest_node:
+            rospy.loginfo("Already in goal influence area. Navigating to exact pose...")
+            self.top_nav_policy_exec.send_goal(ExecutePolicyModeGoal(), feedback_cb = self.top_nav_feedback_cb)
+            status=self.top_nav_policy_exec.get_state()
+            while (status==GoalStatus.PENDING or status==GoalStatus.ACTIVE):
+                self.top_nav_policy_exec.wait_for_result(rospy.Duration(0.2))
+                status= self.top_nav_policy_exec.get_state()
+                if  self.policy_exec_preempted:
+                    self.execute_policy_service_preempt()
+                    return
+            if status != GoalStatus.SUCCEEDED:
+                rospy.logerr("Policy mode execution finished with status " + str(status) + ". Aborting...")
+                self.executing_policy=False
+                self.mdp_navigation_action.set_aborted()
+                return
+            else:
+                self.mdp_navigation_action.set_succeeded()
+                return
+            
         
         if goal.task_type==ExecutePolicyGoal.GOTO_WAYPOINT:
             if goal.target_id in self.forbidden_waypoints:
@@ -337,82 +358,92 @@ class MdpPlanner(object):
 
         
         
-        product_mdp = self.generate_prod_mdp_policy(specification,goal.time_of_day)
-        if product_mdp is None:
+        self.generate_prod_mdp_policy(specification,goal.time_of_day)
+        if self.policy_handler.product_mdp is None:
             rospy.logerr("The goal is unattainable. Aborting...")
             self.mdp_navigation_action.set_aborted()
             return
   
-        self.current_prod_mdp_state=product_mdp.initial_state 
-        current_policy_mode = product_mdp.get_current_policy_mode(self.current_prod_mdp_state)
+        self.current_prod_mdp_state=self.policy_handler.product_mdp.initial_state 
+        current_policy_mode = self.policy_handler.product_mdp.get_current_policy_mode(self.current_prod_mdp_state)
 
    
+        if  self.policy_exec_preempted:
+            self.execute_policy_service_preempt()
+            return
+   
         self.executing_policy=True
-        while self.current_prod_mdp_state not in product_mdp.goal_states and self.executing_policy and not rospy.is_shutdown():
+        replanned=False
+        while self.current_prod_mdp_state not in self.policy_handler.product_mdp.goal_states and self.executing_policy and not rospy.is_shutdown():
             self.top_nav_policy_exec.send_goal(ExecutePolicyModeGoal(route = current_policy_mode), feedback_cb = self.top_nav_feedback_cb)
             status=self.top_nav_policy_exec.get_state()
-            while (status==GoalStatus.PENDING or status==GoalStatus.ACTIVE) and self.executing_policy:     
-                self.top_nav_policy_exec.wait_for_result(rospy.Duration(0.2))
-                status= self.top_nav_policy_exec.get_state()
-             
-            if  self.policy_exec_preempted:
-                self.policy_exec_preempted = True
-                self.mdp_navigation_action.set_preempted()
-                return
-                
-            if status != GoalStatus.SUCCEEDED:
-                rospy.logerr("Policy mode execution finished with status " + str(status) + ". Aborting...")
-                self.executing_policy=False
-                self.mdp_navigation_action.set_aborted()
-                return
- 
-            if self.executing_policy:
+            self.finishing_policy_mode_execution=False
+            while (status==GoalStatus.PENDING or status==GoalStatus.ACTIVE) and self.executing_policy:
+                #check that mdp still knows where it is
                 if self.current_prod_mdp_state==None:
                     rospy.logwarn('State transition is not in MDP model! Replanning...')
+                    replanned = True
                     self.top_nav_policy_exec.cancel_all_goals()
-                    if self.current_node == 'none' or self.current_node is None:
-                            self.policy_handler.top_map_mdp.set_initial_state_from_name(self.closest_node) 
-                    else:
-                        self.policy_handler.top_map_mdp.set_initial_state_from_name(self.current_node)
-                    self.policy_handler.update_current_top_mdp(goal.time_of_day)
-                    product_mdp = self.generate_prod_mdp_policy(specification,goal.time_of_day)
-                    if product_mdp is None:
+                    self.generate_prod_mdp_policy(specification,goal.time_of_day)
+                    if self.policy_handler.product_mdp is None:
                         rospy.logerr("The goal is unattainable. Aborting...")
                         self.executing_policy=False
                         self.mdp_navigation_action.set_aborted()
                         return
-                    self.current_prod_mdp_state=product_mdp.initial_state
-                elif self.current_prod_mdp_state not in product_mdp.goal_states:
-                    current_policy_mode = self.policy_handler.product_mdp.get_current_policy_mode(self.current_prod_mdp_state)
+                    self.current_prod_mdp_state=self.policy_handler.product_mdp.initial_state
+                self.top_nav_policy_exec.wait_for_result(rospy.Duration(0.2))
+                status=self.top_nav_policy_exec.get_state()
+            
+            if not replanned:               
+                if  self.policy_exec_preempted:
+                    self.execute_policy_service_preempt()
+                    return
                     
-            if self.policy_exec_preempted:
-                self.policy_exec_preempted = True
-                self.mdp_navigation_action.set_preempted()
-                return
+                if status != GoalStatus.SUCCEEDED:
+                    rospy.logerr("Policy mode execution finished with status " + str(status) + ". Aborting...")
+                    self.executing_policy=False
+                    self.mdp_navigation_action.set_aborted()
+                    return
+    
+                if self.executing_policy and self.current_prod_mdp_state not in self.policy_handler.product_mdp.goal_states:
+                    current_policy_mode = self.policy_handler.product_mdp.get_current_policy_mode(self.current_prod_mdp_state)
+                        
+                if self.policy_exec_preempted:
+                    self.execute_policy_service_preempt()
+                    return
+            else:
+                replanned=False
+                   
         self.executing_policy = False                            
         
         self.exp_times_handler.update_current_top_mdp(goal.time_of_day)
 
         if self.policy_exec_preempted:
-            self.policy_exec_preempted = True
-            self.mdp_navigation_action.set_preempted()
+            self.execute_policy_service_preempt()
             return
         self.mdp_navigation_action.set_succeeded()
         
    
     def top_nav_feedback_cb(self,feedback):
-        self.current_node = feedback.route_status
-        current_action=product_mdp.policy[self.current_prod_mdp_state]
-        self.current_prod_mdp_state = product_mdp.get_new_state(self.current_prod_mdp_state,current_action, self.current_node)
+        if not self.finishing_policy_mode_execution:
+            self.current_node = feedback.route_status
+            current_action=self.policy_handler.product_mdp.policy[self.current_prod_mdp_state]
+            self.current_prod_mdp_state = self.policy_handler.product_mdp.get_new_state(self.current_prod_mdp_state,current_action, self.current_node)
+            print self.current_prod_mdp_state
+            if self.current_prod_mdp_state in self.policy_handler.product_mdp.goal_states:
+                self.finishing_policy_mode_execution=True
         
         
     def preempt_policy_execution_cb(self):
         self.policy_exec_preempted = True
         self.executing_policy=False
+        
+        
+        
+    def execute_policy_service_preempt(self):
         self.top_nav_policy_exec.cancel_all_goals()
-        
-        
-        
+        self.policy_exec_preempted = False
+        self.mdp_navigation_action.set_preempted()
    
     #def execute_policy_cb(self,goal):
         
