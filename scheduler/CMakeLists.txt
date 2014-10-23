@@ -8,7 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
 	  roscpp 
 	  scipoptsuite 
 	  strands_executive_msgs
-    mongodb_store_cpp_client
+    mongodb_store
 )
 
 
