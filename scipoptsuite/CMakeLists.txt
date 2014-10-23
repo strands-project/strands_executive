@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 2.8.3)
 
 project(scipoptsuite)
 
-find_package(catkin REQUIRED COMPONENTS)
+find_package(catkin REQUIRED COMPONENTS
+)
 
 MESSAGE("providing scipopt_libs from " ${CMAKE_BINARY_DIR}/strands_executive/scipoptsuite/scipoptsuite/src/scipoptsuite_ext/scip-3.0.2/lib/)
 MESSAGE("scipopt_libs " ${scipopt_libs})
@@ -12,6 +13,7 @@ find_library(GMP_LIB gmp)
 find_library(READLINE_LIB readline)
 find_library(Z_LIB z)
 find_library(M_LIB m)
+find_library(NCURSES_LIB ncurses)
 
 ###########
 ## Build ##
@@ -98,7 +100,7 @@ file(MAKE_DIRECTORY ${HEADER_DIRECTORY})
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
  INCLUDE_DIRS ${HEADER_DIRECTORY}
- LIBRARIES ${scipopt_libs} ${GMP_LIB} ${READLINE_LIB} ${Z_LIB} ${M_LIB}
+ LIBRARIES ${scipopt_libs} ${GMP_LIB} ${READLINE_LIB} ${Z_LIB} ${M_LIB} ${NCURSES_LIB}
  EXPORTED_TARGETS scipoptsuite_ext
 )
 
