@@ -2,8 +2,8 @@
 Changelog for package strands_executive_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.1 (2014-10-24)
+------------------
 * Tidying up package and cmake files.
 * This simply bulk replaces all ros_datacentre strings to mongodb_store strings inside files and also in file names.
 * Added first task logic to scheduler.

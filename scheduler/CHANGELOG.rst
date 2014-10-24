@@ -2,8 +2,8 @@
 Changelog for package scheduler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.1 (2014-10-24)
+------------------
 * Adding ncurses rosdep and also correct mongodb component order.
 * Tidying up package and cmake files.
 * Added absolute paths to libraries to ensure that dependent projects get correct linking.
