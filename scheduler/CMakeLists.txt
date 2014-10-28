@@ -6,7 +6,7 @@ project(scheduler)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
     mongodb_store
-	  roscpp 
+    roscpp 
 	  scipoptsuite 
 	  strands_executive_msgs
 )
@@ -72,8 +72,7 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 # MESSAGE("Does dependencies work" ${scipoptsuite_LIBRARIES})
-# MESSAGE("Does dependencies work" ${scipoptsuite_LIBRARIES})
-
+# MESSAGE("scipoptsuite_INCLUDE_DIRS: " ${scipoptsuite_INCLUDE_DIRS})
 
 ###################################
 ## catkin specific configuration ##
