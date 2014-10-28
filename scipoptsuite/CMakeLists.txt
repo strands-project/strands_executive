@@ -14,6 +14,16 @@ find_library(GMP_LIB gmp)
 find_library(READLINE_LIB readline)
 find_library(Z_LIB z)
 find_library(M_LIB m)
+
+
+# # we need to work out if we are in a repo/package or just package prefix as this effects the build
+# string(LENGTH ${CMAKE_HOME_DIRECTORY} home_dir_len)
+# string(LENGTH ${CMAKE_CURRENT_SOURCE_DIR} source_dir_len)
+# MATH( EXPR sub_from "${home_dir_len} + 1")
+# string(SUBSTRING ${CMAKE_CURRENT_SOURCE_DIR} ${sub_from}  -1 devel_prefix)
+
+# MESSAGE("WE ARE DOING: " ${devel_prefix})
+
 find_library(NCURSES_LIB ncurses)
 
 ###########
@@ -34,10 +44,10 @@ else ()
    SET(scipopt_lib_files ${CATKIN_DEVEL_PREFIX}/lib/libscip.so ${CATKIN_DEVEL_PREFIX}/lib/libobjscip.so ${CATKIN_DEVEL_PREFIX}/lib/liblpispx.so ${CATKIN_DEVEL_PREFIX}/lib/libnlpi.cppad.so ${CATKIN_DEVEL_PREFIX}/lib/libsoplex.so ${CATKIN_DEVEL_PREFIX}/lib/libzimpl.so)
 endif ()
 
-MESSAGE("CMAKE_BINARY_DIR " ${CMAKE_BINARY_DIR})
-MESSAGE("CATKIN_DEVEL_PREFIX " ${CATKIN_DEVEL_PREFIX})
-MESSAGE("providing scipopt_libs from " ${CMAKE_BINARY_DIR}/scipoptsuite/scipoptsuite_ext-prefix/src/scipoptsuite_ext/scip-3.0.2/lib/)
-MESSAGE("scipopt_libs " ${scipopt_libs})
+# MESSAGE("CMAKE_BINARY_DIR " ${CMAKE_BINARY_DIR})
+# MESSAGE("CATKIN_DEVEL_PREFIX " ${CATKIN_DEVEL_PREFIX})
+# MESSAGE("providing scipopt_libs from " ${scipoptsuite_BINARY_DIR}/scipoptsuite_ext-prefix/src/scipoptsuite_ext/scip-3.0.2/lib/)
+# MESSAGE("scipopt_libs " ${scipopt_libs})
 
 ExternalProject_Add(
    scipoptsuite_ext   
@@ -46,48 +56,48 @@ ExternalProject_Add(
    UPDATE_COMMAND ""
    PATCH_COMMAND patch -p0 < ${PATCH_FILE}
    CONFIGURE_COMMAND ""
-   BUILD_COMMAND make -j4 SHARED=${SHARED_OBJS} -C ${CMAKE_BINARY_DIR}/scipoptsuite/scipoptsuite_ext-prefix/src/scipoptsuite_ext
-   INSTALL_COMMAND make SHARED=${SHARED_OBJS} -C ${CMAKE_BINARY_DIR}/scipoptsuite/scipoptsuite_ext-prefix/src/scipoptsuite_ext/scip-3.0.2 SHARED=${SHARED_OBJS} INSTALLDIR=${CATKIN_DEVEL_PREFIX} installlibs COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/create-lib-links.bash ${CATKIN_DEVEL_PREFIX}/lib
+   BUILD_COMMAND make -j4 SHARED=${SHARED_OBJS} -C ${scipoptsuite_BINARY_DIR}/scipoptsuite_ext-prefix/src/scipoptsuite_ext
+   INSTALL_COMMAND make SHARED=${SHARED_OBJS} -C ${scipoptsuite_BINARY_DIR}/scipoptsuite_ext-prefix/src/scipoptsuite_ext/scip-3.0.2 SHARED=${SHARED_OBJS} INSTALLDIR=${CATKIN_DEVEL_PREFIX} installlibs COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/create-lib-links.bash ${CATKIN_DEVEL_PREFIX}/lib
 )
 
 
 # need explicit unpack inorder to apply patch
 ExternalProject_Add_Step(scipoptsuite_ext extract_scip                                       scipoptsuite/strands_executive/scipoptsuite/src/scipoptsuite_ext
-   COMMAND ${CMAKE_COMMAND} -E tar zxvf scip-3.0.2.tgz WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/scipoptsuite/scipoptsuite_ext-prefix/src/scipoptsuite_ext
+   COMMAND ${CMAKE_COMMAND} -E tar zxvf scip-3.0.2.tgz WORKING_DIRECTORY ${scipoptsuite_BINARY_DIR}/scipoptsuite_ext-prefix/src/scipoptsuite_ext
    DEPENDEES download
    DEPENDERS patch
 )
 
 # need explicit unpack inorder to apply patch
 ExternalProject_Add_Step(scipoptsuite_ext extract_gcg
-   COMMAND ${CMAKE_COMMAND} -E tar zxvf gcg-1.1.1.tgz WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/scipoptsuite/scipoptsuite_ext-prefix/src/scipoptsuite_ext
+   COMMAND ${CMAKE_COMMAND} -E tar zxvf gcg-1.1.1.tgz WORKING_DIRECTORY ${scipoptsuite_BINARY_DIR}/scipoptsuite_ext-prefix/src/scipoptsuite_ext
    DEPENDEES download
    DEPENDERS patch
 )
 
 # need explicit unpack inorder to apply patch
 ExternalProject_Add_Step(scipoptsuite_ext extract_ug
-   COMMAND ${CMAKE_COMMAND} -E tar zxvf ug-0.7.2.tgz WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/scipoptsuite/scipoptsuite_ext-prefix/src/scipoptsuite_ext
+   COMMAND ${CMAKE_COMMAND} -E tar zxvf ug-0.7.2.tgz WORKING_DIRECTORY ${scipoptsuite_BINARY_DIR}/scipoptsuite_ext-prefix/src/scipoptsuite_ext
    DEPENDEES download
    DEPENDERS patch
 )
 
 # need explicit unpack inorder to apply patch
 ExternalProject_Add_Step(scipoptsuite_ext extract_soplex
-   COMMAND ${CMAKE_COMMAND} -E tar zxvf soplex-1.7.2.tgz WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/scipoptsuite/scipoptsuite_ext-prefix/src/scipoptsuite_ext
+   COMMAND ${CMAKE_COMMAND} -E tar zxvf soplex-1.7.2.tgz WORKING_DIRECTORY ${scipoptsuite_BINARY_DIR}/scipoptsuite_ext-prefix/src/scipoptsuite_ext
    DEPENDEES download
    DEPENDERS patch
 )
 
 # need explicit unpack inorder to apply patch
 ExternalProject_Add_Step(scipoptsuite_ext extract_zimpl
-   COMMAND ${CMAKE_COMMAND} -E tar zxvf zimpl-3.3.1.tgz WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/scipoptsuite/scipoptsuite_ext-prefix/src/scipoptsuite_ext
+   COMMAND ${CMAKE_COMMAND} -E tar zxvf zimpl-3.3.1.tgz WORKING_DIRECTORY ${scipoptsuite_BINARY_DIR}/scipoptsuite_ext-prefix/src/scipoptsuite_ext
    DEPENDEES download
    DEPENDERS patch
 )
 
 ExternalProject_Add_Step(scipoptsuite_ext install_headers
-   COMMAND make -C ${CMAKE_BINARY_DIR}/scipoptsuite/scipoptsuite_ext-prefix/src/scipoptsuite_ext/scip-3.0.2 INSTALLDIR=${CATKIN_DEVEL_PREFIX}/include INCLUDEDIR=scipoptsuite installheaders 
+   COMMAND make -C ${scipoptsuite_BINARY_DIR}/scipoptsuite_ext-prefix/src/scipoptsuite_ext/scip-3.0.2 INSTALLDIR=${CATKIN_DEVEL_PREFIX}/include INCLUDEDIR=scipoptsuite installheaders 
    DEPENDEES build
    DEPENDERS install
 )
