@@ -113,7 +113,6 @@ install(DIRECTORY ${HEADER_DIRECTORY}/blockmemshell ${HEADER_DIRECTORY}/nlpi ${H
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
 
-
 FILE(GLOB install_these_libs "${CATKIN_DEVEL_PREFIX}/lib/lib*.so")
 
 ## Mark executables and/or libraries for installation
