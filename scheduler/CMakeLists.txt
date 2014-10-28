@@ -115,6 +115,7 @@ add_definitions(-std=c++0x -DNDEBUG -DWITH_SCIPDEF -DROUNDING_FE -DNPARASCIP -DW
 
 add_library(scheduler src/task.cpp src/scheduler.cpp src/distWrapper.cpp src/scipUser.cpp src/pairs.cpp)
 add_dependencies(scheduler scipoptsuite_ext)
+
 target_link_libraries(scheduler
   ${catkin_LIBRARIES}
   gmp readline z m

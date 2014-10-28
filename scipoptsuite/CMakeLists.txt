@@ -34,6 +34,11 @@ else ()
    SET(scipopt_lib_files ${CATKIN_DEVEL_PREFIX}/lib/libscip.so ${CATKIN_DEVEL_PREFIX}/lib/libobjscip.so ${CATKIN_DEVEL_PREFIX}/lib/liblpispx.so ${CATKIN_DEVEL_PREFIX}/lib/libnlpi.cppad.so ${CATKIN_DEVEL_PREFIX}/lib/libsoplex.so ${CATKIN_DEVEL_PREFIX}/lib/libzimpl.so)
 endif ()
 
+MESSAGE("CMAKE_BINARY_DIR " ${CMAKE_BINARY_DIR})
+MESSAGE("CATKIN_DEVEL_PREFIX " ${CATKIN_DEVEL_PREFIX})
+MESSAGE("providing scipopt_libs from " ${CMAKE_BINARY_DIR}/scipoptsuite/scipoptsuite_ext-prefix/src/scipoptsuite_ext/scip-3.0.2/lib/)
+MESSAGE("scipopt_libs " ${scipopt_libs})
+
 ExternalProject_Add(
    scipoptsuite_ext   
    URL http://scip.zib.de/download/release/scipoptsuite-3.0.2.tgz
@@ -92,21 +97,13 @@ set(HEADER_DIRECTORY ${CATKIN_DEVEL_PREFIX}/include/scipoptsuite)
 file(MAKE_DIRECTORY ${HEADER_DIRECTORY})
 
 
-###################################
-## catkin specific configuration ##
-###################################
-## The catkin_package macro generates cmake config files for your package
-## Declare things to be passed to dependent projects
-## INCLUDE_DIRS: uncomment this if you package contains header files
-## LIBRARIES: libraries you create in this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
- INCLUDE_DIRS ${HEADER_DIRECTORY}/blockmemshell ${HEADER_DIRECTORY}/nlpi ${HEADER_DIRECTORY}/objscip ${HEADER_DIRECTORY}/scip
- LIBRARIES ${scipopt_libs} ${GMP_LIB} ${READLINE_LIB} ${Z_LIB} ${M_LIB} ${NCURSES_LIB}
+INCLUDE_DIRS ${HEADER_DIRECTORY}
+LIBRARIES ${scipopt_libs} ${GMP_LIB} ${READLINE_LIB} ${Z_LIB} ${M_LIB} ${NCURSES_LIB}
  # CATKIN_DEPENDS 
  # DEPENDS gmp readline zlib m 
  EXPORTED_TARGETS scipoptsuite_ext
+ CFG_EXTRAS scipoptsuite-extras.cmake
 )
 
 
@@ -115,11 +112,15 @@ install(DIRECTORY ${HEADER_DIRECTORY}/blockmemshell ${HEADER_DIRECTORY}/nlpi ${H
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
 
+# Install cmake extras
+install(DIRECTORY ${CATKIN_DEVEL_PREFIX}/share/scipoptsuite/cmake
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
+
 ## Mark executables and/or libraries for installation
 install(FILES ${scipopt_lib_files}
-   DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  
-  
+   DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}    
 )
 
 
