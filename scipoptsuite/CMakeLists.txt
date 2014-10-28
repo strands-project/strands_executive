@@ -111,12 +111,18 @@ install(DIRECTORY ${HEADER_DIRECTORY}/blockmemshell ${HEADER_DIRECTORY}/nlpi ${H
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
 
-FILE(GLOB install_these_libs "${CATKIN_DEVEL_PREFIX}/lib/lib*.so")
 
 ## Mark executables and/or libraries for installation
-install(FILES ${install_these_libs}
-   DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}    
+
+
+
+#FILE(GLOB install_these_libs ${CATKIN_DEVEL_PREFIX}/lib/lib*.so)
+#FILE( GLOB install_these_libs "/usr/lib/*.so" )
+
+# find the build-time files to install using this magic...
+install(
+    CODE "
+    FILE( GLOB install_these_libs \"${CATKIN_DEVEL_PREFIX}/lib/*.so\" )
+    FILE(INSTALL \${install_these_libs} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib )
+    "
 )
-
-
-
