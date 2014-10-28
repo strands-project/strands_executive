@@ -11,8 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
 	  strands_executive_msgs
 )
 
-
-# MESSAGE("scipoptsuite_INCLUDE_DIRS: " ${scipoptsuite_INCLUDE_DIRS})
+MESSAGE("scipoptsuite_INCLUDE_DIRS: " ${scipoptsuite_INCLUDE_DIRS})
 
 ###################################
 ## catkin specific configuration ##

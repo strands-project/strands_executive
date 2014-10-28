@@ -14,16 +14,6 @@ find_library(GMP_LIB gmp)
 find_library(READLINE_LIB readline)
 find_library(Z_LIB z)
 find_library(M_LIB m)
-
-
-# # we need to work out if we are in a repo/package or just package prefix as this effects the build
-# string(LENGTH ${CMAKE_HOME_DIRECTORY} home_dir_len)
-# string(LENGTH ${CMAKE_CURRENT_SOURCE_DIR} source_dir_len)
-# MATH( EXPR sub_from "${home_dir_len} + 1")
-# string(SUBSTRING ${CMAKE_CURRENT_SOURCE_DIR} ${sub_from}  -1 devel_prefix)
-
-# MESSAGE("WE ARE DOING: " ${devel_prefix})
-
 find_library(NCURSES_LIB ncurses)
 
 ###########
@@ -35,13 +25,11 @@ include(ExternalProject)
 if(APPLE)
    set(PATCH_FILE ${CMAKE_CURRENT_SOURCE_DIR}/scipoptsuite-3.0.2-darwin-clang.diff)
    set(SHARED_OBJS false)
-   SET(scipopt_libs ${CATKIN_DEVEL_PREFIX}/lib/libscip.a ${CATKIN_DEVEL_PREFIX}/lib/libobjscip.a ${CATKIN_DEVEL_PREFIX}/lib/liblpispx.a ${CATKIN_DEVEL_PREFIX}/lib/libnlpi.cppad.a ${CATKIN_DEVEL_PREFIX}/lib/libsoplex.a ${CATKIN_DEVEL_PREFIX}/lib/libzimpl.a)
-   SET(scipopt_lib_files ${scipopt_libs})
-else ()
+   SET(scipopt_devel_lib_files ${CATKIN_DEVEL_PREFIX}/lib/libscip.a ${CATKIN_DEVEL_PREFIX}/lib/libobjscip.a ${CATKIN_DEVEL_PREFIX}/lib/liblpispx.a ${CATKIN_DEVEL_PREFIX}/lib/libnlpi.cppad.a ${CATKIN_DEVEL_PREFIX}/lib/libsoplex.a ${CATKIN_DEVEL_PREFIX}/lib/libzimpl.a)
+  else ()
    set(PATCH_FILE ${CMAKE_CURRENT_SOURCE_DIR}/scipoptsuite-3.0.2-linux-clang.diff)
    set(SHARED_OBJS true)
-   SET(scipopt_libs scip objscip lpispx nlpi.cppad soplex zimpl)
-   SET(scipopt_lib_files ${CATKIN_DEVEL_PREFIX}/lib/libscip.so ${CATKIN_DEVEL_PREFIX}/lib/libobjscip.so ${CATKIN_DEVEL_PREFIX}/lib/liblpispx.so ${CATKIN_DEVEL_PREFIX}/lib/libnlpi.cppad.so ${CATKIN_DEVEL_PREFIX}/lib/libsoplex.so ${CATKIN_DEVEL_PREFIX}/lib/libzimpl.so)
+   SET(scipopt_devel_lib_files ${CATKIN_DEVEL_PREFIX}/lib/libscip.so ${CATKIN_DEVEL_PREFIX}/lib/libobjscip.so ${CATKIN_DEVEL_PREFIX}/lib/liblpispx.so ${CATKIN_DEVEL_PREFIX}/lib/libnlpi.cppad.so ${CATKIN_DEVEL_PREFIX}/lib/libsoplex.so ${CATKIN_DEVEL_PREFIX}/lib/libzimpl.so)
 endif ()
 
 # MESSAGE("CMAKE_BINARY_DIR " ${CMAKE_BINARY_DIR})
@@ -104,13 +92,16 @@ ExternalProject_Add_Step(scipoptsuite_ext install_headers
 
 # need to make this in advance to stop catkin failing
 set(HEADER_DIRECTORY ${CATKIN_DEVEL_PREFIX}/include/scipoptsuite)
-file(MAKE_DIRECTORY ${HEADER_DIRECTORY})
+# file(MAKE_DIRECTORY ${HEADER_DIRECTORY})
 
 
+
+# make a fake include dir just to keep catkin happy. cfg_extras adds the includes proper
+file(MAKE_DIRECTORY include)
 catkin_package(
-INCLUDE_DIRS ${HEADER_DIRECTORY}
-LIBRARIES ${scipopt_libs} ${GMP_LIB} ${READLINE_LIB} ${Z_LIB} ${M_LIB} ${NCURSES_LIB}
- EXPORTED_TARGETS scipoptsuite_ext
+ INCLUDE_DIRS include
+ LIBRARIES ${GMP_LIB} ${READLINE_LIB} ${Z_LIB} ${M_LIB} ${NCURSES_LIB} 
+ EXPORTED_TARGETS scipoptsuite_ext 
  CFG_EXTRAS scipoptsuite-extras.cmake
 )
 
@@ -120,14 +111,11 @@ install(DIRECTORY ${HEADER_DIRECTORY}/blockmemshell ${HEADER_DIRECTORY}/nlpi ${H
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
 
-# Install cmake extras
-install(DIRECTORY ${CATKIN_DEVEL_PREFIX}/share/scipoptsuite/cmake
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
 
+FILE(GLOB install_these_libs "${CATKIN_DEVEL_PREFIX}/lib/lib*.so")
 
 ## Mark executables and/or libraries for installation
-install(FILES ${scipopt_lib_files}
+install(FILES ${install_these_libs}
    DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}    
 )
 
