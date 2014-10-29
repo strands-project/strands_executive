@@ -2,6 +2,12 @@
 Changelog for package scheduler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.2 (2014-10-29)
+------------------
+* Moving mongodb-store component to top of list for linking errors.
+* Added cmake extras to set include directories correctly for scipoptsuite.
+* Contributors: Nick Hawes
+
 0.0.1 (2014-10-24)
 ------------------
 * Adding ncurses rosdep and also correct mongodb component order.
