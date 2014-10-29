@@ -2,14 +2,14 @@
 Changelog for package strands_executive_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.0.2 (2014-10-29)
-------------------
+
+Forthcoming
+-----------
+* No change
 
 0.0.3 (2014-10-29)
 ------------------
-* 0.0.2
-* Updated CHANGELOGs.
-* Contributors: Nick Hawes
+* No change
 
 0.0.1 (2014-10-24)
 ------------------

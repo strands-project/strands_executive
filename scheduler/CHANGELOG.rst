@@ -2,16 +2,15 @@
 Changelog for package scheduler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.0.2 (2014-10-29)
-------------------
-* Moving mongodb-store component to top of list for linking errors.
-* Added cmake extras to set include directories correctly for scipoptsuite.
+
+Forthcoming
+-----------
+* Removed prints.
+* Removed explicit linking of message_store library which was causing library not found error.
 * Contributors: Nick Hawes
 
 0.0.3 (2014-10-29)
 ------------------
-* 0.0.2
-* Updated CHANGELOGs.
 * Changes to build for both single package and repo.
   Having problems with exposing libs created by scipoptsuite which are not actually targets.
 * Moving mongodb-store component to top of list for linking errors.

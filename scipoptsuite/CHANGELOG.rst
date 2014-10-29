@@ -2,7 +2,14 @@
 Changelog for package scipoptsuite
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.0.2 (2014-10-29)
+Forthcoming
+-----------
+* Fixing library type for OS X.
+* Making install platform independent.
+* Contributors: Nick Hawes
+
+
+0.0.3 (2014-10-29)
 ------------------
 * Removed readline from scipoptsuite build as we don't have an interactive interface in ROS.
 * Installing library files now with link targets as well.
@@ -14,20 +21,6 @@ Changelog for package scipoptsuite
 * Adding install targets and fixing build prefix for release.
 * Contributors: Nick Hawes
 
-0.0.3 (2014-10-29)
-------------------
-* 0.0.2
-* Updated CHANGELOGs.
-* Removed readline from scipoptsuite build as we don't have an interactive interface in ROS.
-* Installing library files now with link targets as well.
-* Empty commit to poke Jenkins.
-* Changes to build for both single package and repo.
-  Having problems with exposing libs created by scipoptsuite which are not actually targets.
-* Now correctly fixing build dir problem.
-  I was previously hardcoding the prefix in devel space which could either have been strands_executive/scipoptsuite or just scipoptsuite depending on whether this was built as standalone package or a in repo. This can be reflected in the cmake file with the scipoptsuite_BINARY_DIR variable so now I'm using that.
-* Added cmake extras to set include directories correctly for scipoptsuite.
-* Adding install targets and fixing build prefix for release.
-* Contributors: Nick Hawes
 
 0.0.1 (2014-10-24)
 ------------------
