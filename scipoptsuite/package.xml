@@ -16,12 +16,10 @@
 
 
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>libreadline</build_depend>
   <build_depend>zlib</build_depend>
   <build_depend>libgmp</build_depend>
   <build_depend>libncurses-dev</build_depend>
   <run_depend>libgmp</run_depend>
-  <run_depend>libreadline</run_depend>
   <run_depend>zlib</run_depend>
   <run_depend>libncurses-dev</run_depend>
 
