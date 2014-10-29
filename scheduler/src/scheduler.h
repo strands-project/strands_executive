@@ -18,12 +18,11 @@ class Scheduler
   int numPairs;
   int numTasks;
   vector<vector<int>> pairs;
+  double ** dist_a;
   public:
   Scheduler(vector<Task *>*);
-  int getNumPairs();
-  int getNumTasks();
-  vector<vector<int>> getPairs();
   double getMaxDist();
+  double readDist();
   int setPreVar(ScipUser *);
   int findTaskNow();
   vector<int> findConditions();
