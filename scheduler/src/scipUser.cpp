@@ -1,3 +1,10 @@
+/**
+  This class contains usage of SCIP solver. 
+
+  @author Lenka Mudrova
+  @version 1.0 29/10/2014
+*/
+
 #include "scipUser.h"
 #include "task.h"
 #include "distWrapper.h"
@@ -16,6 +23,11 @@
 using namespace scip;
 using namespace std;
 
+/**
+  The constructor - initialise the SCIP solver
+  @param none
+  @return nan, it is constructor
+*/
 ScipUser::ScipUser()
 {
   scip = new SCIP();//NULL;
@@ -30,17 +42,30 @@ ScipUser::ScipUser()
   catchEr = SCIPcreateProb(scip, "Scheduler", 0, 0, 0, 0, 0, 0, 0);
 }
 
+/**
+  The destructor - release scip from a memory
+*/
 ScipUser::~ScipUser()
 {
   catchEr = SCIPfree(&scip);
   BMScheckEmptyMemory();
 }
 
+/**
+  return the scip error
+  @param none
+  @return the scip error
+*/
 SCIP_Retcode ScipUser::getEr()
 {
   return catchEr;
 }
 
+/**
+  Creates t-variables (execution time of a task) for all tasks
+  @param number of tasks, a vector of pointers to the variables
+  @return scip_retcode
+*/
 SCIP_Retcode ScipUser::tVar(int num_tasks, vector<SCIP_VAR *> * t_var)
 {
   /* add t variables (execution of task) */
@@ -69,6 +94,11 @@ SCIP_Retcode ScipUser::tVar(int num_tasks, vector<SCIP_VAR *> * t_var)
    return SCIP_OKAY;
 }
 
+/**
+  creates a single pre-variable used for constraints, where two tasks can overlap
+  @param vector of pointers to variables, two indexes of tasks, which are overlapping
+  @return scip_retcode
+*/
 SCIP_Retcode ScipUser::preVar(vector<SCIP_VAR *> * pre_var, int i, int j)
 {
   /* add pre variables (execution of task) */
@@ -93,6 +123,11 @@ SCIP_Retcode ScipUser::preVar(vector<SCIP_VAR *> * pre_var, int i, int j)
    return SCIP_OKAY;
 }
 
+/**
+  set a constraint s <= t <= e for a single task
+  @param index to the t-variable, vector of pointers to t-variables , vector of pointers to the t- constrains, start limit, end limit
+  @return scip_retcode
+*/
 SCIP_Retcode ScipUser::setOneTcons(int i, vector<SCIP_VAR *> * t_var, vector<SCIP_CONS*> * t_con, int s, int x)
 {
   char con_name[255];
@@ -189,6 +224,11 @@ SCIP_Retcode ScipUser::setOneTcons(int i, vector<SCIP_VAR *> * t_var, vector<SCI
   return SCIP_OKAY;
 }
 
+/**
+  set constrain s<= t <= e to all tasks
+  @param vector of pointers to tasks, vector of pointers to t-variables, vector of pointer to t-constraints
+  @return scip_retcode
+*/
 SCIP_Retcode ScipUser::setTcons(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t_var, vector<SCIP_CONS*> * t_con)
 {
   /* add constraint s<= t + d <=e */
@@ -204,335 +244,12 @@ SCIP_Retcode ScipUser::setTcons(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t
 }
 
 
-SCIP_Retcode ScipUser::setFinalCons(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t_var, vector<vector<int>> * pairs, double maxDist)
-{
-  char con_name[255]; 
-  for(int x=0; x<(int)pairs->size(); x++)
-  {
-     vector<int> p = pairs->at(x);
-     int i = p.at(0);
-     int j = p.at(1);
-     //int k = p.at(2);
-     int type = p.at(3);
-
-     SCIP_VAR* ti;
-     SCIP_VAR* tj;
-   
-     ti = t_var->at(i);
-     tj = t_var->at(j);
-
-     SCIP_CONS* con;
-     SCIP_CONS* con2;
-    
-     if((type==1)||(type==2)) //task i should precede j, or both combinations are possible
-     {   
-       //creating a constraint ti + di + dist - tj <= 0     
-       SCIP_Real d = tasksToS->at(i)->getDuration();
-       SCIP_Real dist;
-       if(tasksToS->at(i)->getEndPos().empty()) //if first task has no location, that the travel to following task might take maxDist;
-       {
-         dist = maxDist;
-       }
-       else if(tasksToS->at(j)->getStartPos().empty()) //if second task in pair has no location, travel dist is zero, should start immediately
-       {
-         dist = 0; 
-       }
-       else
-       {        
-         dist = DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
-       }
-        //two following tasks with no loc
-       if((tasksToS->at(i)->getEndPos().empty())&&(tasksToS->at(j)->getStartPos().empty()))
-       { 
-         dist =0;
-       }
-       SCIP_Real vals[2]; //array of values
-       vals[0] = 1;
-       vals[1] = -1; 
-
-       double rhs = -d-dist; 
-     
-       SCIP_VAR * vars[2];
-       vars[0] = ti;
-       vars[1] = tj; 
- 
-       
-       SCIPsnprintf(con_name, 255, "tddt_%d%d", i,j);
-
-       SCIP_CALL(SCIPcreateConsLinear 	(scip,
-		&con,
-		con_name,
-		2, //number of variables
-		vars,//&vars,
-		vals,
-		-SCIP_DEFAULT_INFINITY,//  	lhs,
-		rhs,//  	rhs,
-		true,   // 	initial,
-		true,    //  	separate,
-		true,  //  	enforce,
-		true,  //  	check,
-		true,  //  	propagate,
-		false, // 	local,
-		false, //  	modifiable,
-		false, //  	dynamic,
-		false,//  	removable,
-		false//  	stickingatnode
-	) );
-     }
-     if((type==0)||(type==2)) //task j precede task i, or both combinations are possible
-     {
-       //creating a constraint tj + dj + dist - ti <= 0
-
-       SCIP_Real dj = tasksToS->at(j)->getDuration();
-       SCIP_Real distj;
-       if(tasksToS->at(j)->getEndPos().empty()) //if first task has no location, that the travel to following task might take maxDist;
-       {
-         distj = maxDist;
-       }
-       else if(tasksToS->at(i)->getStartPos().empty()) //if second task in pair has no location, travel dist is zero, should start immediately
-       {
-         distj = 0; 
-       }
-       else
-       {        
-         distj = DistWrapper::dist(tasksToS->at(j)->getEndPos(),tasksToS->at(i)->getStartPos());
-       }
-       if((tasksToS->at(j)->getEndPos().empty())&&(tasksToS->at(i)->getStartPos().empty()))
-       {
-         distj = 0;
-       }
-       
-
-       SCIP_Real vals3[2]; //array of values
-       vals3[0] = 1;
-       vals3[1] = -1;  
-     
-       double rhs2 = -dj-distj;
-       SCIP_VAR * vars3[2];
-       vars3[0] = tj;
-       vars3[1] = ti; 
-
- 
-       SCIPsnprintf(con_name, 255, "tddt_%d%d",j,i);
-
-       SCIP_CALL(SCIPcreateConsLinear 	(scip,
-		&con2,
-		con_name,
-		2, //number of variables
-		vars3,//&vars,
-		vals3,
-		-SCIP_DEFAULT_INFINITY,//  	lhs,
-		rhs2,//  	rhs,
-		true,   // 	initial,
-		true,    //  	separate,
-		true,  //  	enforce,
-		true,  //  	check,
-		true,  //  	propagate,
-		false, // 	local,
-		false, //  	modifiable,
-		false, //  	dynamic,
-		false,//  	removable,
-		false//  	stickingatnode
-	) );
-    }
-    if(type==1)
-    {
-      SCIP_CALL( SCIPaddCons(scip, con));
-      SCIP_CALL( SCIPreleaseCons(scip, &con));
-    }
-    if(type==0)
-    {
-      SCIP_CALL( SCIPaddCons(scip, con2));
-      SCIP_CALL( SCIPreleaseCons(scip, &con2));
-    }
-    if(type==2)
-    {
-      //create a disjunction
-      SCIP_CONS* confinal;
-      SCIPsnprintf(con_name, 255, "final_%d%d",i,j);
-      SCIP_CONS* arr_final[2];
-      arr_final[0] = con;
-      arr_final[1] = con2;
-      SCIP_CALL(SCIPcreateConsDisjunction(scip,
-		&confinal,
-		con_name,
-		2,
-		arr_final,
-		NULL, //SCIP_CONS *
-		true,
-		true,//  	enforce,
-		true, //  	check,
-		false,//  	local,
-		false,// 	modifiable,
-		false//  	dynamic 
-	)) ;	
-      SCIP_CALL( SCIPaddCons(scip, confinal) ); 
-      SCIP_CALL( SCIPreleaseCons(scip, &con));
-      SCIP_CALL( SCIPreleaseCons(scip, &con2));
-      SCIP_CALL( SCIPreleaseCons(scip, &confinal));
-    }
-  }
-  return SCIP_OKAY;
-}
-
-/*
-
-Result:
-0 - no problem occured
-1 - start of j is bigger then end
-2 - end of i is smaller then start
+/**
+  This method check the type of a pair and set the final constrain based on it (to ensure, that no tasks overlap)
+  @param tasks to schedule, t-variables, pairs, maximal distance between two locations in the scheduling problem, filename to save time, constrains, array of distances
+  @return scip_retcode 
 */
-
-SCIP_Retcode ScipUser::editExistingTcons(int i, int j, vector<SCIP_CONS*> * t_con, vector<SCIP_VAR *> * t_var, vector<Task*> * tasksToS, int dist, int * result)
-{
-  Task * ti = tasksToS->at(i);
-  Task * tj = tasksToS->at(j);
-
-  //task i precedes task j, so we would like to modify starting time of task j (more limit interval for task j), we move sj more to left on time axis
-  int sj = ti->getDuration() + dist - ti->getStart();
-  int xj = tj->getEnd() - tj->getDuration();
-  if(sj > xj)
-  { 
-    //this means, that we need to start after end, this is not feasible
-    *result = 1;
-    return SCIP_OKAY;
-  }
-
-  //everything went successful, we can delete original constraint and create a new one
-  SCIP_CALL(SCIPsetConsChecked(scip,t_con->at(j),FALSE));
-  SCIP_CALL(SCIPdelCons(scip, t_con->at(j)));
-  t_con->at(j) = NULL;
-
-  char con_name[255];
-  SCIPsnprintf(con_name, 255, "junse_%d", j);
-  SCIP_CONS * conx = SCIPfindCons(scip, con_name);
-  if (conx == NULL)
-   cout << "smazano\n";
-
-  SCIP_CALL(setOneTcons(j, t_var, t_con, sj, xj));
-
-  /*---------------------------------*/
-  //we would like to modify end time of task i (more limit the interval for task i), we move si more to righ on time axis)
-  //variable x stands for end time, where task can be executed, it is x = e-d
-  int xi = xj - ti->getDuration() - dist;
-  int si = ti->getStart();
-  if(xi < si)
-  {
-    //this means, that we need to end before start, this is not feasible
-    *result = 2;
-    return SCIP_OKAY;
-  }  
-
-  //everything went successful, we can delete original constraint and create a new one
-  SCIP_CALL(SCIPsetConsChecked(scip,t_con->at(i),FALSE));
-  SCIP_CALL(SCIPdelCons(scip, t_con->at(i)));
-  t_con->at(i) = NULL;
-  SCIP_CALL(setOneTcons(i, t_var, t_con, si, xi));
-    
-  return SCIP_OKAY;
-}
-
-/* assumption - i is always index of preceding task, j of following task
-
-result:
-0 no problem spotted
-1 infeasibility
-2 fixing of constraint didnt help and it still violates the existing one
-3 SCIPcheckCons returned something else then 4 or 5
-
-*/
-
-SCIP_Retcode ScipUser::checkConstraint(SCIP_CONS * con, int i, int j, vector<SCIP_CONS*> * t_con, vector<SCIP_VAR *> * t_var, vector<Task*> * tasksToS, SCIP_Real dist, int runs,  int * ret_val)
-{
-  //presolve existing problem
-  SCIP_CALL(SCIPpresolve(scip));
-  int status = SCIPgetStatus(scip); 
-  if(status == 11) //11 is infeasible
-  {
-    *ret_val = 1;
-    return SCIP_OKAY;
-  }
-  else //presolve went well
-  {    
-    SCIP_SOL * sol = SCIPgetBestSol(scip);
-    SCIP_RESULT * res = new SCIP_RESULT();
-
-    //check new constraint again the existing problem
-    SCIP_CALL( SCIPcheckCons(scip,
-		con, //  	cons,
-		sol,//  	sol,
-		TRUE,// 	checkintegrality,
-		TRUE,//  	checklprows,
-		TRUE,//  	printreason,
-		res //  	result 
-    ));
-    SCIP_CALL(SCIPsetConsChecked(scip,con,FALSE));
-	
-
-    //we need to free solution to be able to add the constraint
-
-    int result = *res;
-
-    //delete pointers
-     delete res;
-     res = NULL;
-     delete sol;
-     sol = NULL;
-
-    SCIP_CALL( SCIPfreeTransform(scip));
-
-        
-    if(result == 4) //constrain is feasible with existing problem
-    {
-      SCIP_CALL( SCIPaddCons(scip, con));
-      SCIP_CALL( SCIPreleaseCons(scip, &con));
-    }
-    else if(result == 5) //constraint violates existing problem
-    {
-
-      if(runs ==0) //first run
-      {
-
-        int * resExistCons = new int;
-        *resExistCons = 0;
-cout << "ij" << i << " " << j << " " << dist << "\n";
-
-        SCIP_CALL(editExistingTcons(i, j, t_con, t_var, tasksToS, dist, resExistCons));
-
-
-        if(*resExistCons == 0)
-        {
-          //try to check the original constraint again, should proceed smooth
-          //recursive call
-          delete resExistCons;
-          resExistCons = NULL;
-          checkConstraint(con, i, j, t_con, t_var, tasksToS, dist, 1, ret_val);
- cout << "stagex\n";       
-        }
-        else //infeasibility occured
-        {
-          *ret_val = 1;
-          return SCIP_OKAY;
-        }
-
-
-      }
-      else //the constraint was changed, but still it is violated. this should not happen
-      {
-
-        *ret_val = 2; 
-        return SCIP_OKAY;
-      }
-    }
-    else //this state should not happen, if I understood SCIP_Result properly
-    {
-      *ret_val = 3;
-    }
-  }
-  return SCIP_OKAY;
-}
-
-SCIP_Retcode ScipUser::setFinalCons_new(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t_var, vector<vector<int>> * pairs, double maxDist, string filename, vector<SCIP_CONS*> * t_con)
+SCIP_Retcode ScipUser::setFinalCons_new(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t_var, vector<vector<int>> * pairs, double maxDist, string filename, vector<SCIP_CONS*> * t_con, double ** dist_a)
 {
   char con_name[255]; 
   ofstream results;
@@ -572,7 +289,7 @@ SCIP_Retcode ScipUser::setFinalCons_new(vector<Task*> * tasksToS, vector<SCIP_VA
        }
        else
        {        
-         distij = DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
+         distij = dist_a[i][j];//DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
        }
         //two following tasks with no loc
        if((tasksToS->at(i)->getEndPos().empty())&&(tasksToS->at(j)->getStartPos().empty()))
@@ -632,7 +349,7 @@ SCIP_Retcode ScipUser::setFinalCons_new(vector<Task*> * tasksToS, vector<SCIP_VA
        else
        {  
       
-         distji = DistWrapper::dist(tasksToS->at(j)->getEndPos(),tasksToS->at(i)->getStartPos());
+         distji = dist_a[j][i];//DistWrapper::dist(tasksToS->at(j)->getEndPos(),tasksToS->at(i)->getStartPos());
        }
        if((tasksToS->at(j)->getEndPos().empty())&&(tasksToS->at(i)->getStartPos().empty()))
        {
@@ -673,29 +390,10 @@ SCIP_Retcode ScipUser::setFinalCons_new(vector<Task*> * tasksToS, vector<SCIP_VA
        SCIP_CALL( SCIPaddCons(scip, con2));
        SCIP_CALL( SCIPreleaseCons(scip, &con2));
     }
-    /*if(type==1)
-    {
-      int * result = new int;
-      *result = 0;
-      SCIP_CALL(checkConstraint(con, i, j, t_con, t_var, tasksToS, distij,0,result)); 
-      
-      delete result;
-      result = NULL;
 
-    }*/
-   /* if(type==0)
-    {
-      int * result = new int;
-      *result = 0;
-      SCIP_CALL(checkConstraint(con2, j, i, t_con, t_var, tasksToS, distji,0,result)); 
-      
-      delete result;
-      result = NULL;
-
-    }*/
     if(type==2)
     {
-      SCIP_CALL( setFullConstr(tasksToS, t_var, i, j, maxDist));
+      SCIP_CALL( setFullConstr(tasksToS, t_var, i, j, maxDist,dist_a));
     }
   }
 
@@ -707,7 +405,13 @@ SCIP_Retcode ScipUser::setFinalCons_new(vector<Task*> * tasksToS, vector<SCIP_VA
   return SCIP_OKAY;
 }
 
-SCIP_Retcode ScipUser::setFullConstr(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t_var, int i, int j, double maxDist)
+
+/**
+  This method sets a single constrain, when both options are possible (I precedes J, J precedes I)
+  @param tasks to schedule, t-variables, index to task i, index to task j, maximal distance, array of distances
+  @return scip retcode
+*/
+SCIP_Retcode ScipUser::setFullConstr(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t_var, int i, int j, double maxDist, double ** dist_a)
 {
    char con_name[255]; 
 
@@ -738,7 +442,7 @@ SCIP_Retcode ScipUser::setFullConstr(vector<Task*> * tasksToS, vector<SCIP_VAR *
        }
        else
        {        
-         distij = DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
+         distij = dist_a[i][j];//DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
        }
         //two following tasks with no loc
        if((tasksToS->at(i)->getEndPos().empty())&&(tasksToS->at(j)->getStartPos().empty()))
@@ -759,7 +463,7 @@ SCIP_Retcode ScipUser::setFullConstr(vector<Task*> * tasksToS, vector<SCIP_VAR *
        }
        else
        {        
-         distji = DistWrapper::dist(tasksToS->at(j)->getEndPos(),tasksToS->at(i)->getStartPos());
+         distji = dist_a[j][i];//DistWrapper::dist(tasksToS->at(j)->getEndPos(),tasksToS->at(i)->getStartPos());
        }
        if((tasksToS->at(j)->getEndPos().empty())&&(tasksToS->at(i)->getStartPos().empty()))
        {
@@ -881,8 +585,12 @@ SCIP_Retcode ScipUser::setFullConstr(vector<Task*> * tasksToS, vector<SCIP_VAR *
   return SCIP_OKAY;
 }
 
-
-SCIP_Retcode ScipUser::setFinalCons_preVar(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t_var, vector<vector<int>> * pairs, double maxDist)
+/**
+  This is used by original Brian Coltin approach - all constraints (ensuring that tasks do not overlap) are treated as type=2, thus full constrain is added
+  @param tasks to schedule, t-variables, pairs, maximal distance, array of distances
+  @return scip retcode
+*/ 
+SCIP_Retcode ScipUser::setFinalCons_preVar(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t_var, vector<vector<int>> * pairs, double maxDist, double ** dist_a)
 {
  
   for(int x=0; x<(int)pairs->size(); x++)
@@ -897,17 +605,20 @@ SCIP_Retcode ScipUser::setFinalCons_preVar(vector<Task*> * tasksToS, vector<SCIP
 
      if(type == 2) //this method is called for BC original algorithm, all pairs are of type 2
      {
-       setFullConstr(tasksToS, t_var, i, j, maxDist);
+       setFullConstr(tasksToS, t_var, i, j, maxDist, dist_a);
      }
   }
   return SCIP_OKAY;
 }
 
-
+/**
+  The main method, where the solving of formulated MIP problem is called
+  @param tasks to schedule, variables to find, pointer to boolean (signaling if the solver found solution), filename to save time and criterion, timeout
+  @return scip retcode
+*/
 SCIP_Retcode ScipUser::scipSolve(vector<Task*> * tasksToS, SCIP_VAR * vars[], bool * worked, string filename, const int & timeout)
 {
   int num_tasks = tasksToS -> size();
-  //std::chrono::time_point<std::chrono::system_clock> start, end;
   std::chrono::high_resolution_clock::time_point start, end;
   ofstream results, schedule_file;
 
@@ -915,15 +626,11 @@ SCIP_Retcode ScipUser::scipSolve(vector<Task*> * tasksToS, SCIP_VAR * vars[], bo
   start = std::chrono::high_resolution_clock::now();
 
   //cancel the output to the terminal
-  //SCIPsetMessagehdlr(scip, NULL);
+  SCIPsetMessagehdlr(scip, NULL);
 
   if(timeout > 0) {
     SCIP_CALL( SCIPsetRealParam(scip, "limits/time", timeout) );
   }
-  
-  //adding an offset to objective - produces a segmanation fault - maybe fixed in 3.1
-  //SCIP_Real addval = 0.0;
-  //SCIP_CALL (SCIPaddObjoffset (scip, addval)); 
 
 
 	
