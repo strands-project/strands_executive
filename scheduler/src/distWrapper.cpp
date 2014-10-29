@@ -23,11 +23,7 @@ double DistWrapper::dist(string p1, string p2)
         return srv.response.travel_time;
       
         }
-        /*if((p1=="s1")&&(p2 == "s2"))
-          return 4;
- else 
-        return 1.0;*/
-   
+         
 
 }
 
