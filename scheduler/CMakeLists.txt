@@ -78,8 +78,18 @@ target_link_libraries(synthetic
   scheduler
 )
 
+add_executable(getresults src/getResults.cpp)
+target_link_libraries(getresults
+  scheduler
+)
+
 add_executable(replay_test src/replay.cpp)
 target_link_libraries(replay_test
+  scheduler
+)
+
+add_executable(distComp src/distComputation.cpp)
+target_link_libraries(distComp
   scheduler
 )
 

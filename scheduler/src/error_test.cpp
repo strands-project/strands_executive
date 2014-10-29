@@ -37,7 +37,7 @@ int main (int argc, char** argv)
 
    tasks.push_back(new Task(1, 0, 8, 2, "s1", "s1"));
    tasks.push_back(new Task(2, 2, 8, 2, "s2", "s2"));
-   tasks.push_back(new Task(3, 0, 8, 1, "s3", "s3"));
+   tasks.push_back(new Task(3, 0, 7, 1, "s3", "s3"));
 
 
 

@@ -9,7 +9,7 @@ double DistWrapper::dist(string p1, string p2)
 {
 
 	// quick hack pending outcome of https://github.com/strands-project/strands_executive/issues/41
-	/*if(p1 == "" || p2 == "") {
+	if(p1 == "" || p2 == "" || p1 == p2){
 		return 0;
 	}    
 	else {
@@ -22,13 +22,12 @@ double DistWrapper::dist(string p1, string p2)
         expectedTimeClient.call(srv);
         return srv.response.travel_time;
       
-    }*/
-   if((p1 == "")||(p2 == ""))
-   {
-     return 0;
-   }
-   else
-     return 1.0;
+        }
+        /*if((p1=="s1")&&(p2 == "s2"))
+          return 4;
+ else 
+        return 1.0;*/
+   
 
 }
 

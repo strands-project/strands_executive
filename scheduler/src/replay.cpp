@@ -5,6 +5,7 @@
 #include "task.h"
 #include "scheduler.h"
 #include <fstream>
+#include "ros/ros.h"
 
 using namespace std;
 
@@ -23,6 +24,8 @@ int main (int argc, char** argv)
   int task_count;
   int version;	
 
+  ros::init(argc, argv, "replay");
+
   vector<Task*> tasks;
 
   if(argc > 3) {
@@ -36,7 +39,7 @@ int main (int argc, char** argv)
     return 0;
   }
 
-  myfile.open ("/home/lenka/phd/code/strands_ws/src/strands_executive/scheduler/data/"+name_file, std::ios_base::in);
+  myfile.open ("/home/lenka/phd/text/Articles/ICRA2015new/Data/moreoverlapping/"+name_file, std::ios_base::in);
 
   if (myfile.is_open())
   {
@@ -49,7 +52,7 @@ int main (int argc, char** argv)
       if(num%task_count == 0)
       {
         Scheduler scheduler(&tasks);
-        line= "/home/lenka/phd/code/strands_ws/src/strands_executive/scheduler/data/paper/results"+to_string(task_count)+"version"+ to_string(version)+".txt";
+        line= "/home/lenka/phd/text/Articles/ICRA2015new/Data/"+to_string(task_count)+"version"+ to_string(version)+".txt";
         bool worked = scheduler.solve(version,line,3*60);
         tasks.erase(tasks.begin(),tasks.end());
         cout << "zkouska" << tasks.size() << "\n";
