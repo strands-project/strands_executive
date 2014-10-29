@@ -2,8 +2,8 @@
 Changelog for package scipoptsuite
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.2 (2014-10-29)
+------------------
 * Removed readline from scipoptsuite build as we don't have an interactive interface in ROS.
 * Installing library files now with link targets as well.
 * Changes to build for both single package and repo.
