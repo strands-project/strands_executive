@@ -8,6 +8,16 @@ Changelog for package scheduler
 * Added cmake extras to set include directories correctly for scipoptsuite.
 * Contributors: Nick Hawes
 
+Forthcoming
+-----------
+* 0.0.2
+* Updated CHANGELOGs.
+* Changes to build for both single package and repo.
+  Having problems with exposing libs created by scipoptsuite which are not actually targets.
+* Moving mongodb-store component to top of list for linking errors.
+* Added cmake extras to set include directories correctly for scipoptsuite.
+* Contributors: Nick Hawes
+
 0.0.1 (2014-10-24)
 ------------------
 * Adding ncurses rosdep and also correct mongodb component order.

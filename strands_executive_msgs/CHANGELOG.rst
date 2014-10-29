@@ -5,6 +5,12 @@ Changelog for package strands_executive_msgs
 0.0.2 (2014-10-29)
 ------------------
 
+Forthcoming
+-----------
+* 0.0.2
+* Updated CHANGELOGs.
+* Contributors: Nick Hawes
+
 0.0.1 (2014-10-24)
 ------------------
 * Tidying up package and cmake files.
