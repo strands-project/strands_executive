@@ -1,3 +1,10 @@
+/**
+  definition of a task
+
+  @author Lenka Mudrova
+  @version 1.0 29/10/2014
+*/
+
 #include <string>
 #include <iostream> 
 #include <vector>
@@ -5,7 +12,11 @@
 
 using namespace std;
 
-/*constructor without parameter now, automatically set now to false*/
+/** 
+  constructor without parameter now, automatically set now to false
+  @param ID of the task, release time, deadline, processing time, start position, end position
+  @return nan, it is constructor
+*/
 Task::Task(unsigned int ID, double s, double e, double d, string start_pos, string end_pos)
 {
   id = ID;
@@ -18,7 +29,11 @@ Task::Task(unsigned int ID, double s, double e, double d, string start_pos, stri
   cond = false;
 }
 
-/*constructor with parameter now*/
+/**
+  constructor with parameter now
+  @param ID of the task, release time, deadline, processing time, start position, end position, now flag
+  @return nan, it is constructor
+*/
 Task::Task(unsigned int ID, double s, double e, double d, string start_pos, string end_pos,bool now)
 {
   id = ID;
@@ -31,7 +46,11 @@ Task::Task(unsigned int ID, double s, double e, double d, string start_pos, stri
   cond = false;
 }
 
-/*constructor without parameter now, automatically set now to false and with vector of tasks, which needs to precede this task*/
+/** 
+  constructor without parameter now, automatically set now to false and with vector of tasks, which needs to precede this task
+  @param ID of the task, release time, deadline, processing time, start position, vector of pointers to preceding tasks
+  @return nan, it is constructor
+*/
 Task::Task(unsigned int ID, double s, double e, double d, string start_pos, string end_pos, vector<Task*> * pre)
 {
   id = ID;
@@ -49,6 +68,7 @@ Task::Task(unsigned int ID, double s, double e, double d, string start_pos, stri
 unsigned int Task::getID() {return id;}
 double Task::getStart() {return start;}
 double Task::getEnd() {return end;}
+void Task::setEnd(double new_end){end = new_end;}
 double Task::getDuration() {return duration;}
 string Task::getStartPos() {return s_pos;}
 string Task::getEndPos() {return e_pos;}

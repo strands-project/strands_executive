@@ -1,3 +1,10 @@
+/**
+  This class initialise the scheduling problem and call the SCIP solver to solve it.
+
+  @author Lenka Mudrova
+  @version 1.0 29/10/2014
+*/
+
 #include <vector>
 #include "scheduler.h"
 #include "task.h"
@@ -8,6 +15,7 @@
 #include <math.h>  
 #include <chrono>
 #include <fstream>
+#include <algorithm> 
 /* scip includes */
 #include "objscip/objscip.h"
 #include "objscip/objscipdefplugins.h"
@@ -16,29 +24,33 @@ using namespace scip;
 
 using namespace std;
 
+
+/** 
+  Constructor - initialisation of the scheduling problem. It also sets an array of distance for later usage. 
+  @param - vector of pointers to tasks, which should be schedule
+  @return - nan, it is constructor
+*/
 Scheduler::Scheduler(vector<Task *> * tasks)
 {
   tasksToS = tasks;
   numTasks = tasks->size();
   numPairs = 0;
+  dist_a = new double*[tasks->size()];
+  for(int i = 0; i < tasks->size(); i++)
+    dist_a[i] = new double[tasks->size()];
 }
 
-int Scheduler::getNumPairs()
-{
-  return numPairs;
-}
+//TODO destructor
 
-int Scheduler::getNumTasks()
-{
-  return numTasks;
-}
 
-vector<vector<int>> Scheduler::getPairs()
-{
-  return pairs; //TODO: think if this is good, maybe return reference to it?
-}
-
-double Scheduler::getMaxDist()
+/**
+  This method initialises an array of distances between locations, which are used in a set of tasks. 
+  The array is used later in order to minimise the amount of calling DistWrapper.
+  It also computes max distance.
+  @param none
+  @return maximal distance, which occured in the system
+*/
+double Scheduler::getMaxDist() 
 {
   double max=0;
   double dist;
@@ -49,6 +61,7 @@ double Scheduler::getMaxDist()
       if(i != j)
       {
         dist = DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
+        dist_a[i][j] = dist;
         if(dist>max)
         {  
           max = dist; 
@@ -59,7 +72,107 @@ double Scheduler::getMaxDist()
   return max;
 }
 
+/**
+  This method is used during experiments. It reads the array of distances from the file. It is hard-coded for specific datasets G4S or AAF.
+  Not for public use.
+  @param none
+  @return maximal distance
+*/
+double Scheduler::readDist() 
+{
+  //string filename = "/home/lenka/phd/code/strands_ws/src/strands_executive/scheduler/data/distances_aaf.txt";
+  string filename = "/home/lenka/phd/code/strands_ws/src/strands_executive/scheduler/data/distances_g4s.txt";
+  ifstream results;
+  results.open (filename,std::ios_base::in);
 
+  double max=0;
+  double dist;
+  int numWay = 46; //or 17 for aaf 46 for g4s
+  double arr_dist[numWay][numWay];
+
+  double n;
+  int i=0,j=0;
+  while(results >> n)
+  {
+    arr_dist[i][j] = n;
+    j++;
+    if(n>max)
+        {  
+          max = n; 
+        }
+    if(j > numWay-1)
+    {
+      j = 0;
+      i++;
+    }
+  }
+ results.close();
+
+  string point[] = {"Lobby", "ChargingPoint", "OfficeDoorInside", "OfficePoint", "OfficeDoorOutside", "SafePointLobby", "SafePointCorridor", "CrossRoads", "CorridorToilets", "GamePoint", "FireDoorWest", "FireDoorEast", "ChapelDoors", "FireExtinguisher", "PrinterRoom", "GameTable", "CorridorEast"};
+
+
+  for(int i=0; i< numTasks; i++)
+  {
+    for(int j=0; j< numTasks; j++)
+    {
+      if(i != j)
+      {
+        int x = -1,y = -1,sizex,sizey;
+        string EP = tasksToS->at(i)->getEndPos();
+        string SP = tasksToS->at(j)->getStartPos();
+
+        //aaf
+        /*for(int k = 0; k < numWay; k++)
+        {
+          if(EP == point[k])
+            x = k;
+          if(SP == point[k])
+            y = k;
+        }*/
+ 
+        //g4s
+        sizex = EP.size();
+        sizey = SP.size();
+
+        if(sizex >=8)
+        {
+          if(EP == "ChargingPoint")
+            x = 0;
+          else if(EP.substr(0,8)=="WayPoint")
+          {
+            EP = EP.substr(8,sizex);  
+            x = stoi(EP);
+          }
+        }
+        if(sizey >= 8)
+        {
+          if(SP == "ChargingPoint")
+            y = 0;
+          else if(SP.substr(0,8)=="WayPoint")
+          {
+            SP = SP.substr(8,sizey);  
+            y = stoi(SP);
+          }
+        }
+
+        if((x != -1)&&(y != -1))
+          dist_a[i][j] = arr_dist[x][y];
+        
+      }
+       
+    }
+  }
+  
+ 
+  
+  return max;
+}
+
+/**
+  This method returns the index of a task which has "now" flag.
+  @param none
+  @return index of the task
+*/
 int Scheduler::findTaskNow()
 {
   int index = -1;
@@ -75,6 +188,11 @@ int Scheduler::findTaskNow()
   return index;
 }
 
+/**
+  This method returns a vector of indexes which has "precondition" flag.
+  @param none
+  @return vector of indexes
+*/
 vector<int> Scheduler::findConditions()
 {
   vector<int> con;
@@ -93,6 +211,12 @@ vector<int> Scheduler::findConditions()
   return con;
 }
 
+/**
+  This method sets pairs for those tasks, which have some special flags - now or preconditions.
+  TODO needs clearing
+  @param pointer to SCIP solver
+  @return 0 if everything went well
+*/
 int Scheduler::setPreVar(ScipUser * solver)
 {
   vector<bool> pairSet;
@@ -283,8 +407,19 @@ int Scheduler::setPreVar(ScipUser * solver)
   return 0;
 }
 
+/**
+  This is the main method for a scheduler, which calls the rest
+
+  @param version = 1 - Brian Coltin original work. Mainly for experiments
+         version = 4 - Mine approach
+         filename - if given, some times needed to computation are saved
+         timeout - if given, the SCIP solver will be killed after this time is reached
+  @return if the SCIP finds a solution or not
+*/
 bool Scheduler::solve(int version, string filename, const int & timeout)
 {
+  //scheduler save to file: 
+  //preprocessing time to create pairs, setting the constraints, infeas, objective criteria, time to solve, number of tasks, if it worked
   SCIP_Retcode err;
   vector<bool> pairUsed;
   ofstream results;
@@ -294,91 +429,89 @@ bool Scheduler::solve(int version, string filename, const int & timeout)
   if (err != SCIP_OKAY)
     return -1;
 
-  cout<<"Solving with: "<<version<<endl;
+  //uncomment here to save tasks to the file, mainly debugging purpose
+  /*if(!filename.empty())
+  {
+    string name = filename + "tasks.txt";
+    results.open (name,std::ios_base::app);
+    results << "BATCH\n";
+    for(int a =0; a< tasksToS->size(); a++)
+    {
+      results << tasksToS->at(a)-> getStart() << " " << tasksToS ->at(a) -> getEnd() << " " << tasksToS ->at(a) -> getDuration() << "\n"; 
+    }
+    results << "----------------------------------------------\n";
+    results.close();
+  }*/
+
+
+  
   std::chrono::high_resolution_clock::time_point start, end;
+
+  double maxDist = getMaxDist();
+ 
   Pairs * pr = new Pairs(tasksToS);
   
-  start = std::chrono::high_resolution_clock::now();
+  
   if(version==1)  {
     //Brian Coltin
     numPairs = pr->setPairs_BC();
   }
-  else if(version==2) {
-    //mine
-    numPairs = pr->setPairs_mine();
-  }
-  else if(version==3) {
-    //robot version
-    numPairs = pr->setPairs();
-  }
   else if(version==4) {
     //mine specific approach
-    numPairs = pr->setPairs_new();
-  }
+    numPairs = pr->setPairs_new(dist_a);
+  } 
   else {
     //if parameter is not set
-    numPairs = pr->setPairs_new();
-  }
-  end = std::chrono::high_resolution_clock::now();
-  
-  std::chrono::duration<double> elapsed_seconds = end-start;
-  if(!filename.empty())
-  {
-    results.open (filename,std::ios_base::app);
-    results << elapsed_seconds.count() << " ";
-    results.close();
+    numPairs = pr->setPairs_new(dist_a);
   }
 
   pr->getPairs(&pairs);
 
-//creating a vector for variables
+  //creating a vector for t variables (t = execution time)
   vector<SCIP_VAR *> * t_var = new vector<SCIP_VAR *>(numTasks,(SCIP_VAR*) NULL); 
   err = solver->tVar(numTasks,t_var);
   if (err != SCIP_OKAY)
     return -1;
 
-
+  //checking if some task has "now" or "precondition" flag. If yes, pairs needs to be set in different way
   int e = setPreVar(solver);
   if (e==-1)
     return -1;
 
 
-//create constraints for starting and ending time
-  err = solver->setTcons(tasksToS, t_var);
+  //create constraints that holds s<= t <= e
+  vector<SCIP_CONS *> * t_con = new vector<SCIP_CONS *>(numTasks,(SCIP_CONS *) NULL); 
+  err = solver->setTcons(tasksToS, t_var, t_con);
   if (err != SCIP_OKAY)
     return -1; 
 
-  double maxDist = getMaxDist();
-//for all pairs we need to set condition
-  start = std::chrono::high_resolution_clock::now();
-  err = solver->setFinalCons(tasksToS, t_var, &pairs, maxDist);
-  end = std::chrono::high_resolution_clock::now();
-  if (err != SCIP_OKAY)
-    return -1; 
 
-  elapsed_seconds = end-start;
-  if(!filename.empty())
+  //for all pairs we need to set condition, that no tasks are overlapping
+  if(version != 1)
   {
-    results.open (filename,std::ios_base::app);
-    results << elapsed_seconds.count() << " ";
-    results.close();
+    err = solver->setFinalCons_new(tasksToS, t_var, &pairs, maxDist,filename, t_con, dist_a);
   }
+  else
+  {
+    err = solver->setFinalCons_preVar(tasksToS, t_var, &pairs, maxDist,dist_a);
+  }
+  if (err != SCIP_OKAY)
+    return -1; 
 
-//conversion from vector to "array"
+
+  //conversion from vector to "array"
   SCIP_VAR * array_tvar[numTasks];
   for(int i=0; i<numTasks; i++)
     array_tvar[i] = t_var->at(i);
 
   bool * worked = new bool();
 
-
-//----------------------- 
-
+  //calling solver for the formulated MIP problem
   err = solver->scipSolve(tasksToS, array_tvar, worked, filename, timeout);
    if (err != SCIP_OKAY)
     return -1; 
 
-  //call destructor
+  //call destructor for SCIP problem
   delete solver;
 
   return *worked;
