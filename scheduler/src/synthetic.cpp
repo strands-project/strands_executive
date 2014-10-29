@@ -18,9 +18,9 @@ int const mind = 2; //minimal duration of tasks
 int const maxd = 30; //maximal duration of tasks
 int const maxw = 20; //maximum waiting time between two tasks
 int const minsp = 2;
-int type = 3;
-int over = kind_over[2];
-int amount_over = 2; //how many tasks should overlap with existing task 
+int type = 0;
+int over = kind_over[0];
+int amount_over = 10; //how many tasks should overlap with existing task 
 
 
 double act_r[2] = {ratio[type][0], ratio[type][1]}; //actual used ratio
@@ -165,7 +165,14 @@ void overlap(int num, int initial_time, int order)
               s1 = t->getEndPos();
             }
 
-            r = (int) round(rand() % (max_overlap - min_overlap) + min_overlap);      
+            if(min_overlap == max_overlap)
+            {
+              r = min_overlap;
+            }
+            else
+              //r = (int) round(rand() % (max_overlap - min_overlap) + min_overlap);      
+              r = t->getStart()+1;
+    
             time_win = (int) round(p / rand_rat);
                            
           }  
@@ -204,13 +211,14 @@ void overlap(int num, int initial_time, int order)
               r = min_overlap;
             }
             else
-              r = (int) round(rand() % (max_overlap - min_overlap) + min_overlap);      
-          
+              //r = (int) round(rand() % (max_overlap - min_overlap) + min_overlap);      
+              r = t->getStart()+1;
+
             time_win = (int) round(p / rand_rat);
                            
           }    
         }
-        d = max(max(r + time_win, s+p), d+1); //to gurantee that new deadline is bigger
+        d = max(max(max(r + time_win, s+p), d+1),amount_over); //to gurantee that new deadline is bigger
 
         vector<Task*>::iterator iter = previous.begin() + aover;
         previous.insert(iter,new Task(i, r, d, p, s1, s2));
@@ -353,7 +361,7 @@ void starts(int num, int initial_time, int order)
 void writeTofile(int num, string name_file)
 {
   Task * t =(Task*)NULL;
-  myfile.open ("/home/lenka/phd/code/strands_ws/src/strands_executive/scheduler/data/"+name_file + ".txt", std::ios_base::app);
+  myfile.open ("/home/lenka/phd/text/Articles/ICRA2015new/Data/moreoverlapping/"+name_file + ".txt", std::ios_base::app);
   for(int i=0; i< num; i++)
   {
     t = tasks.at(i);
@@ -405,7 +413,7 @@ int main (int argc, char** argv)
     writeTofile(task_count, name_file);*/
   
 
-    overlap(task_count, initial_time, 1);
+    overlap(task_count, initial_time, -1);
     initial_time = tasks.at(task_count-1) -> getEnd()+1;
     writeTofile(task_count, name_file);
 
