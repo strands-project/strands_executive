@@ -11,7 +11,6 @@ MESSAGE("scipopt_libs " ${scipopt_libs})
 
 
 find_library(GMP_LIB gmp)
-find_library(READLINE_LIB readline)
 find_library(Z_LIB z)
 find_library(M_LIB m)
 find_library(NCURSES_LIB ncurses)
@@ -44,8 +43,8 @@ ExternalProject_Add(
    UPDATE_COMMAND ""
    PATCH_COMMAND patch -p0 < ${PATCH_FILE}
    CONFIGURE_COMMAND ""
-   BUILD_COMMAND make -j4 SHARED=${SHARED_OBJS} -C ${scipoptsuite_BINARY_DIR}/scipoptsuite_ext-prefix/src/scipoptsuite_ext
-   INSTALL_COMMAND make SHARED=${SHARED_OBJS} -C ${scipoptsuite_BINARY_DIR}/scipoptsuite_ext-prefix/src/scipoptsuite_ext/scip-3.0.2 SHARED=${SHARED_OBJS} INSTALLDIR=${CATKIN_DEVEL_PREFIX} installlibs COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/create-lib-links.bash ${CATKIN_DEVEL_PREFIX}/lib
+   BUILD_COMMAND make -j4 SHARED=${SHARED_OBJS} READLINE=false -C ${scipoptsuite_BINARY_DIR}/scipoptsuite_ext-prefix/src/scipoptsuite_ext
+   INSTALL_COMMAND make SHARED=${SHARED_OBJS} READLINE=false -C ${scipoptsuite_BINARY_DIR}/scipoptsuite_ext-prefix/src/scipoptsuite_ext/scip-3.0.2 SHARED=${SHARED_OBJS} INSTALLDIR=${CATKIN_DEVEL_PREFIX} installlibs COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/create-lib-links.bash ${CATKIN_DEVEL_PREFIX}/lib
 )
 
 
@@ -100,7 +99,7 @@ set(HEADER_DIRECTORY ${CATKIN_DEVEL_PREFIX}/include/scipoptsuite)
 file(MAKE_DIRECTORY include)
 catkin_package(
  INCLUDE_DIRS include
- LIBRARIES ${GMP_LIB} ${READLINE_LIB} ${Z_LIB} ${M_LIB} ${NCURSES_LIB} 
+ LIBRARIES ${GMP_LIB} ${Z_LIB} ${M_LIB} ${NCURSES_LIB} 
  # CATKIN_DEPENDS 
  # DEPENDS gmp readline zlib m 
  EXPORTED_TARGETS scipoptsuite_ext 
