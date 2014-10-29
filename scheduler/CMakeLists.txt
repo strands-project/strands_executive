@@ -6,13 +6,12 @@ project(scheduler)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
     mongodb_store
-	  roscpp 
+    roscpp 
 	  scipoptsuite 
 	  strands_executive_msgs
 )
 
-
-
+MESSAGE("scipoptsuite_INCLUDE_DIRS: " ${scipoptsuite_INCLUDE_DIRS})
 
 ###################################
 ## catkin specific configuration ##
@@ -53,6 +52,7 @@ add_definitions(-std=c++0x -DNDEBUG -DWITH_SCIPDEF -DROUNDING_FE -DNPARASCIP -DW
 
 add_library(scheduler src/task.cpp src/scheduler.cpp src/distWrapper.cpp src/scipUser.cpp src/pairs.cpp)
 add_dependencies(scheduler scipoptsuite_ext)
+
 target_link_libraries(scheduler  
   ${catkin_LIBRARIES}
 )
