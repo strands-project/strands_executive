@@ -3,8 +3,8 @@ Changelog for package scheduler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Forthcoming
------------
+0.0.4 (2014-10-29)
+------------------
 * Removed prints.
 * Removed explicit linking of message_store library which was causing library not found error.
 * Contributors: Nick Hawes
