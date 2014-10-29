@@ -2,6 +2,9 @@
 Changelog for package strands_executive_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.0.1 (2014-10-24)
 ------------------
 * Tidying up package and cmake files.
