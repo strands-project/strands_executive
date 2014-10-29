@@ -130,31 +130,6 @@ target_link_libraries(error_test
   scheduler
 )
 
-add_executable(random_test src/random_test.cpp)
-target_link_libraries(random_test
-  scheduler
-)
-
-add_executable(synthetic src/synthetic.cpp)
-target_link_libraries(synthetic
-  scheduler
-)
-
-add_executable(getresults src/getResults.cpp)
-target_link_libraries(getresults
-  scheduler
-)
-
-add_executable(replay_test src/replay.cpp)
-target_link_libraries(replay_test
-  scheduler
-)
-
-add_executable(distComp src/distComputation.cpp)
-target_link_libraries(distComp
-  scheduler
-)
-
 add_executable(scheduler_node src/scheduler_node.cpp)
 add_dependencies(scheduler_node strands_executive_msgs_generate_messages_cpp)
 target_link_libraries(scheduler_node
