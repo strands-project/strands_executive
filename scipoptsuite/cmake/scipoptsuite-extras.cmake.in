@@ -1,0 +1,20 @@
+list(APPEND @PROJECT_NAME@_INCLUDE_DIRS ${@PROJECT_NAME@_DIR}/../../../@CATKIN_GLOBAL_INCLUDE_DESTINATION@/scipoptsuite)
+
+
+if(APPLE)
+	_list_append_unique(@PROJECT_NAME@_LIBRARIES ${@PROJECT_NAME@_PREFIX}/lib/libscip.a)
+	_list_append_unique(@PROJECT_NAME@_LIBRARIES ${@PROJECT_NAME@_PREFIX}/lib/libobjscip.a)
+	_list_append_unique(@PROJECT_NAME@_LIBRARIES ${@PROJECT_NAME@_PREFIX}/lib/liblpispx.a) 
+	_list_append_unique(@PROJECT_NAME@_LIBRARIES ${@PROJECT_NAME@_PREFIX}/lib/libnlpi.cppad.a)
+	_list_append_unique(@PROJECT_NAME@_LIBRARIES ${@PROJECT_NAME@_PREFIX}/lib/libsoplex.a)
+	_list_append_unique(@PROJECT_NAME@_LIBRARIES ${@PROJECT_NAME@_PREFIX}/lib/libzimpl.a)
+else ()
+	_list_append_unique(@PROJECT_NAME@_LIBRARIES ${@PROJECT_NAME@_PREFIX}/lib/libscip.so)
+	_list_append_unique(@PROJECT_NAME@_LIBRARIES ${@PROJECT_NAME@_PREFIX}/lib/libobjscip.so)
+	_list_append_unique(@PROJECT_NAME@_LIBRARIES ${@PROJECT_NAME@_PREFIX}/lib/liblpispx.so) 
+	_list_append_unique(@PROJECT_NAME@_LIBRARIES ${@PROJECT_NAME@_PREFIX}/lib/libnlpi.cppad.so)
+	_list_append_unique(@PROJECT_NAME@_LIBRARIES ${@PROJECT_NAME@_PREFIX}/lib/libsoplex.so)
+	_list_append_unique(@PROJECT_NAME@_LIBRARIES ${@PROJECT_NAME@_PREFIX}/lib/libzimpl.so)
+endif ()
+
+ 

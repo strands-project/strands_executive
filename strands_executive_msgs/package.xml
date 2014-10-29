@@ -1,16 +1,11 @@
 <?xml version="1.0"?>
 <package>
   <name>strands_executive_msgs</name>
-  <version>0.0.0</version>
+  <version>0.0.1</version>
   <description>Messages used to interact with the STRANDS executive framework.</description>
-
 
   <maintainer email="n.a.hawes@cs.bham.ac.uk">Nick Hawes</maintainer>
 
-
-  <!-- One license tag required, multiple allowed, one license per tag -->
-  <!-- Commonly used license strings: -->
-  <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
   <license>MIT</license>
 
   <author email="n.a.hawes@cs.bham.ac.uk">Nick Hawes</author>
