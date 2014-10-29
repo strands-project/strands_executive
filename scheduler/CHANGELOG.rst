@@ -8,8 +8,8 @@ Changelog for package scheduler
 * Added cmake extras to set include directories correctly for scipoptsuite.
 * Contributors: Nick Hawes
 
-Forthcoming
------------
+0.0.3 (2014-10-29)
+------------------
 * 0.0.2
 * Updated CHANGELOGs.
 * Changes to build for both single package and repo.

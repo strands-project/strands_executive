@@ -14,8 +14,8 @@ Changelog for package scipoptsuite
 * Adding install targets and fixing build prefix for release.
 * Contributors: Nick Hawes
 
-Forthcoming
------------
+0.0.3 (2014-10-29)
+------------------
 * 0.0.2
 * Updated CHANGELOGs.
 * Removed readline from scipoptsuite build as we don't have an interactive interface in ROS.
