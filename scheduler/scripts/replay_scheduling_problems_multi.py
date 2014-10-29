@@ -65,9 +65,9 @@ if __name__ == "__main__":
         earliest_start = rospy.get_rostime()
 
 
-
         for pair in message.pairs:
-            task = msg_store.query_id(message.pairs[0].second, Task._type)[0]
+            #task = msg_store.query_id(message.pairs[0].second, Task._type)[0]
+            task = msg_store.query_id(pair.second, Task._type)[0]
             tasks.append(task)
 
             if task.start_after < earliest_start:
