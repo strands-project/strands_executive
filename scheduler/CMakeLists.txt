@@ -11,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
 	  strands_executive_msgs
 )
 
-MESSAGE("scipoptsuite_INCLUDE_DIRS: " ${scipoptsuite_INCLUDE_DIRS})
+# MESSAGE("scipoptsuite_INCLUDE_DIRS: " ${scipoptsuite_INCLUDE_DIRS})
 
 ###################################
 ## catkin specific configuration ##
@@ -47,6 +47,7 @@ include_directories(
 #   src/${PROJECT_NAME}/scheduler.cpp
 # )
 
+link_directories(${catkin_LINK_DIRS})
 
 add_definitions(-std=c++0x -DNDEBUG -DWITH_SCIPDEF -DROUNDING_FE -DNPARASCIP -DWITH_ZLIB -DWITH_GMP -DWITH_READLINE -DWITH_ZIMPL -fomit-frame-pointer  -mtune=native -m64)
 
@@ -74,7 +75,6 @@ target_link_libraries(scheduler_node
   ${catkin_LIBRARIES}
 )
 
-link_directories(/usr/local/lib)
 
 # Specify libraries to link a library or executable target against
 
