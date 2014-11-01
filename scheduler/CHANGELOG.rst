@@ -3,8 +3,8 @@ Changelog for package scheduler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Forthcoming
------------
+0.0.5 (2014-11-01)
+------------------
 * CMake contains only public files, not those used for testing
 * deleted to files, which are used only privately
 * Now, tasks are replayed correctly from DB (previously, all tasks were the first one in DB)

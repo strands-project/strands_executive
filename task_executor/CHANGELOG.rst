@@ -2,8 +2,8 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.5 (2014-11-01)
+------------------
 * Added launch file install target and disabled testing.
 * Moving task_executor to release branch.
 * Contributors: Nick Hawes
