@@ -3,6 +3,22 @@ Changelog for package scheduler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* CMake contains only public files, not those used for testing
+* deleted to files, which are used only privately
+* Now, tasks are replayed correctly from DB (previously, all tasks were the first one in DB)
+* Supporting files, mainly used in experiments.
+* Added documentation and deleted methods, which were not used anymore
+* Changed pairs_new
+* Edited CMakelist
+* No backtracking algorithm, creating synthetic data
+* creation of synthetic test - including 1,2,3,4 intervals
+* still not working, it seems that constraint is not checked againts newly changed
+* Added methods editExistingTcons, checkConstraint; not tested
+* Added Original version of BC, my system uses also pre variables
+* Contributors: Lenka Mudrova
+
 0.0.4 (2014-10-29)
 ------------------
 * Removed prints.
