@@ -1,12 +1,10 @@
 <?xml version="1.0"?>
 <package>
   <name>task_executor</name>
-  <version>0.0.0</version>
+  <version>0.0.4</version>
   <description>A package for triggering and monitoring the execution of actionlib-based tasks.</description>
-
  
   <maintainer email="n.a.hawes@cs.bham.ac.uk">Nick Hawes</maintainer>
-
 
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
@@ -40,6 +38,7 @@
   <run_depend>actionlib_msgs</run_depend>
   <run_depend>topological_navigation</run_depend>
   <run_depend>python-dateutil</run_depend>
-  
+  <run_depend>scheduler</run_depend>
+   
 
 </package>
