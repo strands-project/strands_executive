@@ -56,6 +56,7 @@ bool compareTasks ( Task * i,  Task * j) {
 }
 
 double ** createDurationArray(const strands_executive_msgs::DurationMatrix & dm, double & max) {
+
   double ** array = new double *[dm.durations.size()];
   
   for(int i = 0; i < dm.durations.size(); ++i) {
@@ -68,7 +69,6 @@ double ** createDurationArray(const strands_executive_msgs::DurationMatrix & dm,
   }
 
   return array;
-
 }
 
 bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
@@ -78,23 +78,15 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
 
   static ros::NodeHandle nh;
 
-  static MessageStoreProxy messageStore(nh, "scheduling_problems");
-
 
   std::vector<Task*> tasks;
 
-  vector< pair<string, string> > stored;
+
 
   // for(strands_executive_msgs::Task task : req.tasks) {
   for(auto & task : req.tasks) {
     // ROS_INFO_STREAM(task.task_id << " start " << task.start_after << ", end " << task.end_before
-        // << ", duration " << task.max_duration);
-
-    if(save_problems) {
-      static string taskType(get_ros_type(task));
-      stored.push_back( make_pair(taskType, messageStore.insert(task)) );
-    }
-
+    //     << ", duration " << task.max_duration);    
 
     bool first = task.task_id == req.first_task ? true : false;
 
@@ -106,6 +98,16 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
 
 
   if(save_problems) { 
+
+    static MessageStoreProxy messageStore(nh, "scheduling_problems");
+    
+    vector< pair<string, string> > stored;
+
+    for(auto & task : req.tasks) {
+      static string taskType(get_ros_type(task));
+      stored.push_back( make_pair(taskType, messageStore.insert(task)) );
+    }
+
     StringPairList spl;
     for(auto & pair : stored) {
       spl.pairs.push_back(mongodb_store::makePair(pair.first, pair.second));
@@ -118,15 +120,23 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
   double ** duration_array = createDurationArray(req.durations, max_duration);
   Scheduler scheduler(&tasks, duration_array, max_duration);
 
-  // clean up duration matrix... yuck! Lenka, smart pointers or, ideally, boost matrix
-  for (int i = 0; i < tasks.size(); ++i)
-  {
-    delete duration_array[i];
-  }
-  delete duration_array;
+    ROS_INFO_STREAM("Going to solve");    
+ 
 
   if(scheduler.solve(scheduler_version, output_file, timeout)) {
+
+  
+
   	std::sort(tasks.begin(), tasks.end(), compareTasks);
+
+
+   // clean up duration matrix... yuck! Lenka, smart pointers or, ideally, boost matrix
+    for (int i = 0; i < tasks.size(); ++i)
+    {
+      delete duration_array[i];
+    }
+    delete duration_array;
+
 
   	for(auto & tp : tasks) {
   		res.task_order.push_back(tp->getID());
@@ -136,6 +146,15 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
 
   }
   else {
+
+  
+
+   // clean up duration matrix... yuck! Lenka, smart pointers or, ideally, boost matrix
+    for (int i = 0; i < tasks.size(); ++i)
+    {
+      delete duration_array[i];
+    }
+    delete duration_array;
 
 	  // manage memory explicitly until Lenka changes to smart pointers
 	  for(auto & tp : tasks) {
