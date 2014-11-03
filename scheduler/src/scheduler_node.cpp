@@ -55,6 +55,21 @@ bool compareTasks ( Task * i,  Task * j) {
 	return (i->getExecTime()<j->getExecTime()); 
 }
 
+double ** createDurationArray(const strands_executive_msgs::DurationMatrix & dm, double & max) {
+  double ** array = new double *[dm.durations.size()];
+  
+  for(int i = 0; i < dm.durations.size(); ++i) {
+    const strands_executive_msgs::DurationList & dl(dm.durations[i]);
+    array[i] = new double [dl.durations.size()];
+    for (int j = 0; j < dl.durations.size(); ++j)
+    {
+      array[i][j] = dl.durations[j].toSec();
+    }
+  }
+
+  return array;
+
+}
 
 bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
          			strands_executive_msgs::GetSchedule::Response &res) {
@@ -98,8 +113,17 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
     messageStore.insert(spl);
   }
 
-  Scheduler scheduler(&tasks);
 
+  double max_duration;
+  double ** duration_array = createDurationArray(req.durations, max_duration);
+  Scheduler scheduler(&tasks, duration_array, max_duration);
+
+  // clean up duration matrix... yuck! Lenka, smart pointers or, ideally, boost matrix
+  for (int i = 0; i < tasks.size(); ++i)
+  {
+    delete duration_array[i];
+  }
+  delete duration_array;
 
   if(scheduler.solve(scheduler_version, output_file, timeout)) {
   	std::sort(tasks.begin(), tasks.end(), compareTasks);
@@ -117,8 +141,9 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
 	  for(auto & tp : tasks) {
 	  	delete tp;
 	  } 
-
 	}
+
+
   return true;
 }
 

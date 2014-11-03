@@ -88,7 +88,7 @@ include_directories(
 
 add_definitions(-std=c++0x -DNDEBUG -DWITH_SCIPDEF -DROUNDING_FE -DNPARASCIP -DWITH_ZLIB -DWITH_GMP -DWITH_READLINE -DWITH_ZIMPL -fomit-frame-pointer  -mtune=native -m64)
 
-add_library(scheduler src/task.cpp src/scheduler.cpp src/distWrapper.cpp src/scipUser.cpp src/pairs.cpp)
+add_library(scheduler src/task.cpp src/scheduler.cpp src/scipUser.cpp src/pairs.cpp)
 add_dependencies(scheduler scipoptsuite_ext)
 
 target_link_libraries(scheduler

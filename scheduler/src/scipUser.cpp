@@ -7,7 +7,7 @@
 
 #include "scipUser.h"
 #include "task.h"
-#include "distWrapper.h"
+
 
 /* scip includes */
 #include "objscip/objscip.h"
@@ -289,7 +289,7 @@ SCIP_Retcode ScipUser::setFinalCons_new(vector<Task*> * tasksToS, vector<SCIP_VA
        }
        else
        {        
-         distij = dist_a[i][j];//DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
+         distij = dist_a[i][j];
        }
         //two following tasks with no loc
        if((tasksToS->at(i)->getEndPos().empty())&&(tasksToS->at(j)->getStartPos().empty()))
@@ -349,7 +349,7 @@ SCIP_Retcode ScipUser::setFinalCons_new(vector<Task*> * tasksToS, vector<SCIP_VA
        else
        {  
       
-         distji = dist_a[j][i];//DistWrapper::dist(tasksToS->at(j)->getEndPos(),tasksToS->at(i)->getStartPos());
+         distji = dist_a[j][i];
        }
        if((tasksToS->at(j)->getEndPos().empty())&&(tasksToS->at(i)->getStartPos().empty()))
        {
@@ -442,7 +442,7 @@ SCIP_Retcode ScipUser::setFullConstr(vector<Task*> * tasksToS, vector<SCIP_VAR *
        }
        else
        {        
-         distij = dist_a[i][j];//DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
+         distij = dist_a[i][j];
        }
         //two following tasks with no loc
        if((tasksToS->at(i)->getEndPos().empty())&&(tasksToS->at(j)->getStartPos().empty()))
@@ -463,7 +463,7 @@ SCIP_Retcode ScipUser::setFullConstr(vector<Task*> * tasksToS, vector<SCIP_VAR *
        }
        else
        {        
-         distji = dist_a[j][i];//DistWrapper::dist(tasksToS->at(j)->getEndPos(),tasksToS->at(i)->getStartPos());
+         distji = dist_a[j][i];
        }
        if((tasksToS->at(j)->getEndPos().empty())&&(tasksToS->at(i)->getStartPos().empty()))
        {
