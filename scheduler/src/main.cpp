@@ -54,7 +54,10 @@ cout << "this is a test!";
   }
 
 
-  Scheduler scheduler(&tasks);
+  double ** duration_array = toArray(createUniformDurationMatrix(&tasks, 1.0));
+
+
+  Scheduler scheduler(&tasks, duration_array, 1.0);
   bool worked = scheduler.solve(2,filename);
 
   if(worked)  {
@@ -67,6 +70,8 @@ cout << "this is a test!";
   else {
     cout<< "No schedule found"<< endl;
   }
+
+  
 
   return 0;
 

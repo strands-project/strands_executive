@@ -9,7 +9,7 @@
 #include <vector>
 #include <iostream> 
 #include <algorithm>
-#include "distWrapper.h"
+
 
 using namespace std;
 
@@ -175,8 +175,8 @@ int Pairs::setPairs_new(double ** dist_a)
       double sj = j->getStart();
       double dj = j->getDuration();
 
-      double distij = dist_a[a][b];//DistWrapper::dist(i->getEndPos(),j->getStartPos());
-      double distji = dist_a[b][a];//DistWrapper::dist(j->getEndPos(),i->getStartPos());
+      double distij = dist_a[a][b];
+      double distji = dist_a[b][a];
 
       double time_ij = si+di+distij - sj;
       double time_ji = sj+dj+distji - si;
