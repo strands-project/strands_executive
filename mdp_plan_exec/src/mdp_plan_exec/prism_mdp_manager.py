@@ -27,6 +27,8 @@ class PrismMdpManager(object):
         
         self.prism_client.add_model('all_day',self.mdp_prism_file)
         
+        self.product_mdp = None
+        
     def update_current_top_mdp(self,time_of_day,update_stats=True):
         if update_stats:
             self.top_map_mdp.update_nav_statistics()

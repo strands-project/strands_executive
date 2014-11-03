@@ -412,7 +412,7 @@ class ProductMdp(Mdp):
             if self.prop_map[next_possible_state][final_node_prop_index]:
                 self.publish_current_policy_mode(next_possible_state)
                 return next_possible_state
-        return -1
+        return None
         
     def publish_current_policy_mode(self, current_state):
         sources = []
@@ -433,7 +433,22 @@ class ProductMdp(Mdp):
                 
         
         
-        
+    def get_current_policy_mode(self, current_state):
+        sources = []
+        targets = []
+        current_mode = self.state_labels[current_state][0]
+        policy_msg = NavRoute()
+        print current_mode
+        for i in range(0,self.n_states):
+            current_action = self.policy[i]
+            if current_action is not None and self.state_labels[i][0] == current_mode:
+                action_split = current_action.split('_')
+                source = action_split[1]
+                target = action_split[2]
+                policy_msg.source.append(source)
+                policy_msg.target.append(target)
+                
+        return policy_msg   
         
         
         
