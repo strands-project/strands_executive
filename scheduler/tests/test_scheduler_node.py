@@ -11,16 +11,14 @@ import sys
 from math import ceil
 
 from random import random
-from strands_executive_msgs.msg import Task
+from strands_executive_msgs.msg import Task, DurationList, DurationMatrix
 from strands_executive_msgs.srv import GetSchedule
 
 
-# class TestEntry(unittest.TestCase):
-class TestEntry():
+class TestEntry(unittest.TestCase):
+# class TestEntry():
 
-
-
-    def run_scheduler(self, tasks):    
+    def run_scheduler(self, tasks, earliest_start, first_task, durations):    
         # get  services
         schedule_srv_name = 'get_schedule'
         rospy.loginfo("Waiting for scheduler service...")
@@ -32,7 +30,7 @@ class TestEntry():
             
                     
             # Schedule the tasks
-            resp = schedule_srv(tasks)
+            resp = schedule_srv(tasks, earliest_start, first_task, durations)
 
             print resp
 
@@ -51,11 +49,10 @@ class TestEntry():
                     print 'task %s   window from %s.%s to %s.%s' % (task.task_id, task.start_after.secs, task.start_after.nsecs, task.end_before.secs, task.end_before.nsecs)            
                     print 'task %s will start at %s.%s' % (task.task_id, task.execution_time.secs, task.execution_time.nsecs)            
 
-                    # self.assertTrue(task.execution_time >= task.start_after)
-                    # self.assertTrue(task.execution_time + task.max_duration <= task.end_before)
-                
-            else:
-                pass
+                    self.assertGreaterEqual(task.execution_time, task.start_after)
+                    self.assertLessEqual(task.execution_time + task.max_duration, task.end_before)                
+            else:                
+                self.fail("Couldn't find a scheduler")
 
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
@@ -70,7 +67,7 @@ class TestEntry():
 
 
         tasks = []
-        for task_id in range(task_count):    
+        for task_id in range(1, task_count+1):    
             # create the task from the description
             task = Task()
             task.task_id=task_id
@@ -81,7 +78,14 @@ class TestEntry():
             task.max_duration = rospy.Duration(max_duration.secs/2)
             tasks.append(task)
 
-        return tasks
+        dm = DurationMatrix()
+        for i in range(task_count):
+            dm.durations.append(DurationList())
+            for j in range(task_count):
+                dm.durations[-1].durations.append(rospy.Duration(1.0))
+
+        # ['tasks', 'earliest_start', 'first_task', 'durations']
+        return (tasks, start_of_window, 0, dm)
 
 
     def create_tasks_in_two_windows(self, task_count, start_of_first_window):           
@@ -121,28 +125,35 @@ class TestEntry():
             task.max_duration = rospy.Duration(max_duration.secs * random())
             tasks.append(task)
 
+        dm = DurationMatrix()
+        for i in range(task_count):
+            dm.durations.append(DurationList())
+            for j in range(task_count):
+                dm.durations[-1].durations.append(rospy.Duration(1.0))    
+
         self.assertEquals(task_count, len(tasks))
-        return tasks
+        return (tasks, start_of_first_window, 0, dm)
 
 
     def test_start_at_zero_one_window(self):        
-        self.run_scheduler(self.create_tasks_in_single_window(10, rospy.Time(0)))
+        self.run_scheduler(*self.create_tasks_in_single_window(10, rospy.Time(0)))
 
     def test_start_at_zero_two_windows(self):        
-        self.run_scheduler(self.create_tasks_in_two_windows(5, rospy.Time(0)))
+        self.run_scheduler(*self.create_tasks_in_two_windows(5, rospy.Time(0)))
 
 
     def test_start_at_now(self):
         """ this fails as time needs to start from zero """
-        self.run_scheduler(self.create_tasks_in_single_window(6, rospy.get_rostime()))
+        # discard nanos from time as they are not respected by the scheduler
+        self.run_scheduler(*self.create_tasks_in_single_window(6, rospy.Time(rospy.get_rostime().secs)))
         
 
 if __name__ == '__main__':
     rospy.init_node(NAME)
-    # rostest.rosrun(PKG, NAME, TestEntry, sys.argv)
-    test = TestEntry()
+    rostest.rosrun(PKG, NAME, TestEntry, sys.argv)
+    # test = TestEntry()
     # test.test_start_at_now()
-    test.test_start_at_zero_one_window()
-    rospy.spin()
+
+    # rospy.spin()
 
 
