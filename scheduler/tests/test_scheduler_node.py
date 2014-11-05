@@ -78,7 +78,11 @@ class TestEntry(unittest.TestCase):
             task.max_duration = rospy.Duration(max_duration.secs/2)
             tasks.append(task)
 
-
+        dm = DurationMatrix()
+        for i in range(task_count):
+            dm.durations.append(DurationList())
+            for j in range(task_count):
+                dm.durations[-1].durations.append(rospy.Duration(1.0))
 
         # ['tasks', 'earliest_start', 'first_task', 'durations']
         return (tasks, start_of_window, 0, dm)
