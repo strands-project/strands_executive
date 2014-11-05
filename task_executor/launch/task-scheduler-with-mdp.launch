@@ -1,0 +1,14 @@
+<launch>
+
+  <arg name="topological_map"/>
+  
+  <node pkg="mdp_plan_exec" type="mdp_planner.py" name="mdp_planner"  args="$(arg topological_map)"/>
+
+  <node pkg="scheduler" type="scheduler_node" name="schedule_server"  output="screen"/>
+
+  <node pkg="task_executor" type="scheduled_task_executor.py" name="scheduled_task_executor"  output="screen"/>
+  
+  <!-- This allows waiting to happen. It's not very interesting but is useful for testing -->
+  <node pkg="wait_action" type="wait_node.py" name="wait_node"  output="screen"/>
+
+</launch>

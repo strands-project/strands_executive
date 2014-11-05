@@ -9,7 +9,8 @@ from task_executor.base_executor import AbstractTaskExecutor
 class FIFOTaskExecutor(AbstractTaskExecutor):
     def __init__(self):
         # init node first, must be done before call to super init for service advertising to work
-        rospy.init_node("task_executor", log_level=rospy.DEBUG)
+        # rospy.init_node("task_executor", log_level=rospy.DEBUG)
+        rospy.init_node("task_executor" )
         # init superclasses
         super( FIFOTaskExecutor, self ).__init__()
         self.tasks = Queue()
@@ -34,7 +35,7 @@ class FIFOTaskExecutor(AbstractTaskExecutor):
         while not rospy.is_shutdown():
 
             if self.executing:
-                if self.active_task_id == Task.NO_TASK:
+                if not self.active_task:
                     print "need a task"
                     try:
                         task = self.tasks.get(False)
@@ -42,7 +43,7 @@ class FIFOTaskExecutor(AbstractTaskExecutor):
                     except Empty, e:
                         pass
                 else:
-                    print "executing task %s" % self.active_task_id
+                    print "executing task %s" % self.active_task
                 
             r.sleep()
         
