@@ -8,7 +8,6 @@
 #include <vector>
 #include "scheduler.h"
 #include "task.h"
-#include "distWrapper.h"
 #include "pairs.h"
 #include <iostream> //TODO: delete
 #include "scipUser.h"
@@ -24,53 +23,74 @@ using namespace scip;
 
 using namespace std;
 
+namespace bn = boost::numeric::ublas;
+
+
+bn::matrix<double> createUniformDurationMatrix(vector<Task *>* tasks, double dist) {
+
+  bn::matrix<double> dm(tasks->size(), tasks->size());
+
+  for (unsigned i = 0; i < tasks->size(); ++i) {
+    for (unsigned j = 0; j < tasks->size(); ++j) {
+      if(i == j) {
+        dm(i, j) = 0;
+      }
+      else {
+        dm(i, j) = dist;
+      }
+    }
+  }
+
+  return dm;
+
+}
 
 /** 
   Constructor - initialisation of the scheduling problem. It also sets an array of distance for later usage. 
   @param - vector of pointers to tasks, which should be schedule
   @return - nan, it is constructor
 */
-Scheduler::Scheduler(vector<Task *> * tasks)
+Scheduler::Scheduler(vector<Task *> * tasks, double ** duration_matrix, double max_duration)
 {
   tasksToS = tasks;
   numTasks = tasks->size();
   numPairs = 0;
-  dist_a = new double*[tasks->size()];
-  for(int i = 0; i < tasks->size(); i++)
-    dist_a[i] = new double[tasks->size()];
+  this->duration_matrix = duration_matrix;
+  this->max_duration = max_duration;
+  
 }
 
 //TODO destructor
 
 
-/**
-  This method initialises an array of distances between locations, which are used in a set of tasks. 
-  The array is used later in order to minimise the amount of calling DistWrapper.
-  It also computes max distance.
-  @param none
-  @return maximal distance, which occured in the system
-*/
-double Scheduler::getMaxDist() 
-{
-  double max=0;
-  double dist;
-  for(int i=0; i< numTasks; i++)
-  {
-    for(int j=0; j< numTasks; j++)
-    {
-      if(i != j)
-      {
-        dist = DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
-        dist_a[i][j] = dist;
-        if(dist>max)
-        {  
-          max = dist; 
-        }
-      }
-    }
-  }
-  return max;
-}
+// /**
+//   This method initialises an array of distances between locations, which are used in a set of tasks. 
+//   The array is used later in order to minimise the amount of calling DistWrapper.
+//   It also computes max distance.
+//   @param none
+//   @return maximal distance, which occured in the system
+// */
+// double Scheduler::getMaxDist() 
+// {
+//   double max=0;
+//   double dist;
+//   for(int i=0; i< numTasks; i++)
+//   {
+//     for(int j=0; j< numTasks; j++)
+//     {
+//       if(i != j)
+//       {
+//         dist = DistWrapper::dist(tasksToS->at(i)->getEndPos(),tasksToS->at(j)->getStartPos());
+//         duration_matrix[i][j] = dist;
+//         if(dist>max)
+//         {  
+//           max = dist; 
+//         }
+//       }
+//     }
+//   }
+//   return max;
+// }
 
 /**
   This method is used during experiments. It reads the array of distances from the file. It is hard-coded for specific datasets G4S or AAF.
@@ -156,7 +176,7 @@ double Scheduler::readDist()
         }
 
         if((x != -1)&&(y != -1))
-          dist_a[i][j] = arr_dist[x][y];
+          duration_matrix[i][j] = arr_dist[x][y];
         
       }
        
@@ -446,8 +466,6 @@ bool Scheduler::solve(int version, string filename, const int & timeout)
 
   
   std::chrono::high_resolution_clock::time_point start, end;
-
-  double maxDist = getMaxDist();
  
   Pairs * pr = new Pairs(tasksToS);
   
@@ -458,11 +476,11 @@ bool Scheduler::solve(int version, string filename, const int & timeout)
   }
   else if(version==4) {
     //mine specific approach
-    numPairs = pr->setPairs_new(dist_a);
+    numPairs = pr->setPairs_new(duration_matrix);
   } 
   else {
     //if parameter is not set
-    numPairs = pr->setPairs_new(dist_a);
+    numPairs = pr->setPairs_new(duration_matrix);
   }
 
   pr->getPairs(&pairs);
@@ -473,14 +491,16 @@ bool Scheduler::solve(int version, string filename, const int & timeout)
   if (err != SCIP_OKAY)
     return -1;
 
-  //checking if some task has "now" or "precondition" flag. If yes, pairs needs to be set in different way
+  //checking if some tasurationnow" or "precondition" flag. If yes, pairs needs to be set in different way
   int e = setPreVar(solver);
+
   if (e==-1)
     return -1;
 
 
-  //create constraints that holds s<= t <= e
+  //create constraurationat holds s<= t <= e
   vector<SCIP_CONS *> * t_con = new vector<SCIP_CONS *>(numTasks,(SCIP_CONS *) NULL); 
+
   err = solver->setTcons(tasksToS, t_var, t_con);
   if (err != SCIP_OKAY)
     return -1; 
@@ -489,11 +509,11 @@ bool Scheduler::solve(int version, string filename, const int & timeout)
   //for all pairs we need to set condition, that no tasks are overlapping
   if(version != 1)
   {
-    err = solver->setFinalCons_new(tasksToS, t_var, &pairs, maxDist,filename, t_con, dist_a);
+    err = solver->setFinalCons_new(tasksToS, t_var, &pairs, max_duration, filename, t_con, duration_matrix);
   }
   else
   {
-    err = solver->setFinalCons_preVar(tasksToS, t_var, &pairs, maxDist,dist_a);
+    err = solver->setFinalCons_preVar(tasksToS, t_var, &pairs, max_duration, duration_matrix);
   }
   if (err != SCIP_OKAY)
     return -1; 

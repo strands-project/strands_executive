@@ -88,7 +88,7 @@ include_directories(
 
 add_definitions(-std=c++0x -DNDEBUG -DWITH_SCIPDEF -DROUNDING_FE -DNPARASCIP -DWITH_ZLIB -DWITH_GMP -DWITH_READLINE -DWITH_ZIMPL -fomit-frame-pointer  -mtune=native -m64)
 
-add_library(scheduler src/task.cpp src/scheduler.cpp src/distWrapper.cpp src/scipUser.cpp src/pairs.cpp)
+add_library(scheduler src/task.cpp src/scheduler.cpp src/scipUser.cpp src/pairs.cpp)
 add_dependencies(scheduler scipoptsuite_ext)
 
 target_link_libraries(scheduler
@@ -159,11 +159,9 @@ install(TARGETS scheduler_example error_test scheduler_node
 ## Testing ##
 #############
 
-## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_scheduler.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
+if (CATKIN_ENABLE_TESTING)
+  find_package(catkin REQUIRED COMPONENTS rostest)
 
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
+  add_rostest(tests/scheduler.test)
+
+endif()
