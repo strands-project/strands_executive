@@ -2,6 +2,12 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Updated and tested FIFO executor. Removed MDP depedency from base executor.
+  This is now ready for a full release without the MDP parts.
+* Contributors: Nick Hawes
+
 0.0.5 (2014-11-01)
 ------------------
 * Added launch file install target and disabled testing.

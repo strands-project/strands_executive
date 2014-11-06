@@ -3,6 +3,13 @@ Changelog for package scheduler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* Restored missing code.
+* Added tests for scheduler.
+* Pushed duration service argument through C++ side.
+* Contributors: Nick Hawes
+
 0.0.5 (2014-11-01)
 ------------------
 * CMake contains only public files, not those used for testing
