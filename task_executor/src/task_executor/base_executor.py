@@ -8,8 +8,8 @@ import actionlib
 from actionlib_msgs.msg import GoalStatus
 from geometry_msgs.msg import Pose, Point, Quaternion
 from mongodb_store.message_store import MessageStoreProxy
-#from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
-from strands_executive_msgs.msg import ExecutePolicyAction, ExecutePolicyGoal
+from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
+from strands_navigation_msgs.srv import EstimateTravelTime
 from std_srvs.srv import Empty, EmptyResponse
 from std_msgs.msg import String
 import threading
@@ -58,11 +58,13 @@ class BaseTaskExecutor(object):
         self.task_counter = 1        
         self.msg_store = MessageStoreProxy() 
         self.logging_msg_store = MessageStoreProxy(collection='task_events') 
-        expected_time_srv_name = '/mdp_plan_exec/get_expected_travel_time_to_node'
+        
+        expected_time_srv_name = 'topological_navigation/travel_time_estimator'
         rospy.loginfo('Waiting for %s' % expected_time_srv_name)
         rospy.wait_for_service(expected_time_srv_name)
         rospy.loginfo('... and got %s' % expected_time_srv_name)
-        self.expected_time = rospy.ServiceProxy(expected_time_srv_name, GetExpectedTravelTime)
+        self.expected_time = rospy.ServiceProxy(expected_time_srv_name, EstimateTravelTime)        
+
         self.executing = False
         # start with some faked but likely one in case of problems
         self.current_node = 'WayPoint1'
@@ -72,7 +74,7 @@ class BaseTaskExecutor(object):
         self.active_task = None
         self.active_task_completes_by = rospy.get_rostime()
         self.service_lock = threading.Lock()
-        self.task_event_publisher = rospy.Publisher('/task_executor/events', TaskEvent)
+        self.task_event_publisher = rospy.Publisher('task_executor/events', TaskEvent, queue_size=20)
 
 
 
@@ -112,14 +114,13 @@ class BaseTaskExecutor(object):
 
     def expected_navigation_duration(self, task):
         if self.current_node == 'none':
-            et = self.expected_time(start_id=self.closest_node, target_id=task.start_node_id,time_of_day="all_day")
+            et = self.expected_time(start=self.closest_node, target=task.start_node_id)
         else:
-            et = self.expected_time(start_id=self.current_node, target_id=task.start_node_id,time_of_day="all_day")
+            et = self.expected_time(start=self.current_node, target=task.start_node_id)
         # rospy.loginfo('expected travel time %s' % et.travel_time)
         # allow a bit of time for any transition -- mainly for testing cases
-        return rospy.Duration(max(et.travel_time * 3, 10))
+        return rospy.Duration(max(et.travel_time.to_sec() * 3, 10))
         # return rospy.Duration(120)
-
 
         
     def log_task_events(self, tasks, event, time, description=""):
@@ -268,6 +269,9 @@ class BaseTaskExecutor(object):
         
         self.active_task_completes_by = now + total_task_duration    
 
+        return expected_nav_duration
+
+
     def instantiate_from_string_pair(self, string_pair):
         if len(string_pair.first) == 0:
             return string_pair.second
@@ -305,8 +309,7 @@ class AbstractTaskExecutor(BaseTaskExecutor):
 
         self.log_task_event(task, TaskEvent.TASK_STARTED, rospy.get_rostime())
 
-
-        self.prepare_task(task)
+        expected_nav_duration = self.prepare_task(task)
 
         if self.active_task.start_node_id != '':                    
             self.start_task_navigation(expected_nav_duration)
@@ -412,10 +415,8 @@ class AbstractTaskExecutor(BaseTaskExecutor):
             self.task_failed(completed)
 
     def start_task_navigation(self, expected_duration):
-        # handle delayed start up
-        # if self.nav_client == None:
         # always reconnect in case of issues before
-        self.nav_client = actionlib.SimpleActionClient('mdp_plan_exec/execute_policy', ExecutePolicyAction)
+        self.nav_client = actionlib.SimpleActionClient('topological_navigation', GotoNodeAction)
         self.nav_client.wait_for_server()
         rospy.logdebug("Created action client")
 
@@ -423,8 +424,8 @@ class AbstractTaskExecutor(BaseTaskExecutor):
         self.nav_timeout_timer = rospy.Timer(expected_duration, self.cancel_navigation, oneshot=True)
         # self.nav_timeout_timer = rospy.Timer(rospy.Duration(360), self.cancel_navigation, oneshot=True)
 
-        #nav_goal = GotoNodeGoal(target = self.active_task.start_node_id)
-        nav_goal = ExecutePolicyGoal(task_type=ExecutePolicyGoal.GOTO_WAYPOINT, target_id = self.active_task.start_node_id, time_of_day='all_day')
+        nav_goal = GotoNodeGoal(target = self.active_task.start_node_id)
+
         self.log_task_event(self.active_task, TaskEvent.NAVIGATION_STARTED, rospy.get_rostime())
 
         self.nav_client.send_goal(nav_goal, self.navigation_complete_cb)

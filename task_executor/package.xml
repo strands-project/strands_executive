@@ -6,9 +6,6 @@
  
   <maintainer email="n.a.hawes@cs.bham.ac.uk">Nick Hawes</maintainer>
 
-  <!-- One license tag required, multiple allowed, one license per tag -->
-  <!-- Commonly used license strings: -->
-  <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
   <license>MIT</license>
 
   <author email="n.a.hawes@cs.bham.ac.uk">Nick Hawes</author>
@@ -25,7 +22,7 @@
   <build_depend>actionlib</build_depend>
   <build_depend>actionlib_msgs</build_depend>
   <build_depend>topological_navigation</build_depend>
-  <build_depend>rostest</build_depend>
+  
 
   <run_depend>message_runtime</run_depend>
   <run_depend>actionlib</run_depend>
@@ -39,6 +36,7 @@
   <run_depend>topological_navigation</run_depend>
   <run_depend>python-dateutil</run_depend>
   <run_depend>scheduler</run_depend>
-   
+  <test_depend>rostest</test_depend>
+  <test_depend>topological_utils</test_depend>
 
 </package>

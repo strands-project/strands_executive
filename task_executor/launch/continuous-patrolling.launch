@@ -1,0 +1,6 @@
+<launch>
+
+  <node pkg="task_executor" type="fifo_task_executor.py" name="fifo_task_executor" output="screen"/>
+  <node pkg="task_executor" type="continuous_patrolling.py" name="patrol_scheduler" output="screen"/>
+
+</launch>

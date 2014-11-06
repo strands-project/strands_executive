@@ -2,7 +2,7 @@
 
 import rospy
 from Queue import Queue, Empty
-from strands_executive_msgs.msg import Task, ExecutionStatus
+from strands_executive_msgs.msg import Task, ExecutionStatus, DurationMatrix, DurationList
 from strands_executive_msgs.srv import GetSchedule
 from task_executor.sm_base_executor import AbstractTaskExecutor
 from threading import Thread
@@ -26,7 +26,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         self.schedule_srv = rospy.ServiceProxy(schedule_srv_name, GetSchedule)
 
         # topic on which current schedule is broadcast
-        self.schedule_publisher = rospy.Publisher('/current_schedule', ExecutionStatus)
+        self.schedule_publisher = rospy.Publisher('/current_schedule', ExecutionStatus, queue_size=1)
 
         # defaults for setting the ends of tasks
         self.default_duration = rospy.Duration.from_sec(60 * 60 * 4)
@@ -120,6 +120,39 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
                         rospy.loginfo('Was not able to reinstate previously active task after demand (but other tasks ok)')
             else:
                 rospy.loginfo('Was NOT able to reinstate tasks after demand')
+
+
+
+    def get_duration(self, start, end):
+        return 1.0
+
+    def get_duration_matrix(self, tasks):
+        """
+        Creates the matrix of durations between waypoints needed as input to the scheuler.
+        Output is a DurationMatrix encoding  duration[i][j] where this is the duration expected for travelling between the end of the ith task in tasks and the start of the jth element.
+        """
+        # first populate sets of start and end locations for moves between tasks, these are the end and start of tasks repsectively
+        start_nodes = set([task.end_node_id for task in tasks])
+        end_nodes = set([task.start_node_id for task in tasks])
+
+        # next get the costs for each element of the cross product
+        durations = dict()
+        for start in start_nodes:
+            durations[start] = dict()
+            for end in end_nodes:
+                durations[start][end] = self.get_duration(start, end)
+
+
+        # now populate the DurationMatrix object
+        dm = DurationMatrix()
+        for task_i in tasks:
+            dm.durations.append(DurationList())
+            for task_j in tasks:
+                dm.durations[-1].durations.append(durations[task_i.end_node_id][task_j.start_node_id])
+
+        return dm
+
+
 
 
     def call_scheduler(self, tasks, earliest_start, current_id=0):

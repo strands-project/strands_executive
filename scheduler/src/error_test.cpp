@@ -7,7 +7,10 @@
 #include "task.h"
 #include "scheduler.h"
 
+#include <boost/numeric/ublas/matrix.hpp>
+
 using namespace std;
+namespace bn = boost::numeric::ublas;
 
 int main (int argc, char** argv) 
 {   
@@ -39,10 +42,11 @@ int main (int argc, char** argv)
    tasks.push_back(new Task(2, 2, 8, 2, "s2", "s2"));
    tasks.push_back(new Task(3, 0, 7, 1, "s3", "s3"));
 
+  
+  double ** duration_array = toArray(createUniformDurationMatrix(&tasks, 1.0));
 
 
-
-  Scheduler scheduler(&tasks);
+  Scheduler scheduler(&tasks, duration_array, 1.0);
   bool worked = scheduler.solve(4, "");
 
   if(worked)  {

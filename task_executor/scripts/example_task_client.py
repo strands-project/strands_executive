@@ -7,6 +7,7 @@ import mongodb_store.util as dc_util
 from mongodb_store.message_store import MessageStoreProxy
 from geometry_msgs.msg import Pose, Point, Quaternion
 import StringIO
+import random
 
 from strands_executive_msgs import task_utils
 from strands_executive_msgs.msg import Task
@@ -35,6 +36,39 @@ def get_services():
     add_tasks_srv = rospy.ServiceProxy(add_tasks_srv_name, AddTasks)
     set_execution_status = rospy.ServiceProxy(set_exe_stat_srv_name, SetExecutionStatus)
     return add_tasks_srv, set_execution_status
+
+def publish_topological_map():
+    """
+    Publish a topological map for testing.
+    """
+    # create a test topological map
+    width = 5 
+    height = 5 
+    nodeSeparation = 10.0
+
+    test_nodes = topological_navigation.testing.create_cross_map(width = width, height = height, nodeSeparation = nodeSeparation)
+
+    # now insert the map into the database
+    msg_store = MessageStoreProxy(collection='topological_maps')
+
+    map_name = 'test_top_map'
+
+    meta = {}
+    meta['map'] = map_name
+    meta['pointset'] = map_name
+
+    for (nodeName, node) in test_nodes.iteritems():
+        meta["node"] = nodeName
+        node.map = meta['map']
+        node.pointset = meta['pointset']
+        msg_store.insert(node,meta)
+
+    # and publish the map
+    ps = map_publisher(map_name)
+
+    return test_nodes
+    
+
 
 def create_master_task():
     """ 
@@ -74,8 +108,6 @@ if __name__ == '__main__':
     # create a task we will copy later,
     master_task = create_master_task()
 
-    # get services to call into execution framework
-    add_tasks, set_execution_status = get_services()
 
     # now create a bunch of task with different times
     task_count = 1
@@ -92,13 +124,16 @@ if __name__ == '__main__':
     scheduled_duration = rospy.Duration(actual_action_duration.secs / 4)
 
 
+    test_nodes = publish_topological_map()
+
     tasks = []
     # create individual tasks with differnt duration to happen within the window
     for task_id in range(task_count):    
         # copy the task from the master
         timed_task = deepcopy(master_task)
-        timed_task.start_node_id=str(task_id)
-        timed_task.end_node_id=str(task_id)
+        task_node = random.choice(test_nodes).name
+        timed_task.start_node_id=task_node
+        timed_task.end_node_id=task_node
         timed_task.start_after = start_of_window
         timed_task.end_before = end_of_window
         # tell the scheduler we might take longer than we think
@@ -107,6 +142,11 @@ if __name__ == '__main__':
 
         # this provides windows that need execution delays
         # start_of_window += max_action_duration
+
+
+    # get services to call into execution framework
+    add_tasks, set_execution_status = get_services()
+
 
     # register task with the scheduler
     task_ids = add_tasks(tasks)
