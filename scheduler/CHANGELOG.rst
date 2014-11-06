@@ -3,8 +3,8 @@ Changelog for package scheduler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Forthcoming
------------
+0.0.6 (2014-11-06)
+------------------
 * Restored missing code.
 * Added tests for scheduler.
 * Pushed duration service argument through C++ side.
