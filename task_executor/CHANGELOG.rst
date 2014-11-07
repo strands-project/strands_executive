@@ -2,6 +2,13 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Moving scripts to the install target rather than setup.py and the latter doesn't install them under the package name.
+  Conflicts:
+  task_executor/CMakeLists.txt
+* Contributors: Nick Hawes
+
 0.0.6 (2014-11-06)
 ------------------
 * Updated and tested FIFO executor. Removed MDP depedency from base executor.

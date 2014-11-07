@@ -3,6 +3,9 @@ Changelog for package scheduler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+
 0.0.6 (2014-11-06)
 ------------------
 * Restored missing code.
