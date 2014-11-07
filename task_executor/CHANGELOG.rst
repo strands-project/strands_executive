@@ -2,8 +2,8 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.7 (2014-11-07)
+------------------
 * Moving scripts to the install target rather than setup.py and the latter doesn't install them under the package name.
   Conflicts:
   task_executor/CMakeLists.txt
