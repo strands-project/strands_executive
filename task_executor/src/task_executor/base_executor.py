@@ -111,7 +111,6 @@ class BaseTaskExecutor(object):
         raise RuntimeError('No action associated with topic: %s'% action_name)
 
 
-
     def expected_navigation_duration(self, task):
         if self.current_node == 'none':
             et = self.expected_time(start=self.closest_node, target=task.start_node_id)
@@ -263,7 +262,7 @@ class BaseTaskExecutor(object):
         expected_nav_duration = rospy.Duration(0)
         if self.active_task.start_node_id != '':                    
             expected_nav_duration = self.expected_navigation_duration(task)
-            rospy.loginfo('expected_nav_duration:  %s' % expected_nav_duration)
+            rospy.loginfo('expected_nav_duration:  %s' % expected_nav_duration.to_sec())
 
         total_task_duration = expected_nav_duration + task.max_duration
         

@@ -8,8 +8,8 @@ import actionlib
 from actionlib_msgs.msg import GoalStatus
 from geometry_msgs.msg import Pose, Point, Quaternion
 from mongodb_store.message_store import MessageStoreProxy
-#from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
-from strands_executive_msgs.msg import ExecutePolicyAction, ExecutePolicyGoal
+from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
+# from strands_executive_msgs.msg import ExecutePolicyAction, ExecutePolicyGoal
 from std_srvs.srv import Empty, EmptyResponse
 from std_msgs.msg import String
 from task_executor.base_executor import BaseTaskExecutor
@@ -245,13 +245,16 @@ class AbstractTaskExecutor(BaseTaskExecutor):
 
                 with nav_concurrence:
                     # where we want to go
-                    nav_goal = ExecutePolicyGoal(task_type=ExecutePolicyGoal.GOTO_WAYPOINT, target_id=task.start_node_id, time_of_day='all_day')
+                    # nav_goal = ExecutePolicyGoal(task_type=ExecutePolicyGoal.GOTO_WAYPOINT, target_id=task.start_node_id, time_of_day='all_day')
+                    nav_goal = GotoNodeGoal(target = task.start_node_id)
                     # let nav run for three times the length it usually takes before terminating
                     monitor_duration = self.expected_navigation_duration(task) * 3
 
                     smach.Concurrence.add('MONITORED',
-                                            SimpleActionState('mdp_plan_exec/execute_policy',
-                                                ExecutePolicyAction,
+                                            # SimpleActionState('mdp_plan_exec/execute_policy',
+                                                # ExecutePolicyAction,
+                                                SimpleActionState('topological_navigation',
+                                                GotoNodeAction,
                                                 goal=nav_goal))
                     smach.Concurrence.add('MONITORING', TimerState(duration=monitor_duration))
 
