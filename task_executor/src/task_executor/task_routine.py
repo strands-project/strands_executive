@@ -62,17 +62,15 @@ class DailyRoutine(object):
     """ An object for setting up the daily schedule of a robot. 
         Args:
             daily_start (datetime.time): The time of day when all tasks can start, local time.
-            daily_end (datetime.time): The time of day by when all tasks should end, local time.
-            pre_start_window (datetime.timedelta): The duration before a task's start that it should be passed to the scheduler. Defaults to 1 hour.
+            routine_duration (datetime.timedelta): The duration of the overall window after daily_start that task can be executed
+            pre_start_window (datetime.timedelta): The duration before an individual task's start that it should be passed to the scheduler. Defaults to 1 hour.
     """
-    def __init__(self, daily_start, daily_end):
+    def __init__(self, daily_start, routine_duration):
         super(DailyRoutine, self).__init__()
         self.daily_start = daily_start
-        self.daily_end = daily_end
+        self.routine_duration = routine_duration
         self.routine_tasks = []
     
-
-
     def repeat_every_day(self, tasks, times=1):
         """
         Repeat the given tasks a number of times during the day.
@@ -139,16 +137,20 @@ class DailyRoutine(object):
                 window_end = self.daily_end 
 
 
-    def repeat_every(self, tasks, daily_start, daily_end, times=1):
+    def repeat_every(self, tasks, daily_start, daily_duration, times=1):
         """
-        Repeat the given task a number of times during the day.
+        Repeat the given task a number of times during the given time window.
+          Args:
+            daily_start (datetime.time): The time of day when the given tasks can start, local time.
+            daily_duration (datetime.timedelta): The duration of time during which the tasks can be executed
+            times: the number of times to execute the tasks in the window
         """
 
         # make tasks a list if its not already 
         if not isinstance(tasks, list):            
             tasks = [tasks]
 
-        self.routine_tasks += [(tasks, (daily_start, daily_end))] * times
+        self.routine_tasks += [(tasks, (daily_start, daily_duration))] * times
 
     def get_routine_tasks(self):
         return self.routine_tasks
