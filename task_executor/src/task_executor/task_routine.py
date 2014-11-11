@@ -62,8 +62,7 @@ class DailyRoutine(object):
     """ An object for setting up the daily schedule of a robot. 
         Args:
             daily_start (datetime.time): The time of day when all tasks can start, local time.
-            routine_duration (datetime.timedelta): The duration of the overall window after daily_start that task can be executed
-            pre_start_window (datetime.timedelta): The duration before an individual task's start that it should be passed to the scheduler. Defaults to 1 hour.
+            routine_duration (datetime.timedelta): The duration of the overall window after daily_start that task can be executed            
     """
     def __init__(self, daily_start, routine_duration):
         super(DailyRoutine, self).__init__()
@@ -75,66 +74,43 @@ class DailyRoutine(object):
         """
         Repeat the given tasks a number of times during the day.
         """
-        self.repeat_every(tasks, self.daily_start, self.daily_end, times)
+        self.repeat_every(tasks, self.daily_start, self.routine_duration, times)
+
+
+
+    def repeat_every_delta(self, tasks, delta=timedelta(hours=1), times=1):
+
+        # we're going to use date+time here to deal with windows that go past midnight
+
+        window_start = datetime.combine(date.today(), self.daily_start)
+        window_end =  window_start + delta 
+        routine_end = window_start + self.routine_duration
+
+        while window_end <= routine_end
+
+            if window_start == window_end:
+                return
+           
+            print '%s.%s - %s.%s' % (window_start.hour, window_start.minute, window_end.hour, window_end.minute)
+            self.repeat_every(tasks, window_start.time(), delta, times)
+
+            window_start = window_end
+            window_end =  window_start + delta
+              
 
     def repeat_every_mins(self, tasks, mins=30, times=1):
         """
         Repeat the given tasks x times every n minutes
         """
 
-        window_start = self.daily_start
-        new_end_mins = window_start.minute + mins
-        if new_end_mins <= 59: 
-            window_end =  window_start.replace(minute=(new_end_mins))
-        else:
-            window_end =  window_start.replace(minute=(new_end_mins-59), hour=(window_start.hour + 1))
-
-        while window_end <= self.daily_end:
-
-            if window_start == window_end:
-                return
-           
-            print '%s.%s - %s.%s' % (window_start.hour, window_start.minute, window_end.hour, window_end.minute)
-            self.repeat_every(tasks, window_start, window_end, times)
-    
-
-            window_start = window_end
-
-            new_end = window_start
-            new_end_mins = new_end.minute + mins
-            if new_end_mins <= 59: 
-                new_end =  new_end.replace(minute=(new_end_mins))
-            else:                
-                new_end =  new_end.replace(minute=(new_end_mins-59), hour=(new_end.hour + 1))
-
-            if new_end.hour < 23:
-                window_end = new_end
-            else:
-                window_end = self.daily_end 
+        self.repeat_every_delta(tasks, timedelta(minutes=mins), times)
 
 
     def repeat_every_hour(self, tasks, hours=1, times=1):
         """
         Repeat the given tasks x times every n hours
         """
-
-        window_start = self.daily_start
-        window_end =  window_start.replace(hour=(window_start.hour + hours))
-
-        while window_end <= self.daily_end:
-
-            if window_start == window_end:
-                return
-           
-            # print '%s.%s - %s.%s' % (window_start.hour, window_start.minute, window_end.hour, window_end.minute)
-            self.repeat_every(tasks, window_start, window_end, times)
-    
-
-            window_start = window_end
-            if window_start.hour + hours < 23:
-                window_end =  window_start.replace(hour=(window_start.hour + hours))
-            else:
-                window_end = self.daily_end 
+        self.repeat_every_delta(tasks, timedelta(hours=hours), times)
 
 
     def repeat_every(self, tasks, daily_start, daily_duration, times=1):
@@ -160,14 +136,18 @@ class DailyRoutineRunner(object):
     """ An object for running the daily schedule of a robot. 
         Args:
             daily_start (datetime.time): The time of day when all tasks can start, local time.
-            daily_end (datetime.time): The time of day by when all tasks should end, local time.
+            routine_duration (datetime.timedelta): The duration of the overall window after daily_start that task can be executed            
             pre_start_window (datetime.timedelta): The duration before a task's start that it should be passed to the scheduler. Defaults to 1 hour.
     """
-    def __init__(self, daily_start, daily_end, add_tasks_srv, pre_start_window=timedelta(hours=0.25), day_start_cb=None, day_end_cb=None, tasks_allowed_fn=None):
+    def __init__(self, daily_start, routine_duration, add_tasks_srv, pre_start_window=timedelta(hours=0.25), day_start_cb=None, day_end_cb=None, tasks_allowed_fn=None):
         super(DailyRoutineRunner, self).__init__()
         self.daily_start = daily_start
-        self.daily_end = daily_end
-        assert time_less_than(daily_start, daily_end)
+        self.routine_duration = routine_duration
+       
+        # these variables track the start and end of the overall routine window
+        self.current_routine_start = datetime.combine(date.today(), self.daily_start)
+        self.current_routine_end = self.current_routine_start + self.routine_duration
+
         # the tasks which need to be performed every day, tuples of form (daily_start, daily_end, task)
         self.routine_tasks = []
         self.add_tasks_srv = add_tasks_srv
@@ -187,14 +167,11 @@ class DailyRoutineRunner(object):
             self.all_days.append(day_today.strftime("%A"))
             day_today += timedelta(days=1)
 
-
         self.pre_schedule_delay = rospy.Duration(pre_start_window.total_seconds())
-        self.midnight_thread = Thread(target=self._delay_to_midnight)
-        self.midnight_thread.start()
+
         self.day_start_cb = day_start_cb
         self.day_end_cb = day_end_cb
-        if day_start_cb != None or day_end_cb != None:
-            Thread(target=self._start_and_end_day).start()
+        Thread(target=self._start_and_end_day).start()
 
     def add_day_off(self, day_name):
         """ Add a day of the week, e.g. Saturday, on which the routing should not be run """
@@ -225,16 +202,17 @@ class DailyRoutineRunner(object):
  
             # again, using sleeps rather than timers due to slightly odd sim time behaviour of the latter
             now = datetime.fromtimestamp(rospy.get_rostime().to_sec(), tz=tzlocal())
-    
-            # print('Now', now.time())
-            # print('Now', self.daily_start)
 
-            # wait for the start of the day
-            while time_less_than(self.daily_start, now.time()) and time_less_than(self.daily_end, now.time()) and not rospy.is_shutdown():
+            # wait for a the pre-delay before the start of the day to instantiate the day's tasks
+            pre_delayed_start = self.current_routine_start - timedelta(seconds=self.pre_schedule_delay.to_sec())
+            while now < pre_delayed_start and not rospy.is_shutdown():
                 rospy.sleep(loop_delay)
                 now = datetime.fromtimestamp(rospy.get_rostime().to_sec(), tz=tzlocal())
 
-            while time_less_than(now.time(),self.daily_start) and not rospy.is_shutdown():                
+            self._new_day()
+
+            # wait for the start of the day
+            while now < self.current_routine_start and not rospy.is_shutdown():
                 rospy.sleep(loop_delay)
                 now = datetime.fromtimestamp(rospy.get_rostime().to_sec(), tz=tzlocal())
 
@@ -242,7 +220,7 @@ class DailyRoutineRunner(object):
                 rospy.loginfo('triggering day start cb at %s' % now)
                 self.day_start_cb()
 
-            while time_less_than(now.time(),self.daily_end) and not rospy.is_shutdown():                
+            while now < self.current_routine_end:
                 rospy.sleep(loop_delay)
                 now = datetime.fromtimestamp(rospy.get_rostime().to_sec(), tz=tzlocal())
 
@@ -250,75 +228,30 @@ class DailyRoutineRunner(object):
                 rospy.loginfo('triggering day end cb at %s' % now)
                 self.day_end_cb()
 
-
-
-    def _delay_to_midnight(self):
-        
-        while not rospy.is_shutdown():
-
-            # jump to the start of the next day in rostime
-            midnight = start_of_the_day(1)
-            print "midnight  %s" % midnight
-            midnight_rostime = rospy.Time(unix_time(midnight))
-            
-            now = rospy.get_rostime()
-            print "midnight_rostime  %s" % midnight_rostime.to_sec()
-            print "             now  %s" % now.to_sec()
-            assert midnight_rostime > now
-                  
-            while rospy.get_rostime() < midnight_rostime and not rospy.is_shutdown():
-                rospy.sleep(1)
-
-            if not rospy.is_shutdown():               
-                print "MIDNIGHT %s" % datetime.fromtimestamp(rospy.get_rostime().to_sec())
-                self._new_day()
-
-
-
-
-    """
-        Does some basic checking on the task.
-        Args:
-            daily_start (datetime.time): The time of day when the task can start.
-            daily_end (datetime.time): The time of day by when the task should end.
-    """
-    def sanity_check_task(self, daily_start, daily_end, task):
-        end_secs = time_to_secs(daily_end)
-        start_secs = time_to_secs(daily_start)
-        if end_secs <= start_secs:
-            raise RoutineException('Task window is negative: %s to %s' % (daily_start, daily_end))
-        if end_secs - start_secs < task.max_duration.secs:
-            raise RoutineException('Task window is not large enough for task: %s to %s for task of duration %s' % (daily_start, daily_end, timedelta(seconds=task.max_duration)))
+            # update routine window
+            self.current_routine_start += timedelta(days=1)
+            self.current_routine_end += timedelta(days=1)
 
 
     """
         Adds a task to the daily routine.
         Args:
-            routines: A list of tuples where each tuple is (task_list, window) where task_list is a list of task and window is a tuple (start, end) representing a time window in which to execute those tasks each day.
+            routines: A list of tuples where each tuple is (task_list, window) where task_list is a list of task and window is a tuple (start, duration) representing a time window in which to execute those tasks each day.
     """
     def add_tasks(self, routines):
 
         # add tasks to daily route
         new_routine = []
+
         for task_tuple in routines:
             
             daily_start = task_tuple[1][0]
-            daily_end = task_tuple[1][1]
+            daily_duration = task_tuple[1][1]
 
             for task in task_tuple[0]:
-                # bound by daily activity window
-                if time_less_than(daily_start, self.daily_start):
-                    rospy.loginfo('Bounding task to daily start window')
-                    daily_start = self.daily_start
-
-                if time_less_than(self.daily_end, daily_end):
-                    rospy.loginfo('Bounding task to daily end window')
-                    daily_end = self.daily_end
-
-                self.sanity_check_task(daily_start, daily_end, task)
         
                 # else, add to daily routine
-                routine = (daily_start, daily_end, task)
+                routine = (daily_start, daily_duration, task)
                 self.routine_tasks.append(routine)
                 new_routine.append(routine)
 
@@ -408,13 +341,13 @@ class DailyRoutineRunner(object):
             else:
                 rospy.loginfo('Provided function prevented tasks being send to the scheduler')
 
-    def _instantiate_for_day(self, start_of_day, daily_start, daily_end, task):
+    def _instantiate_for_day(self, start_of_day, daily_start, daily_duration, task):
         """ 
             Create a copy of the given task with start and end times instantiated from input variables relative to the start date provided.
         """
         instantiated_task = copy(task)
         release_date = datetime.combine(start_of_day.date(), daily_start)
-        end_date = datetime.combine(start_of_day.date(), daily_end)
+        end_date = release_date + daily_duration
         instantiated_task.start_after = rospy.Time(unix_time(release_date))
         instantiated_task.end_before = rospy.Time(unix_time(end_date))
         # print '%s (%s)' % (release_date, instantiated_task.start_after.secs)
