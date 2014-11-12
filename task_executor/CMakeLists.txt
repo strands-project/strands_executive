@@ -129,8 +129,3 @@ if (CATKIN_ENABLE_TESTING)
 endif()
 
 
-# if (CATKIN_ENABLE_TESTING)
-#   add_rostest(tests/fifo_tester.test)
-# endif()
-
-
