@@ -33,3 +33,6 @@ catkin_package(
 #  DEPENDS system_lib
 )
 
+install(DIRECTORY scripts/
+        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+        USE_SOURCE_PERMISSIONS)
