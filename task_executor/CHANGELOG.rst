@@ -2,6 +2,14 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fixing up bugs in routine
+* Added wait node back in.
+* Updating task routine to be more flexible wrt window start and end times.
+* Updated scheduled task executor with distance matrix parts and removed MDP depdendencies in sm base executor which I had previous forgotten.
+* Contributors: Nick Hawes
+
 0.0.7 (2014-11-07)
 ------------------
 * Moving scripts to the install target rather than setup.py and the latter doesn't install them under the package name.
