@@ -2,8 +2,8 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.8 (2014-11-12)
+------------------
 * Fixing up bugs in routine
 * Added wait node back in.
 * Updating task routine to be more flexible wrt window start and end times.
