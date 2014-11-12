@@ -3,6 +3,11 @@ Changelog for package scheduler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* Added back libscheduler install target.
+* Contributors: Nick Hawes
+
 0.0.9 (2014-11-12)
 ------------------
 
