@@ -1,0 +1,30 @@
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package sim_clock
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Forthcoming
+-----------
+* Updated install targets.
+* Copied in sim_clock and wait_node without history
+* Contributors: Nick Hawes
+
+* Copied in sim_clock and wait_node without history
+* Contributors: Nick Hawes
+
+0.0.7 (2014-11-07)
+------------------
+
+0.0.6 (2014-11-06)
+------------------
+
+0.0.5 (2014-11-01)
+------------------
+
+0.0.4 (2014-10-29 21:12)
+------------------------
+
+0.0.3 (2014-10-29 10:43)
+------------------------
+
+0.0.1 (2014-10-24)
+------------------
