@@ -2,12 +2,14 @@
 Changelog for package sim_clock
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Corrected setup.py
+* Contributors: Nick Hawes
+
 0.0.8 (2014-11-12)
 ------------------
 * Updated install targets.
-* Copied in sim_clock and wait_node without history
-* Contributors: Nick Hawes
-
 * Copied in sim_clock and wait_node without history
 * Contributors: Nick Hawes
 

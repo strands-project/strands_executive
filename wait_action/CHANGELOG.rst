@@ -2,6 +2,11 @@
 Changelog for package wait_action
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Corrected setup.py
+* Contributors: Nick Hawes
+
 0.0.8 (2014-11-12)
 ------------------
 * Updated install targets.
