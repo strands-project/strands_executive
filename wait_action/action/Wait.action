@@ -1,0 +1,8 @@
+# the time to wait until
+time wait_until
+# if wait until is 0 then try waiting for this long, if this is 0 too, wait until explicitly woken or cancelled
+duration wait_duration
+---
+---
+# feedback message
+float32 percent_complete
