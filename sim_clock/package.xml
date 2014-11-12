@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package>
+  <name>sim_clock</name>
+  <version>0.0.0</version>
+
+  <description>A package to run rostime at a configurable rate.</description>
+
+  <maintainer email="n.a.hawes@cs.bham.ac.uk">Nick Hawes</maintainer>
+
+
+  <license>MIT</license>
+
+  <author email="n.a.hawes@cs.bham.ac.uk">Nick Hawes</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  
+  <build_depend>rospy</build_depend>
+  <run_depend>rospy</run_depend>
+
+  <build_depend>rosgraph_msgs</build_depend>
+  <run_depend>rosgraph_msgs</run_depend>
+
+
+</package>
