@@ -124,7 +124,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
 
     def get_duration(self, start, end):
-        return 1.0
+        return self.expected_time(start=start, target=end).travel_time
 
     def get_duration_matrix(self, tasks):
         """
@@ -161,7 +161,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         Calls scheduler. Reorders the list of tasks in execution order with their execution times set. 
         
         """
-        resp = self.schedule_srv(tasks, earliest_start, current_id)
+        resp = self.schedule_srv(tasks, earliest_start, current_id, self.get_duration_matrix(tasks))
 
         rospy.loginfo(resp)
 

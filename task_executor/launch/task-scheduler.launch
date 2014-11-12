@@ -4,4 +4,7 @@
 
   <node pkg="task_executor" type="scheduled_task_executor.py" name="scheduled_task_executor"  output="screen"/>  
 
+  <!-- Utility node used for generating wait behaviours -->
+  <node pkg="wait_action" type="wait_node.py" name="wait_node"  output="screen"/>    
+
 </launch>
