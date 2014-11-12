@@ -1,5 +1,5 @@
 import rospy
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from dateutil.tz import tzlocal, tzutc
 from copy import copy
 
@@ -31,16 +31,6 @@ def time_to_secs(time):
 
     # do it n times every X duration 
 
-def start_of_the_day(day_delta=0): 
-    """
-        Get the datetime at the start of the day requested, i.e. the last midnight which has passed. All done in UTC
-
-        Args:
-            day_delta (int, optional): The relative day to today. 0 is today, 1 is tomorrow, -1 is yesterday. Defaults to 0.
-        Returns:
-            datetime.datetime: The date time at the start of the day 
-    """
-    return datetime.fromordinal(datetime.utcfromtimestamp(rospy.get_rostime().to_sec()).toordinal() + day_delta).replace(tzinfo=tzutc())
 
 def time_less_than(t1, t2):
     """ Seems to be a bug in datetime when comparing localtz dates, so do this instead. """
@@ -57,17 +47,41 @@ def time_less_than(t1, t2):
 
     return False
 
+def delta_between(start, end):
+    """
+        Args:
+            start (datetime.time): start time of window
+            end (datetime.time): end time of window
+        Returns
+            datetime.timedelta: The delta of the window between start and end
+    """
+    sdt = datetime.combine(date.today(), start)
+    if time_less_than(start, end):
+        enddt = datetime.combine(date.today(), end)
+    else: 
+        enddt = datetime.combine(date.today(), end) + timedelta(days=1)
+    return enddt - sdt
+
+
+
 
 class DailyRoutine(object):
     """ An object for setting up the daily schedule of a robot. 
         Args:
             daily_start (datetime.time): The time of day when all tasks can start, local time.
-            routine_duration (datetime.timedelta): The duration of the overall window after daily_start that task can be executed            
+            daily_end (datetime.time): The time of day when all tasks should end start, local time.
     """
-    def __init__(self, daily_start, routine_duration):
+    def __init__(self, daily_start, daily_end):
         super(DailyRoutine, self).__init__()
+
+        if not daily_start.tzinfo:
+            raise RoutineException('Start time must have timezone set')
+
+        if not daily_end.tzinfo:
+            raise RoutineException('End times must have timezone set')
+
         self.daily_start = daily_start
-        self.routine_duration = routine_duration
+        self.routine_duration = delta_between(daily_start, daily_end)
         self.routine_tasks = []
     
     def repeat_every_day(self, tasks, times=1):
@@ -86,13 +100,13 @@ class DailyRoutine(object):
         window_end =  window_start + delta 
         routine_end = window_start + self.routine_duration
 
-        while window_end <= routine_end
+        while window_end <= routine_end:
 
             if window_start == window_end:
                 return
            
             print '%s.%s - %s.%s' % (window_start.hour, window_start.minute, window_end.hour, window_end.minute)
-            self.repeat_every(tasks, window_start.time(), delta, times)
+            self.repeat_every(tasks, window_start.timetz(), delta, times)
 
             window_start = window_end
             window_end =  window_start + delta
@@ -132,21 +146,36 @@ class DailyRoutine(object):
         return self.routine_tasks
 
 
+
+
 class DailyRoutineRunner(object):
     """ An object for running the daily schedule of a robot. 
         Args:
             daily_start (datetime.time): The time of day when all tasks can start, local time.
-            routine_duration (datetime.timedelta): The duration of the overall window after daily_start that task can be executed            
+            daily_end (datetime.time): The time of day when all tasks should end start, local time.
             pre_start_window (datetime.timedelta): The duration before a task's start that it should be passed to the scheduler. Defaults to 1 hour.
     """
-    def __init__(self, daily_start, routine_duration, add_tasks_srv, pre_start_window=timedelta(hours=0.25), day_start_cb=None, day_end_cb=None, tasks_allowed_fn=None):
+    def __init__(self, daily_start, daily_end, add_tasks_srv, pre_start_window=timedelta(hours=0.25), day_start_cb=None, day_end_cb=None, tasks_allowed_fn=None):
         super(DailyRoutineRunner, self).__init__()
-        self.daily_start = daily_start
-        self.routine_duration = routine_duration
        
-        # these variables track the start and end of the overall routine window
+
+        if not daily_start.tzinfo:
+            raise RoutineException('Start time must have timezone set')
+
+        if not daily_end.tzinfo:
+            raise RoutineException('End times must have timezone set')
+        
+        self.daily_start = daily_start
+        self.routine_duration = delta_between(daily_start, daily_end)
+       
         self.current_routine_start = datetime.combine(date.today(), self.daily_start)
         self.current_routine_end = self.current_routine_start + self.routine_duration
+
+        if not self.current_routine_start.tzinfo:
+            raise RoutineException()
+
+        if not self.current_routine_end.tzinfo:
+            raise RoutineException()
 
         # the tasks which need to be performed every day, tuples of form (daily_start, daily_end, task)
         self.routine_tasks = []
@@ -220,7 +249,7 @@ class DailyRoutineRunner(object):
                 rospy.loginfo('triggering day start cb at %s' % now)
                 self.day_start_cb()
 
-            while now < self.current_routine_end:
+            while now < self.current_routine_end and not rospy.is_shutdown():
                 rospy.sleep(loop_delay)
                 now = datetime.fromtimestamp(rospy.get_rostime().to_sec(), tz=tzlocal())
 
@@ -245,7 +274,8 @@ class DailyRoutineRunner(object):
 
         for task_tuple in routines:
             
-            daily_start = task_tuple[1][0]
+
+            daily_start = task_tuple[1][0]            
             daily_duration = task_tuple[1][1]
 
             for task in task_tuple[0]:
@@ -271,9 +301,8 @@ class DailyRoutineRunner(object):
 
 
     def _instantiate_tasks_for_today(self, routine_tasks):
-        start_of_today = start_of_the_day()    
         # instantiate the daily tasks with release windows for today
-        todays_tasks = [self._instantiate_for_day(start_of_today, *task_tuple) for task_tuple in routine_tasks]
+        todays_tasks = [self._instantiate_for_day(self.current_routine_start, *task_tuple) for task_tuple in routine_tasks]
         return todays_tasks
 
     def _create_routine(self, tasks, throw=True):
@@ -297,7 +326,7 @@ class DailyRoutineRunner(object):
         # find the soonest start date of all tasks
 
         # an arbitrary large date
-        min_start_date = rospy.Time(unix_time(start_of_the_day(2)))
+        min_start_date = rospy.Time(unix_time(self.current_routine_end))
         for task in tasks:
             if task.start_after < min_start_date:           
                 min_start_date = task.start_after 
