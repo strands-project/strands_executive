@@ -2,8 +2,8 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.11 (2014-11-18)
+-------------------
 * Fixed bug with day start and end.
 * Contributors: Nick Hawes
 
