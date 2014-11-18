@@ -23,14 +23,22 @@ def time_to_secs(time):
     """
     return (time.hour * 60 * 60) + (time.minute * 60) + (time.second) + (time.microsecond/1000.0)
 	
-    # start by providing bounds on daily exectuion
 
-    # given a task or list of tasks (which could be produce by that task at all waypoints)
 
-    # do it n times in a specific window,  - scheduled for proposal x secs before the window
+def time_greater_than(t1, t2):
+    """ Seems to be a bug in datetime when comparing localtz dates, so do this instead. """
+    if t1.hour > t2.hour:
+        return True
+    elif t1.hour == t2.hour:
+        if t1.minute > t2.minute:
+            return True 
+        elif t1.minute == t2.minute:
+            if t1.second > t2.second:
+                return True
+            elif t1.second == t2.second:
+                return t1.microsecond > t2.microsecond
 
-    # do it n times every X duration 
-
+    return False
 
 def time_less_than(t1, t2):
     """ Seems to be a bug in datetime when comparing localtz dates, so do this instead. """
@@ -168,8 +176,24 @@ class DailyRoutineRunner(object):
         self.daily_start = daily_start
         self.routine_duration = delta_between(daily_start, daily_end)
        
-        self.current_routine_start = datetime.combine(date.today(), self.daily_start)
+        # work out when this current run of the routine should've started/ended
+        rostime_now = rospy.get_rostime()
+        now = datetime.fromtimestamp(rostime_now.to_sec(), tzlocal()).time()
+
+        self.current_routine_start = datetime.combine(date.today(), self.daily_start)       
+
+        if time_less_than(daily_start, daily_end):
+            # if we're past the day end then the current routine starts tomorrow
+            if time_greater_than(now, daily_end):
+                self.current_routine_start += timedelta(days=1)
+        else:
+            if time_less_than(now, daily_end):
+                self.current_routine_start -= timedelta(days=1)
+
         self.current_routine_end = self.current_routine_start + self.routine_duration
+
+        rospy.loginfo('Current day starts at %s' % self.current_routine_start)
+        rospy.loginfo('Current day ends at %s' % self.current_routine_end)
 
         if not self.current_routine_start.tzinfo:
             raise RoutineException()
