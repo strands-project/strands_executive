@@ -112,14 +112,31 @@ class BaseTaskExecutor(object):
 
 
     def expected_navigation_duration(self, task):
-        if self.current_node == 'none':
-            et = self.expected_time(start=self.closest_node, target=task.start_node_id)
+        # if we're going nowhere, return some default
+        if task.start_node_id == '':
+            return rospy.Duration(10)
+        elif self.current_node == 'none':
+            return self.get_navigation_duration(start=self.closest_node, end=task.start_node_id)
         else:
-            et = self.expected_time(start=self.current_node, target=task.start_node_id)
-        # rospy.loginfo('expected travel time %s' % et.travel_time)
-        # allow a bit of time for any transition -- mainly for testing cases
-        return rospy.Duration(max(et.travel_time.to_sec() * 3, 10))
-        # return rospy.Duration(120)
+            return self.get_navigation_duration(start=self.current_node, end=task.start_node_id)
+
+
+    def get_navigation_duration(self, start, end):
+
+        try:            
+            if start == '' or end == '':
+                # if we're going nowhere, return some default
+                return rospy.Duration(10)
+            else:
+                et = self.expected_time(start=start, target=end)
+                # rospy.loginfo('expected travel time %s' % et.travel_time)
+                # allow a bit of time for any transition -- mainly for testing cases
+                return rospy.Duration(max(et.travel_time.to_sec() * 3, 10))
+                # return rospy.Duration(120)            
+        except rospy.ServiceException, e:
+            rospy.logwarn('Caught exception when getting expected time: %s' % e)
+            return rospy.Duration(10)
+            
 
         
     def log_task_events(self, tasks, event, time, description=""):
