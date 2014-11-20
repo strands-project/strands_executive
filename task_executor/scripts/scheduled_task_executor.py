@@ -163,20 +163,20 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         """
         resp = self.schedule_srv(tasks, earliest_start, current_id, self.get_duration_matrix(tasks))
 
-        rospy.loginfo(resp)
+        # rospy.loginfo(resp)
 
         if len(resp.task_order) > 0:
 
             # add start times to a dictionary for fast lookup
             task_times = {}
             for (task_id, start_time) in zip(resp.task_order, resp.execution_times):
-                print task_id, start_time
+                # print task_id, start_time
                 task_times[task_id] = start_time
 
             # set start times inside of tasks
             for task in tasks:
                 # add min_window back on to starting times
-                print task.task_id, task_times[task.task_id] 
+                # print task.task_id, task_times[task.task_id] 
                 task.execution_time = task_times[task.task_id] 
 
                 # taking out as rescheduling demanded tasks have an issue here I think

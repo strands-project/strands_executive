@@ -120,7 +120,7 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
   double ** duration_array = createDurationArray(req.durations, max_duration);
   Scheduler scheduler(&tasks, duration_array, max_duration);
 
-    ROS_INFO_STREAM("Going to solve");    
+   ROS_INFO_STREAM("Going to solve");    
  
 
   if(scheduler.solve(scheduler_version, output_file, timeout)) {
