@@ -2,6 +2,12 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Added bounds to repeat_every_delta method.
+  Also cleaned up scheduled and executor output.
+* Contributors: Nick Hawes
+
 0.0.11 (2014-11-18)
 -------------------
 * Fixed bug with day start and end.
