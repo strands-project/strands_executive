@@ -177,7 +177,9 @@ class BaseTaskExecutor(object):
         """
         Demand a the task from the execution framework.
         """
+     
         self.service_lock.acquire()
+     
         req.task.task_id = self.task_counter        
         self.task_counter += 1
         req.task.execution_time = rospy.get_rostime()

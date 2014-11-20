@@ -100,13 +100,18 @@ class DailyRoutine(object):
 
 
 
-    def repeat_every_delta(self, tasks, delta=timedelta(hours=1), times=1):
+    def repeat_every_delta(self, tasks, delta=timedelta(hours=1), times=1, start_time=None, duration=None):
 
-        # we're going to use date+time here to deal with windows that go past midnight
+        if not start_time:
+            start_time = self.daily_start
+        if not duration:
+            duration = self.routine_duration
 
-        window_start = datetime.combine(date.today(), self.daily_start)
+        # this window is moved forward throughout the repeat
+        window_start = datetime.combine(date.today(), start_time)
         window_end =  window_start + delta 
-        routine_end = window_start + self.routine_duration
+        # the past which we don't move the window
+        routine_end = window_start + duration
 
         while window_end <= routine_end:
 
