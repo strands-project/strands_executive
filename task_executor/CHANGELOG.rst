@@ -2,6 +2,11 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* More robust handling of failure cases.
+* Contributors: Nick Hawes
+
 0.0.12 (2014-11-20)
 -------------------
 * Added bounds to repeat_every_delta method.

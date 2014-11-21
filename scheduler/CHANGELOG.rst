@@ -3,6 +3,9 @@ Changelog for package scheduler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+
 0.0.12 (2014-11-20)
 -------------------
 * Added bounds to repeat_every_delta method.
