@@ -2,6 +2,20 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#113 <https://github.com/strands-project/strands_executive/issues/113>`_ from hawesie/hydro-release
+  Changes to demanded tasks and failure cases.
+* Changes to how on demand tasks are handled.
+  The code that waited for a cancelled task had been commented out, leading to demanded tasks being ignored if something was currently executing. This addresses `#108 <https://github.com/strands-project/strands_executive/issues/108>`_.
+* Added run dependency on wait_action.
+  Fixes `#105 <https://github.com/strands-project/strands_executive/issues/105>`_.
+  Conflicts:
+  task_executor/package.xml
+* Added locking to client end of expected time service call.
+  This is for `#108 <https://github.com/strands-project/strands_executive/issues/108>`_.
+* Contributors: Nick Hawes
+
 0.0.13 (2014-11-21)
 -------------------
 * More robust handling of failure cases.
