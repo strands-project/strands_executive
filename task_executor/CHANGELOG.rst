@@ -2,8 +2,8 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.13 (2014-11-21)
+-------------------
 * More robust handling of failure cases.
 * Contributors: Nick Hawes
 
