@@ -97,9 +97,22 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
         # wait until the demanded task has been taken off for execution, otherwise we run into problems with get_schedulable_tasks
         # cancellation should block until cancelled 
-        # while self.execution_schedule.get_current_task() is not None and not rospy.is_shutdown():
-        #     rospy.sleep(1)
-        #     rospy.loginfo('Waiting for previous task to finish')
+        wait_count = 0
+        # a similar theshold is used in sm_base_executor to wait for termination of active task
+        wait_threshold = 31
+        while self.execution_schedule.get_current_task() is not None and wait_count < wait_threshold and not rospy.is_shutdown():
+            rospy.sleep(1)
+            rospy.loginfo('Waiting for previous task to finish')
+            wait_count += 1
+
+        # if it's still not None then we got bored of waiting
+        if self.execution_schedule.get_current_task() is not None:
+            rospy.logwarn('Previous task did not terminate nicely. Everything from here on in could be dicey.')
+
+            self.execution_schedule.current_task != None
+
+
+
 
         # try to schedule them back in 
         self.execution_schedule.add_new_tasks([demanded_task])

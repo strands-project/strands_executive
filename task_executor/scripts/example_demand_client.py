@@ -31,7 +31,7 @@ if __name__ == '__main__':
     # 
     demanded_wait = Task(action='wait_action', max_duration=rospy.Duration(60), start_node_id='WayPoint2')
     task_id = demand_task(demanded_wait)
-    
+    print 'demanded task as id: %s' % task_id
     
     #demanded_fire = Task(action='CheckObjectPresenceAction', max_duration=rospy.Duration(60), start_node_id='WayPoint22')
     #pan=0
