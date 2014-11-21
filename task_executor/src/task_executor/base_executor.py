@@ -74,6 +74,8 @@ class BaseTaskExecutor(object):
         self.active_task = None
         self.active_task_completes_by = rospy.get_rostime()
         self.service_lock = threading.Lock()
+        self.expected_time_lock = threading.Lock()
+
         self.task_event_publisher = rospy.Publisher('task_executor/events', TaskEvent, queue_size=20)
 
 
@@ -124,6 +126,8 @@ class BaseTaskExecutor(object):
     def get_navigation_duration(self, start, end):
 
         try:            
+            # prevent concurrent calls to expected_time service. 
+            self.expected_time_lock.acquire()
             if start == '' or end == '':
                 # if we're going nowhere, return some default
                 return rospy.Duration(10)
@@ -133,10 +137,12 @@ class BaseTaskExecutor(object):
                 # allow a bit of time for any transition -- mainly for testing cases
                 return rospy.Duration(max(et.travel_time.to_sec() * 3, 10))
                 # return rospy.Duration(120)            
-        except rospy.ServiceException, e:
+        except Exception, e:
             rospy.logwarn('Caught exception when getting expected time: %s' % e)
             return rospy.Duration(10)
-            
+        finally:
+            self.expected_time_lock.release()
+                    
 
         
     def log_task_events(self, tasks, event, time, description=""):
