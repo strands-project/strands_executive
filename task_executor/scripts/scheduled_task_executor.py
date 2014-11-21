@@ -122,10 +122,6 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
                 rospy.loginfo('Was NOT able to reinstate tasks after demand')
 
 
-
-    def get_duration(self, start, end):
-        return self.expected_time(start=start, target=end).travel_time
-
     def get_duration_matrix(self, tasks):
         """
         Creates the matrix of durations between waypoints needed as input to the scheuler.
@@ -140,7 +136,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         for start in start_nodes:
             durations[start] = dict()
             for end in end_nodes:
-                durations[start][end] = self.get_duration(start, end)
+                durations[start][end] = self.get_navigation_duration(start, end)
 
 
         # now populate the DurationMatrix object
