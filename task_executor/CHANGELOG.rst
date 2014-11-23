@@ -2,8 +2,8 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.15 (2014-11-23)
+-------------------
 * Added sanity checking to task routine.
 * Handle case where action server for task does not exist
 * Contributors: Nick Hawes
