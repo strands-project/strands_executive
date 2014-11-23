@@ -153,6 +153,19 @@ class DailyRoutine(object):
         if not isinstance(tasks, list):            
             tasks = [tasks]
 
+        if daily_start < self.daily_start:
+            raise Exception('Provided daily start %s is less than overall daily start %s' % (daily_start, self.daily_start))
+
+
+        daily_end = datetime.combine(date.today(), daily_start) + daily_duration
+        overall_end = datetime.combine(date.today(), self.daily_start) + self.routine_duration
+  
+
+        if daily_end > overall_end:
+            raise Exception('Provided daily end %s is greater than overall daily end %s for tasks %s' % (daily_end, overall_end, tasks))
+
+
+
         self.routine_tasks += [(tasks, (daily_start, daily_duration))] * times
 
     def get_routine_tasks(self):
@@ -344,6 +357,38 @@ class DailyRoutineRunner(object):
         self._schedule_tasks(schedule_now)
 
 
+    def _queue_for_scheduling(self, tasks, throw=True):
+        now = rospy.get_rostime()
+
+        schedule_now = []
+        schedule_later = []
+
+        for task in tasks:
+
+            # print task.max_duration.secs
+            # print task.start_after.secs
+            # print task.end_before.secs
+            # print (now).secs
+            # print (now + task.max_duration).secs
+
+
+            # check we're not too late
+            if now + task.max_duration > task.end_before:
+                # 
+                if throw:
+                    raise RoutineException('%s is too late to schedule task %s' % (now.secs, task))
+                else:
+                    rospy.logdebug('Ignoring task for today')
+            else:
+                # if we're in the the window when this should be scheduled
+                if now > (task.start_after - self.pre_schedule_delay):
+                    schedule_now.append(task)
+                else:
+                    schedule_later.append(task)
+
+        return schedule_now, schedule_later
+
+
     def _delay_tasks(self, tasks):
         """
             Delays call to the scheduer until the first of these needs to start, then reruns check for scheduling
@@ -357,18 +402,29 @@ class DailyRoutineRunner(object):
         # an arbitrary large date
         min_start_date = rospy.Time(unix_time(self.current_routine_end))
         for task in tasks:
-            if task.start_after < min_start_date:           
+            if task.start_after < min_start_date:       
+                # print task.max_duration.secs
+                # print task.start_after.secs
+                # print task.end_before.secs
+                # print (now).secs
+                # print (now + task.max_duration).secs    
                 min_start_date = task.start_after 
+
+        # print 'min start at %s' % min_start_date.secs
 
         # only delay up to the pre-scheduler window 
         min_start_date = min_start_date - self.pre_schedule_delay
 
         now = rospy.get_rostime()
 
+
         # print 'min start at %s' % min_start_date.secs
         # print '      now at %s' % now.secs
 
         delay = min_start_date - now
+
+        assert delay.secs > 0
+
 
         # print 'delaying %s' % delay.secs
         self._delay_scheduling(tasks, delay)
@@ -413,37 +469,6 @@ class DailyRoutineRunner(object):
 
         return instantiated_task
 
-
-    def _queue_for_scheduling(self, tasks, throw=True):
-        now = rospy.get_rostime()
-
-        schedule_now = []
-        schedule_later = []
-
-        for task in tasks:
-
-            # print task.max_duration.secs
-            # print task.start_after.secs
-            # print task.end_before.secs
-            # print (now).secs
-            # print (now + task.max_duration).secs
-
-
-            # check we're not too late
-            if now + task.max_duration > task.end_before:
-                # 
-                if throw:
-                    raise RoutineException('%s is too late to schedule task %s' % (now.secs, task))
-                else:
-                    rospy.logdebug('Ignoring task for today')
-            else:
-                # if we're in the the window when this should be scheduled
-                if now > (task.start_after - self.pre_schedule_delay):
-                    schedule_now.append(task)
-                else:
-                    schedule_later.append(task)
-
-        return schedule_now, schedule_later
 
 
 
