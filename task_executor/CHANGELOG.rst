@@ -2,6 +2,12 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Added sanity checking to task routine.
+* Handle case where action server for task does not exist
+* Contributors: Nick Hawes
+
 0.0.14 (2014-11-21)
 -------------------
 * Merge pull request `#113 <https://github.com/strands-project/strands_executive/issues/113>`_ from hawesie/hydro-release
