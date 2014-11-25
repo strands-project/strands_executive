@@ -135,7 +135,7 @@ class BaseTaskExecutor(object):
                 et = self.expected_time(start=start, target=end)
                 # rospy.loginfo('expected travel time %s' % et.travel_time)
                 # allow a bit of time for any transition -- mainly for testing cases
-                return rospy.Duration(max(et.travel_time.to_sec() * 3, 10))
+                return rospy.Duration(max(et.travel_time.to_sec() * 20, 10))
                 # return rospy.Duration(120)            
         except Exception, e:
             rospy.logwarn('Caught exception when getting expected time: %s' % e)
