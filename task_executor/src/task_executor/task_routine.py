@@ -261,7 +261,7 @@ class DailyRoutineRunner(object):
 
         return (day_today in self.days_off) or (date_today in self.dates_off)
 
-    def _tasks_allowed_fn(self):        
+    def _tasks_allowed_fn(self, task):        
         return True
 
     def _start_and_end_day(self):
@@ -448,12 +448,20 @@ class DailyRoutineRunner(object):
 
 
     def _schedule_tasks(self, tasks):
-        rospy.loginfo('Sending %s tasks to the scheduler' % (len(tasks)))
+
         if len(tasks) > 0:
-            if not self.day_off() and self.tasks_allowed():
-                self.add_tasks_srv(tasks)
+
+            allowed_tasks = [t for t in tasks if self.tasks_allowed(t)]
+    
+            if len(allowed_tasks) != len(tasks):
+                rospy.loginfo('Provided function prevented %s of %s tasks being send to the scheduler' % (len(tasks) - len(allowed_tasks), len(tasks)))
+
+            if not self.day_off():
+                rospy.loginfo('Sending %s tasks to the scheduler' % (len(allowed_tasks)))
+                self.add_tasks_srv(allowed_tasks)
             else:
-                rospy.loginfo('Provided function prevented tasks being send to the scheduler')
+                rospy.loginfo('Taking the day off')
+            
 
     def _instantiate_for_day(self, start_of_day, daily_start, daily_duration, task):
         """ 
