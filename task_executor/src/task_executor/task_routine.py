@@ -82,10 +82,10 @@ class DailyRoutine(object):
     def __init__(self, daily_start, daily_end):
         super(DailyRoutine, self).__init__()
 
-        if not daily_start.tzinfo:
+        if daily_start.tzinfo is None:
             raise RoutineException('Start time must have timezone set')
 
-        if not daily_end.tzinfo:
+        if daily_end.tzinfo is None:
             raise RoutineException('End times must have timezone set')
 
         self.daily_start = daily_start
@@ -102,9 +102,9 @@ class DailyRoutine(object):
 
     def repeat_every_delta(self, tasks, delta=timedelta(hours=1), times=1, start_time=None, duration=None):
 
-        if not start_time:
+        if start_time is None:
             start_time = self.daily_start
-        if not duration:
+        if duration is None:
             duration = self.routine_duration
 
         # this window is moved forward throughout the repeat
@@ -185,10 +185,10 @@ class DailyRoutineRunner(object):
         super(DailyRoutineRunner, self).__init__()
        
 
-        if not daily_start.tzinfo:
+        if daily_start.tzinfo is None:
             raise RoutineException('Start time must have timezone set')
 
-        if not daily_end.tzinfo:
+        if daily_end.tzinfo is None:
             raise RoutineException('End times must have timezone set')
         
         self.daily_start = daily_start
