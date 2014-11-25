@@ -213,10 +213,10 @@ class DailyRoutineRunner(object):
         rospy.loginfo('Current day starts at %s' % self.current_routine_start)
         rospy.loginfo('Current day ends at %s' % self.current_routine_end)
 
-        if not self.current_routine_start.tzinfo:
+        if self.current_routine_start.tzinfo is None:
             raise RoutineException()
 
-        if not self.current_routine_end.tzinfo:
+        if self.current_routine_end.tzinfo is None:
             raise RoutineException()
 
         # the tasks which need to be performed every day, tuples of form (daily_start, daily_end, task)
