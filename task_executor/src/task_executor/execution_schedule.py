@@ -103,8 +103,8 @@ class ExecutionSchedule(object):
 
 
     def task_complete(self, task):
-        assert task != None
-        assert self.current_task != None
+        assert task is not None
+        assert self.current_task is not None
         assert task.task_id == self.current_task.task_id
         # no time info yet
         self.next_in_schedule()
@@ -134,7 +134,7 @@ class ExecutionSchedule(object):
         # if nothing is executing, make sure something starts
         if self.current_task is None:
             # nothing may be executing becuase we're waiting for delayed execution
-            if self.execution_delay_timer != None:
+            if self.execution_delay_timer is not None:
                 self.execution_delay_timer.shutdown()
             self.next_in_schedule()
         # else:
