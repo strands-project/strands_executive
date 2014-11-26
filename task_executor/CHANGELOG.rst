@@ -2,8 +2,8 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.16 (2014-11-26)
+-------------------
 * increasing timeout for nav
 * Edited task allowed function to check task details.
 * More none checking changes.
