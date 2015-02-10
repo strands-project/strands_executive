@@ -37,20 +37,34 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         # data structure that manages tasks
         self.execution_schedule = ExecutionSchedule()
 
-        self.scheduling_thread = Thread(target=self.schedule_tasks)    
-        self.execution_thread = Thread(target=self.execute_tasks)
-
+       
         self.running = False
 
         self.advertise_services()
 
     def start_execution(self):
         """ Called when overall execution should  (re)start """
+        
         if not self.running:
-            self.scheduling_thread.start()    
-            self.execution_thread.start()
             self.running = True
 
+            self.scheduling_thread = Thread(target=self.schedule_tasks)    
+            self.execution_thread = Thread(target=self.execute_tasks)
+
+            self.scheduling_thread.start()    
+            self.execution_thread.start()
+
+
+    def pause_execution(self):
+        
+        rospy.loginfo('Pausing execution')
+        self.running = False
+        
+        if self.execution_schedule.get_current_task() is not None:
+            rospy.loginfo('Interrupting active task')
+            self.cancel_active_task()
+
+       
 
     def get_default_end_time(self, start_time):
         return start_time + self.default_duration
@@ -81,11 +95,6 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         # pass signal to schedule
         self.execution_schedule.task_complete(task) 
 
-    def pause_execution(self):
-        rospy.loginfo('Pausing execution')
-        if self.execution_schedule.get_current_task() is not None:
-            rospy.loginfo('Interrupting active task')
-            self.cancel_active_task()
 
     def task_demanded(self, demanded_task, currently_active_task):
         """ Called when a task is demanded. self.active_task is the demanded task (and is being executed) and previously_active_task was the task that was being executed (which could be None) """
@@ -309,7 +318,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
     def schedule_tasks(self):
         loopSecs = 5
         
-        while not rospy.is_shutdown():           
+        while not rospy.is_shutdown() and self.running:           
             # print "scheduling thread %s" % rospy.is_shutdown()      
             try:
                 unscheduled = []
@@ -336,7 +345,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
     def execute_tasks(self):
         wait_time = 1 # 1second
         
-        while not rospy.is_shutdown():           
+        while not rospy.is_shutdown() and self.running:           
 
             # print "executing thread %s" % rospy.is_shutdown()
             if(self.execution_schedule.wait_for_execution_change(wait_time)):
@@ -346,6 +355,8 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
                     self.execute_task(next_task)                
                 else:
                     rospy.logwarn('Next task was None')
+
+
 
 
     def cancel_task(self, task_id):
