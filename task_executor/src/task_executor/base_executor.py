@@ -270,7 +270,7 @@ class BaseTaskExecutor(object):
             self.executing = req.status
 
             self.pause_execution()
-            
+
         elif not self.executing and req.status:
             rospy.logdebug("Starting execution")
 
@@ -278,7 +278,10 @@ class BaseTaskExecutor(object):
             self.executing = req.status
         
             self.start_execution()
-        
+        else:
+            previous = self.executing            
+
+
         self.service_lock.release()
 
         return previous

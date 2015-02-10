@@ -57,12 +57,32 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
     def pause_execution(self):
         
-        rospy.loginfo('Pausing execution')
-        self.running = False
-        
-        if self.execution_schedule.get_current_task() is not None:
-            rospy.loginfo('Interrupting active task')
-            self.cancel_active_task()
+        if self.running:
+            rospy.loginfo('Pausing execution')
+            self.running = False
+
+            # save the tasks we had previously
+            previously_scheduled = self.execution_schedule.get_schedulable_tasks()
+            current_task = self.execution_schedule.get_current_task()
+
+            # clear all tasks that were previously scheduled
+            self.execution_schedule.clear_schedule()
+            
+            if current_task is not None:
+                rospy.loginfo('Interrupting active task')
+
+                # stop execution
+                self.cancel_active_task()            
+
+                # wait for current task to end
+                self.wait_for_task_to_complete()
+            
+                # add the interrupted task back to the queue for scheduling later
+                self.unscheduled_tasks.put(current_task)
+
+            for task in previously_scheduled:
+                self.unscheduled_tasks.put(task)                
+
 
        
 
@@ -96,6 +116,23 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         self.execution_schedule.task_complete(task) 
 
 
+    def wait_for_task_to_complete(self):
+        """ Useful for cases where you don't know what the effect of cancellation will be   """
+
+        wait_count = 0
+        # a similar theshold is used in sm_base_executor to wait for termination of active task
+        wait_threshold = 31
+        while self.execution_schedule.get_current_task() is not None and wait_count < wait_threshold and not rospy.is_shutdown():
+            rospy.sleep(1)
+            rospy.loginfo('Waiting for previous task to finish')
+            wait_count += 1
+
+        # if it's still not None then we got bored of waiting
+        if self.execution_schedule.get_current_task() is not None:
+            rospy.logwarn('Previous task did not terminate nicely. Everything from here on in could be dicey.')
+            self.execution_schedule.current_task = None
+
+
     def task_demanded(self, demanded_task, currently_active_task):
         """ Called when a task is demanded. self.active_task is the demanded task (and is being executed) and previously_active_task was the task that was being executed (which could be None) """
 
@@ -112,22 +149,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
         # wait until the demanded task has been taken off for execution, otherwise we run into problems with get_schedulable_tasks
         # cancellation should block until cancelled 
-        wait_count = 0
-        # a similar theshold is used in sm_base_executor to wait for termination of active task
-        wait_threshold = 31
-        while self.execution_schedule.get_current_task() is not None and wait_count < wait_threshold and not rospy.is_shutdown():
-            rospy.sleep(1)
-            rospy.loginfo('Waiting for previous task to finish')
-            wait_count += 1
-
-        # if it's still not None then we got bored of waiting
-        if self.execution_schedule.get_current_task() is not None:
-            rospy.logwarn('Previous task did not terminate nicely. Everything from here on in could be dicey.')
-
-            self.execution_schedule.current_task != None
-
-
-
+        self.wait_for_task_to_complete()
 
         # try to schedule them back in 
         self.execution_schedule.add_new_tasks([demanded_task])
@@ -331,9 +353,13 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
                 except Empty, e:
                     pass
                 
-                rospy.loginfo('Got a further %s tasks to schedule' % len(unscheduled))
-
-                self.try_schedule(unscheduled)                
+                if self.running:
+                    rospy.loginfo('Got a further %s tasks to schedule' % len(unscheduled))
+                    self.try_schedule(unscheduled)                
+                else:
+                    rospy.loginfo('Putting %s tasks to schedule later' % len(unscheduled))
+                    for task in unscheduled:
+                        self.unscheduled_tasks.put(task)
 
             except Empty, e:
                 # rospy.logdebug('No new tasks to schedule')
@@ -349,12 +375,13 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
             # print "executing thread %s" % rospy.is_shutdown()
             if(self.execution_schedule.wait_for_execution_change(wait_time)):
-                next_task = self.execution_schedule.get_current_task()
-                rospy.loginfo('Next task to execute: %s' % next_task.task_id)
-                if next_task is not None:
-                    self.execute_task(next_task)                
-                else:
-                    rospy.logwarn('Next task was None')
+                if self.running:
+                    next_task = self.execution_schedule.get_current_task()
+                    rospy.loginfo('Next task to execute: %s' % next_task.task_id)
+                    if next_task is not None:
+                        self.execute_task(next_task)                
+                    else:
+                        rospy.logwarn('Next task was None')
 
 
 
