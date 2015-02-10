@@ -81,6 +81,12 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         # pass signal to schedule
         self.execution_schedule.task_complete(task) 
 
+    def pause_execution(self):
+        rospy.loginfo('Pausing execution')
+        if self.execution_schedule.get_current_task() is not None:
+            rospy.loginfo('Interrupting active task')
+            self.cancel_active_task()
+
     def task_demanded(self, demanded_task, currently_active_task):
         """ Called when a task is demanded. self.active_task is the demanded task (and is being executed) and previously_active_task was the task that was being executed (which could be None) """
 
