@@ -1,23 +1,28 @@
 # STRANDS Executive
+Old documentation, being updated now (from 9.2.205)
 
-
-Executive control code for STRANDS robots. The basic unit of behaviour is a *task* as defined by `strands_executive_msgs/Task`. To get the robot to execute a task an appropriate instance of the `Task` message must be sent to the task executor framework. Currently only the `fifo_task_executor.py` exists, which executes tasks in a FIFO manner, but later on a scheduler will be added.
+Executive control code for STRANDS robots. The basic unit of behaviour is a *task* as defined by `strands_executive_msgs/Task`. To get the robot to execute a task an appropriate instance of the `Task` message must be sent to the task executor framework. 
 
 ## Dependencies
 
 Notes, before you can run any of the scheduling stuff, you must run have the datacentre running, e.g.
 
 ```bash
-roslaunch mongodb_store datacentre.launch
+roslaunch mongodb_store mongodb_store.launch
+```
+or with path specifing, where should db be stored:
+
+```bash
+roslaunch mongodb_store mongodb_store.launch db_path:=/...
 ```
 
 and you need to be offering a 'topological_navigation', GotoNodeAction action. If you're not running the full topological navigation system, you can run
 
 ```bash
-rosrun task_executor test_task_action.py
+roslaunch topological_utils dummy_topological_navigation.launch
 ```
 
-which will fake this.
+which will provide a fake map. TODO: more information about locations in map
 
 ## Running scheduled patrols
 
