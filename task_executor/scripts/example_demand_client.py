@@ -28,24 +28,15 @@ if __name__ == '__main__':
     # get services to call into execution framework
     demand_task, set_execution_status = get_services()
 
-    # 
-    demanded_wait = Task(action='wait_action', max_duration=rospy.Duration(60), start_node_id='WayPoint2')
-    task_id = demand_task(demanded_wait)
-    print 'demanded task as id: %s' % task_id
-    
-    #demanded_fire = Task(action='CheckObjectPresenceAction', max_duration=rospy.Duration(60), start_node_id='WayPoint22')
-    #pan=0
-    #tilt=29
-    #object_id='fire_extinguisher_co2.pcd'
-    #task_utils.add_string_argument(demanded_fire, object_id)
-    #task_utils.add_float_argument(demanded_fire, pan)
-    #task_utils.add_float_argument(demanded_fire, tilt)
-
-    #task_id = demand_task(demanded_fire)
-
-  
-
     # Set the task executor running (if it isn't already)
     set_execution_status(True)
+    print 'set execution'
 
-    # rospy.spin()
+
+    # 
+    demanded_wait = Task(action='wait_action', max_duration=rospy.Duration(60), start_node_id='h_2')
+    resp = demand_task(demanded_wait)
+    print 'demanded task as id: %s' % resp.task_id
+    rospy.loginfo('Success: %s' % resp.success)
+    rospy.loginfo('Wait: %s' % resp.remaining_execution_time)
+

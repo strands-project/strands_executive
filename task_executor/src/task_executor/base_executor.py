@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
+
 from strands_executive_msgs.msg import Task, TaskEvent
 from strands_executive_msgs.srv import *
 import mongodb_store.util as dc_util
@@ -200,24 +201,29 @@ class BaseTaskExecutor(object):
         """
         Demand a the task from the execution framework.
         """
-     
-        self.service_lock.acquire()
-     
-        req.task.task_id = self.task_counter        
-        self.task_counter += 1
-        req.task.execution_time = rospy.get_rostime()
+        try:            
+            self.service_lock.acquire()
 
-        # stop anything else
-        if self.active_task is not None:
-            self.cancel_active_task()
+            if self.active_task is not None and not self.is_task_interruptible(self.active_task):
+                return [0, False, self.active_task_completes_by - rospy.get_rostime()]
 
-        # and inform implementation to let it take action
-        self.task_demanded(req.task, self.active_task)                        
+            req.task.task_id = self.task_counter        
+            self.task_counter += 1
+            req.task.execution_time = rospy.get_rostime()
 
-        self.log_task_event(req.task, TaskEvent.DEMANDED, rospy.get_rostime())                
+            # stop anything else
+            if self.active_task is not None:
+                self.cancel_active_task()
 
-        self.service_lock.release()
-        return req.task.task_id
+            # and inform implementation to let it take action
+            self.task_demanded(req.task, self.active_task)                        
+
+            self.log_task_event(req.task, TaskEvent.DEMANDED, rospy.get_rostime())                
+            return [req.task.task_id, True, rospy.Duration(0)]        
+        finally:    
+            self.service_lock.release()
+
+
     demand_task_ros_srv.type=DemandTask
 
     def cancel_task_ros_srv(self, req):
@@ -263,28 +269,39 @@ class BaseTaskExecutor(object):
         
         self.service_lock.acquire()
 
+        success = False
+
+        remaining_time = rospy.Duration(0)
+
+
         if self.executing and not req.status:
             rospy.logdebug("Pausing execution")
 
             previous = self.executing
-            self.executing = req.status
+            
 
-            self.pause_execution()
+            if self.is_task_interruptible(self.active_task):
+                self.pause_execution()
+                self.executing = False
+                success = True            
+            else:
+                remaining_time = self.active_task_completes_by - rospy.get_rostime()
 
         elif not self.executing and req.status:
             rospy.logdebug("Starting execution")
 
             previous = self.executing
-            self.executing = req.status
+            self.executing = True
         
             self.start_execution()
+            success = True
         else:
             previous = self.executing            
-
+            success = True
 
         self.service_lock.release()
 
-        return previous
+        return [previous, success, remaining_time]
     set_execution_status_ros_srv.type = SetExecutionStatus
 
 
@@ -330,6 +347,28 @@ class BaseTaskExecutor(object):
         return map(self.instantiate_from_string_pair, argument_list)
 
 
+    def is_task_interruptible(self, task):
+        if task is None:
+            rospy.logwarn('is_task_interruptible passed a None')
+            return False
+
+        try:
+            srv_name = task.action + '_is_interruptible'
+            rospy.wait_for_service(srv_name, timeout=1)    
+            is_interruptible = rospy.ServiceProxy(srv_name, IsTaskInterruptible)
+            return is_interruptible().status
+        except rospy.ROSException as exc:
+            rospy.logdebug('%s service does not exist, treating as interruptible')
+            return True
+        except rospy.ServiceException as exc:
+            rospy.logwarn(exc.message)
+            return True
+
+
+
+
+
+# NOTE THIS AbstractTaskExecutor IS NOT USED BY THE CURRENT IMPLEMENTATION
 
 class AbstractTaskExecutor(BaseTaskExecutor):
 
@@ -355,6 +394,9 @@ class AbstractTaskExecutor(BaseTaskExecutor):
             self.log_task_event(self.active_task, TaskEvent.TASK_COMPLETE, now, warning)
 
             self.active_task = None            
+
+
+
 
     def cancel_active_task(self):
         self.cancel_active_task_cb(None)

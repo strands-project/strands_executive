@@ -125,10 +125,33 @@ set_execution_status = rospy.ServiceProxy(set_exe_stat_srv_name, SetExecutionSta
 try:
 	# add task to the execution framework
     task_id = add_task_srv(task)
-    # make sure execution is running -- this only needs to be done onece      
+    # make sure execution is running -- this only needs to be done once      
     set_execution_status(True)
 except rospy.ServiceException, e: 
 	print "Service call failed: %s"%e		
+```
+
+### Interruptibility at Execution Time
+
+By default the execution of tasks is interruptible (via actionlib preempt). If you do not wish your task to be interrupted you can provide the `IsTaskInterruptible.srv` service at the name `<task name>_is_interruptible`, e.g. `do_dishes_is_interruptible` from the example above. You can change the return value at runtime as this will be checked prior to interruption. 
+
+Here's an example from the node which provides the `wait_action`.
+
+```python
+
+class WaitServer:
+    def __init__(self):         
+        self.server = actionlib.SimpleActionServer('wait_action', WaitAction, self.execute, False) 
+        self.server.start()
+        # this is not necessary in this node, but included for testing purposes
+        rospy.Service('wait_action_is_interruptible', IsTaskInterruptible, self.is_interruptible)
+
+    def is_interruptible(self, req):
+        # rospy.loginfo('Yes, interrupt me, go ahead')
+        # return True
+        rospy.loginfo('No, I will never stop')
+        return False
+
 ```
 
 ## Creating a Routine

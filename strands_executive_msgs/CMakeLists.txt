@@ -38,6 +38,7 @@ add_service_files(
   AddMdpModel.srv
   UpdateNavStatistics.srv
   AddDeleteSpecialWaypoint.srv
+  IsTaskInterruptible.srv
 )
 
 

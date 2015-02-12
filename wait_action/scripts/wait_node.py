@@ -5,13 +5,21 @@ import actionlib
 from wait_action.msg import *
 from datetime import *
 from std_srvs.srv import Empty, EmptyResponse
+from strands_executive_msgs.srv import IsTaskInterruptible
+
 
 class WaitServer:
     def __init__(self):         
         self.server = actionlib.SimpleActionServer('wait_action', WaitAction, self.execute, False) 
         self.server.start()
+        # this is not necessary in this node, but included for testing purposes
+        rospy.Service('wait_action_is_interruptible', IsTaskInterruptible, self.is_interruptible)
 
-
+    def is_interruptible(self, req):
+        # rospy.loginfo('Yes, interrupt me, go ahead')
+        return True
+        # rospy.loginfo('No, I will never stop')
+        # return False
 
     def end_wait(self, req):
         
