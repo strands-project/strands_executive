@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
+
 from strands_executive_msgs.msg import Task, TaskEvent
 from strands_executive_msgs.srv import *
 import mongodb_store.util as dc_util
@@ -269,6 +270,9 @@ class BaseTaskExecutor(object):
             previous = self.executing
             self.executing = req.status
 
+            if self.active_task is not None:
+                rospy.loginfo('Active task is interruptible? %s' % self.is_task_interruptible(self.active_task))
+
             self.pause_execution()
 
         elif not self.executing and req.status:
@@ -330,6 +334,22 @@ class BaseTaskExecutor(object):
         return map(self.instantiate_from_string_pair, argument_list)
 
 
+    def is_task_interruptible(self, task):
+        if task is None:
+            rospy.logwarn('is_task_interruptible passed a None')
+            return False
+
+        try:
+            srv_name = task.action + '_is_interruptible'
+            rospy.wait_for_service(srv_name, timeout=1)    
+            is_interruptible = rospy.ServiceProxy(srv_name, IsTaskInterruptible)
+            return is_interruptible()
+        except rospy.ROSException as exc:
+            rospy.logdebug('%s service does not exist, treating as interruptible')
+            return True
+        except rospy.ServiceException as exc:
+            rospy.logwarn(exc.message)
+            return True
 
 class AbstractTaskExecutor(BaseTaskExecutor):
 
@@ -355,6 +375,9 @@ class AbstractTaskExecutor(BaseTaskExecutor):
             self.log_task_event(self.active_task, TaskEvent.TASK_COMPLETE, now, warning)
 
             self.active_task = None            
+
+
+
 
     def cancel_active_task(self):
         self.cancel_active_task_cb(None)

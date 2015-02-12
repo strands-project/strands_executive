@@ -20,7 +20,7 @@ def get_services():
     return add_tasks_srv, set_execution_status
 
 
-def create_wait_task(node, secs=rospy.Duration(5)):
+def create_wait_task(node, secs=rospy.Duration(10)):
     wait_task = Task(action='wait_action',start_node_id=node, end_node_id=node, max_duration=secs)
     task_utils.add_time_argument(wait_task, rospy.Time())
     task_utils.add_duration_argument(wait_task, secs)
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     set_execution_status(True)
 
     # now let's stop execution while it's going on
-    rospy.sleep(2)
+    rospy.sleep(4)
     set_execution_status(False)
 
     # # and start again
