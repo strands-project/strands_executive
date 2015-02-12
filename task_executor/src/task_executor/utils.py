@@ -24,3 +24,5 @@ class TestTaskAction(object):
             print "done normal"            
             self.task_server.set_succeeded()
 
+    def start(self):
+        self.task_server.start()
