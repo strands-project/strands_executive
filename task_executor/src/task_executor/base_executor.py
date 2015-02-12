@@ -264,16 +264,22 @@ class BaseTaskExecutor(object):
         
         self.service_lock.acquire()
 
+        success = False
+
+        remaining_time = rospy.Duration(0)
+
+
         if self.executing and not req.status:
             rospy.logdebug("Pausing execution")
 
             previous = self.executing
             self.executing = req.status
 
-            if self.active_task is not None:
-                rospy.loginfo('Active task is interruptible? %s' % self.is_task_interruptible(self.active_task))
-
-            self.pause_execution()
+            if self.is_task_interruptible(self.active_task):
+                self.pause_execution()
+                success = True            
+            else:
+                remaining_time = self.active_task_completes_by - rospy.get_rostime()
 
         elif not self.executing and req.status:
             rospy.logdebug("Starting execution")
@@ -282,13 +288,14 @@ class BaseTaskExecutor(object):
             self.executing = req.status
         
             self.start_execution()
+            success = True
         else:
             previous = self.executing            
-
+            success = True
 
         self.service_lock.release()
 
-        return previous
+        return [previous, success, remaining_time]
     set_execution_status_ros_srv.type = SetExecutionStatus
 
 
@@ -343,13 +350,19 @@ class BaseTaskExecutor(object):
             srv_name = task.action + '_is_interruptible'
             rospy.wait_for_service(srv_name, timeout=1)    
             is_interruptible = rospy.ServiceProxy(srv_name, IsTaskInterruptible)
-            return is_interruptible()
+            return is_interruptible().status
         except rospy.ROSException as exc:
             rospy.logdebug('%s service does not exist, treating as interruptible')
             return True
         except rospy.ServiceException as exc:
             rospy.logwarn(exc.message)
             return True
+
+
+
+
+
+# NOTE THIS AbstractTaskExecutor IS NOT USED BY THE CURRENT IMPLEMENTATION
 
 class AbstractTaskExecutor(BaseTaskExecutor):
 

@@ -1,4 +1,9 @@
 # The task to demanded from the execution system. This overrides all currently queued tasks and is executed immediately
 Task task
 ---
+# Whether the task was successfully demanded
+bool success
+# If successful, the id of the task that was demanded
 uint64 task_id
+# If not successful, how long you may have to wait until the call might be successful, i.e. how long is left on the current execution which refused to be interrupted
+duration remaining_execution_time

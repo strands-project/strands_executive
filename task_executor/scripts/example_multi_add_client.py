@@ -40,11 +40,13 @@ if __name__ == '__main__':
     task_id = add_task(tasks)
     
     # Set the task executor running (if it isn't already)
-    set_execution_status(True)
+    resp = set_execution_status(True)
 
     # now let's stop execution while it's going on
     rospy.sleep(4)
-    set_execution_status(False)
+    resp = set_execution_status(False)
+    rospy.loginfo('Success: %s' % resp.success)
+    rospy.loginfo('Wait: %s' % resp.remaining_execution_time)
 
     # # and start again
     # rospy.sleep(2)
