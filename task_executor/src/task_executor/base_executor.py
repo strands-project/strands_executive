@@ -179,6 +179,12 @@ class BaseTaskExecutor(object):
         return req.task.task_id
     add_task_ros_srv.type=AddTask
 
+    def get_active_task_ros_srv(self, req):
+        """
+        Gets the currently executing task.
+        """
+        return [self.active_task]
+    get_active_task_ros_srv.type=GetActiveTask
 
     def add_tasks_ros_srv(self, req):
         """

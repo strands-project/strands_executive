@@ -43,10 +43,10 @@ if __name__ == '__main__':
     resp = set_execution_status(True)
 
     # now let's stop execution while it's going on
-    rospy.sleep(4)
-    resp = set_execution_status(False)
-    rospy.loginfo('Success: %s' % resp.success)
-    rospy.loginfo('Wait: %s' % resp.remaining_execution_time)
+    # rospy.sleep(4)
+    # resp = set_execution_status(False)
+    # rospy.loginfo('Success: %s' % resp.success)
+    # rospy.loginfo('Wait: %s' % resp.remaining_execution_time)
 
     # # and start again
     # rospy.sleep(2)

@@ -39,6 +39,7 @@ add_service_files(
   UpdateNavStatistics.srv
   AddDeleteSpecialWaypoint.srv
   IsTaskInterruptible.srv
+  GetActiveTask.srv
 )
 
 
