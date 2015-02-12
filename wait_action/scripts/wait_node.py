@@ -17,9 +17,9 @@ class WaitServer:
 
     def is_interruptible(self, req):
         # rospy.loginfo('Yes, interrupt me, go ahead')
-        # return True
-        rospy.loginfo('No, I will never stop')
-        return False
+        return True
+        # rospy.loginfo('No, I will never stop')
+        # return False
 
     def end_wait(self, req):
         

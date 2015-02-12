@@ -201,24 +201,29 @@ class BaseTaskExecutor(object):
         """
         Demand a the task from the execution framework.
         """
-     
-        self.service_lock.acquire()
-     
-        req.task.task_id = self.task_counter        
-        self.task_counter += 1
-        req.task.execution_time = rospy.get_rostime()
+        try:            
+            self.service_lock.acquire()
 
-        # stop anything else
-        if self.active_task is not None:
-            self.cancel_active_task()
+            if self.active_task is not None and not self.is_task_interruptible(self.active_task):
+                return [0, False, self.active_task_completes_by - rospy.get_rostime()]
 
-        # and inform implementation to let it take action
-        self.task_demanded(req.task, self.active_task)                        
+            req.task.task_id = self.task_counter        
+            self.task_counter += 1
+            req.task.execution_time = rospy.get_rostime()
 
-        self.log_task_event(req.task, TaskEvent.DEMANDED, rospy.get_rostime())                
+            # stop anything else
+            if self.active_task is not None:
+                self.cancel_active_task()
 
-        self.service_lock.release()
-        return req.task.task_id
+            # and inform implementation to let it take action
+            self.task_demanded(req.task, self.active_task)                        
+
+            self.log_task_event(req.task, TaskEvent.DEMANDED, rospy.get_rostime())                
+            return [req.task.task_id, True, rospy.Duration(0)]        
+        finally:    
+            self.service_lock.release()
+
+
     demand_task_ros_srv.type=DemandTask
 
     def cancel_task_ros_srv(self, req):
@@ -273,10 +278,11 @@ class BaseTaskExecutor(object):
             rospy.logdebug("Pausing execution")
 
             previous = self.executing
-            self.executing = req.status
+            
 
             if self.is_task_interruptible(self.active_task):
                 self.pause_execution()
+                self.executing = False
                 success = True            
             else:
                 remaining_time = self.active_task_completes_by - rospy.get_rostime()
@@ -285,7 +291,7 @@ class BaseTaskExecutor(object):
             rospy.logdebug("Starting execution")
 
             previous = self.executing
-            self.executing = req.status
+            self.executing = True
         
             self.start_execution()
             success = True
