@@ -1,0 +1,5 @@
+---
+# The current execution status
+bool status
+
+

@@ -131,6 +131,10 @@ except rospy.ServiceException, e:
 	print "Service call failed: %s"%e		
 ```
 
+### Interruptibility at Execution Time
+
+By default the execution of tasks is interruptible (via actionlib preempt). If you do not wish your task to be interrupted you can provide the `IsTaskInterruptible.srv` service at the name `<task name>_is_interruptible`, e.g. `do_dishes_is_interruptible` from the example above. You can change the return value at runtime as this will be checked prior to interruption. 
+
 ## Creating a Routine
 
 The scenario use case for task execution is that the robot has a *daily routine* which is a list of tasks which it carries out every day. This can be created with the `task_routine.DailyRoutine` object which is configured with start and end times for the robot's daily activities:
