@@ -4,7 +4,7 @@ import sys
 import rospy
 from mdp_plan_exec.top_map_mdp import TopMapMdp
 from mdp_plan_exec.product_mdp import ProductMdp
-from mdp_plan_exec.prism_client import PrismClient
+from mdp_plan_exec.prism_java_talker import PrismJavaTalker
 
 if __name__ == '__main__':
     rospy.init_node('test_client')
@@ -16,14 +16,13 @@ if __name__ == '__main__':
     #top_map_mdp.update_nav_statistics()
     top_map_mdp.write_prism_model('/home/bruno/Desktop/teste.prism')
     
-    #directory = '/home/bruno/Desktop/'
+    directory = '/home/bruno/Desktop/'
 
-    #port=8085    
-    #prism_client=PrismClient(port, directory)
-    #prism_client.add_model('test','/home/bruno/Desktop/teste.prism')
-    #prism_client.get_state_vector('test', 'R{"time"}min=? [ (F "WayPoint1") & (F "WayPoint6")]')
-    #prism_client.get_policy('test', 'R{"time"}min=? [ (!"WayPoint3" U "WayPoint5")]')
-    #prism_client.get_policy('test', 'R{"time"}min=? [ (F "WayPoint1") & (F "WayPoint6") & (F "WayPoint4")]')
+    port=8085    
+    prism_client=PrismJavaTalker(port, directory, "teste.prism")
+    prism_client.check_model('R{"time"}min=? [ (F "WayPoint3") & (F "WayPoint5")]')
+    prism_client.get_state_vector('R{"time"}min=? [ (F "WayPoint3") & (F "WayPoint5")]')
+    prism_client.get_policy('R{"time"}min=? [ (!"WayPoint3" U "WayPoint5")]')
     #prism_client.get_policy('test', 'R{"time"}min=? [ (F "WayPoint1") & (F "WayPoint6")]')
     #prism_client.get_policy('test', 'Pmax=? [ ((!"WayPoint3") U "WayPoint5") & ((!"WayPoint3") U "WayPoint6")]')
     
@@ -45,4 +44,4 @@ if __name__ == '__main__':
     ##doors_top_map_mdp.write_prism_model('/home/bruno/Desktop/doors.prism')
 
     
-    #prism_client.shutdown(False)
+    prism_client.shutdown(False)

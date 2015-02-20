@@ -1,5 +1,4 @@
 from mdp import Mdp, MdpTransitionDef, MdpPropDef
-#from strands_navigation_msgs.msg import TopologicalMap
 import rospy
 from strands_navigation_msgs.srv import GetTopologicalMap
 
