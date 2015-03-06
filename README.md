@@ -14,7 +14,7 @@ roslaunch mongodb_store datacentre.launch
 and you need to be offering a 'topological_navigation', GotoNodeAction action. If you're not running the full topological navigation system, you can run
 
 ```bash
-rosrun task_executor test_task_action.py
+roslaunch topological_utils dummy_topological_navigation.launch
 ```
 
 which will fake this.
@@ -130,6 +130,14 @@ try:
 except rospy.ServiceException, e: 
 	print "Service call failed: %s"%e		
 ```
+### Execution Information
+
+The current execution status can be obtained using the service `strands_executive_msgs/GetExecutionStatus` typically on `/task_executor/get_execution_status`. True means the execution system is running, false means that the execution system has either not been started or it has been paused (see below).
+
+To see the full schedule subscribe to the topic `/current_schedule` which gets the list of tasks in execution order. If `currently_executing` that means the first element of `execution_queue` is the currently active task. If it is false then the system is delaying until it starts executing that task.
+
+To just get the currently active task, use the service `strands_executive_msgs/GetActiveTask` on `/task_executor/get_active_task`. If the returned task has a `task_id` of `0` then there is no active task (as you can't return `None` over a service).
+
 
 ### Interruptibility at Execution Time
 
