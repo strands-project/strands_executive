@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 
 
-from urllib import urlretrieve
 from tempfile import mkstemp
-from icalendar import Calendar, Event, vDatetime
 from strands_executive_msgs.msg import Task
 from os import remove
 from std_msgs.msg import Time
@@ -12,50 +10,54 @@ import rospy
 from datetime import datetime
 from time import mktime
 from yaml import load
+import urllib
+import json
+from dateutil import parser
+from dateutil import tz
+
 
 
 class ICalTools:
 
     def from_url(self, url):
-        (_, f) = mkstemp()
-
-        try:
-            urlretrieve(url, f)
-            self.from_file(f)
-        finally:
-            try:
-                remove(f)
-            except:
-                rospy.logwarn('could not delete temp file %s', f)
+        response = urllib.urlopen(url)
+        self.gcal = json.loads(response.read())
 
     def from_file(self, fname):
         g = open(fname, 'rb')
-        self.gcal = Calendar.from_ical(g.read())
+        self.gcal = json.loads(g.read())
         g.close()
 
     def to_task(self):
-        t = Task()
+        tz_utc = tz.gettz('UTC')
         tasks = []
-        for component in self.gcal.walk():
-            if component.name == "VEVENT":
-                start = mktime(component.decoded('dtstart').timetuple())
-                end = mktime(component.decoded('dtend').timetuple())
-                if component.get('RRULE') is not None:
-                    rrule = component.decoded('RRULE')
-                    print "RRULE: %s" % rrule['FREQ']
-                if component.get('RECURRENCE-ID') is not None:
-                    recurrence_id = component.decoded('RECURRENCE-ID')
-                    print "RI: %s" % recurrence_id
-                t.start_after = rospy.Time.from_sec(start)
-                t.end_before = rospy.Time.from_sec(end)
+        #pprint(self.gcal)
+        for component in self.gcal['items']:
+            #pprint(component)
+            try:
+                start = parser.parse(component['start']['dateTime'])
+                start_utc = start.astimezone(tz_utc)
+                end = parser.parse(component['end']['dateTime'])
+                end_utc = end.astimezone(tz_utc)
+
+                t = Task()
+                t.start_after = rospy.Time.from_sec(mktime(start_utc.timetuple()))
+                t.end_before = rospy.Time.from_sec(mktime(end_utc.timetuple()))
+                if 'location' in component:
+                    t.start_node_id = component['location']
+                    t.end_node_id = component['location']
                 t.max_duration = (t.end_before - t.start_after) / 2
-                t.action = component.get('summary')
-                t.arguments = load(component.get('description'))
+                t.action = component['summary']
+                if 'description' in component:
+                    t.arguments = load(component['description'])
                 tasks.append(t)
+            except Exception, e:
+                rospy.logerr('failed to convert event from iCal to task: %s', str(e))
         return tasks
 
 if __name__ == '__main__':
+    rospy.init_node('ical_test')
     ical = ICalTools()
-    #ical.from_url('https://www.google.com/calendar/ical/hanheide.net_c8l2kpajdshp8p1bc3u6r1qsjk%40group.calendar.google.com/private-176de9a6b071a9c0f4c84d06b3dc7b2d/basic.ics')
-    ical.from_file("/Volumes/users/Users/marc/Downloads/basic (2).ics")
+    #ical.from_url('https://www.googleapis.com/calendar/v3/calendars/henry.strands%40hanheide.net/events?key=AIzaSyC1rqV2yecWwV0eLgmoQH7m7PdLNX1p6a0&singleEvents=true&orderBy=startTime&maxResults=2500')
+    ical.from_file("test.json")
     pprint(ical.to_task())
