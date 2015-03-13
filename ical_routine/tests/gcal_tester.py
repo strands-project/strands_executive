@@ -8,7 +8,7 @@ import rostest
 import sys
 
 
-from ical_routine.ical_tools import GCal
+from ical_routine.tools import GCal
 from roslib.packages import find_resource
 
 
