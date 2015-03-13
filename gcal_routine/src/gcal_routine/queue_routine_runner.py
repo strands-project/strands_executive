@@ -1,6 +1,7 @@
 import rospy
 from threading import Thread
 from datetime import timedelta
+from .tools import rostime_str
 
 
 class GCalRoutineRunner(object):
@@ -23,13 +24,11 @@ class GCalRoutineRunner(object):
         else:
             self.tasks_allowed = tasks_allowed_fn
 
-        Thread(target=self.routine_run).start()
+        Thread(target=self._routine_run).start()
 
     def add_task(self, id, task):
-        rospy.loginfo('new task %s', id)
+        rospy.loginfo('adding %s to the set of tasks', id)
         self.waiting_tasks[id] = task
-
-        self.schedule_tasks()
 
     def remove_task(self, i, task):
         rospy.loginfo('remove task %s', i)
@@ -45,35 +44,42 @@ class GCalRoutineRunner(object):
     def now(self):
         return rospy.get_rostime()
 
-    def schedule_tasks(self):
+    def get_schedulable_tasks(self):
         now = self.now()
         tasks = []
-        print self.waiting_tasks
         for (i, task) in self.waiting_tasks.copy().items():
             if task.end_before.secs - now.secs < 0:
-                rospy.loginfo('removed outdated task %s', i)
+                rospy.loginfo('removed outdated task %s that was'
+                              ' planned to end until %s',
+                              i, rostime_str(task.end_before))
                 self.remove_task(i, task)
                 continue
             if task.start_after - self.pre_schedule_delay < now:
-                rospy.loginfo('task %s should be scheduled now.', i)
+                rospy.loginfo('task %s to start after %s should'
+                              ' be scheduled now.',
+                              i, rostime_str(task.start_after))
                 self.remove_task(i, task)
                 tasks.append(task)
             else:
                 rospy.logdebug('task %s remains waiting.', i)
-        self._schedule_tasks(tasks)
+        return tasks
 
-    def _schedule_tasks(self, tasks):
+    def schedule_tasks(self, tasks):
         rospy.loginfo('Sending %d tasks to the scheduler' % (len(tasks)))
         if len(tasks) > 0:
-            if self.tasks_allowed() and self.add_tasks_srv is not None:
+            if self.tasks_allowed():
                 self.add_tasks_srv(tasks)
             else:
                 rospy.loginfo('Provided function prevented tasks'
                               ' being send to the scheduler')
 
-    def routine_run(self):
+    def _routine_run(self):
         while not rospy.is_shutdown():
-            self.schedule_tasks()
+            rospy.logdebug('looking for schedule-able tasks')
+            t = self.get_schedulable_tasks()
+            rospy.logdebug('found %d task suitable for scheduling', len(t))
+            if self.add_tasks_srv is not None:
+                self.schedule_tasks(t)
             # sleep until next check
             target = rospy.get_rostime()
             target.secs = target.secs + self.update_wait

@@ -9,6 +9,7 @@ import sys
 
 
 from gcal_routine.tools import GCal
+from gcal_routine.tools import rostime_str
 from gcal_routine.queue_routine_runner import GCalRoutineRunner
 from roslib.packages import find_resource
 
@@ -34,20 +35,28 @@ class GCalTest(unittest.TestCase):
                     add_cb=self._added, remove_cb=self._removed,
                     file_name=self.filename)
         self.assertEqual(len(gcal.get_task_list()), 0)
-        self.assertTrue(gcal.update())
+        added = []
+        removed = []
+        self.assertTrue(gcal.update(added, removed))
+        self.assertEqual(len(added), 4)
         self.assertEqual(len(gcal.get_task_list()), 4)
         gcal.shift_to_now()
 
     def test_runner(self):
-        runner = GCalRoutineRunner(None)
+        runner = GCalRoutineRunner(None, update_wait=0.5)
         gcal = GCal(None,
                     None,
                     add_cb=runner.add_task, remove_cb=runner.remove_task,
                     file_name=self.filename)
-        self.assertTrue(gcal.update())
+        added = []
+        removed = []
+        self.assertTrue(gcal.update(added, removed))
         gcal.shift_to_now()
-        runner.schedule_tasks()
-
+        self.assertEqual(len(gcal.get_task_list()), 4)
+        rospy.sleep(5)
+        # after this time, the first task should already
+        # be sent to the scheduler
+        self.assertEqual(len(runner.waiting_tasks), 3)
 
 
 if __name__ == '__main__':

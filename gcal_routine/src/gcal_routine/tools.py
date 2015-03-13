@@ -14,6 +14,9 @@ from datetime import datetime
 from threading import Thread
 
 
+def rostime_str(rt):
+    return str(datetime.fromtimestamp(rt.secs))
+
 class GCal:
 
     def __init__(self, calendar, key, add_cb=None,
@@ -56,16 +59,17 @@ class GCal:
         if len(times) < 1:
             return
         m = min(times)-rospy.get_rostime()
-        rospy.loginfo('now is %s', str(datetime.fromtimestamp(rospy.get_rostime().secs)))
+        rospy.logdebug('now is %s', rostime_str(rospy.get_rostime()))
         for s in self.events.values():
             s.start_after = s.start_after - m
             s.end_before = s.end_before - m
-            sd = datetime.fromtimestamp(s.start_after.secs)
-            ed = datetime.fromtimestamp(s.end_before.secs)
-            rospy.loginfo('new event times for %s: %s -> %s', s.action, str(sd), str(ed))
+            rospy.logdebug('new event times for %s: %s -> %s',
+                           s.action,
+                           rostime_str(s.start_after),
+                           rostime_str(s.end_before))
 
 
-    def update(self, added=[], removed=[]):
+    def update(self, added, removed):
         rospy.loginfo('updating from google calendar %s', self.uri)
         self.previous_events = self.events.copy()
         if self.uri.lower().startswith('http'):
@@ -77,7 +81,8 @@ class GCal:
             g.close()
         self._to_task_list()
         if self._find_changes(added, removed):
-            rospy.loginfo('there were changes in the calendar to process')
+            rospy.loginfo('there were changes in the calendar to process +:%d -:%d',
+                          len(added), len(removed))
             if self.add_cb is not None:
                 for a in added:
                     self.add_cb(a, self.events[a])
