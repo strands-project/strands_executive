@@ -15,13 +15,13 @@ def unix_time(dt):
     return delta.total_seconds()
 
 
-class IcalRoutineRunner(object):
+class GCalRoutineRunner(object):
     """ An object for running the daily schedule of a robot.
     """
 
     def __init__(self, add_tasks_srv,
                  pre_start_window=timedelta(hours=0.25), tasks_allowed_fn=None):
-        super(IcalRoutineRunner, self).__init__()
+        super(GCalRoutineRunner, self).__init__()
 
         self.pre_schedule_delay = rospy.Duration(pre_start_window.total_seconds())
 
