@@ -9,6 +9,7 @@ import urllib
 import json
 from dateutil import parser
 from dateutil import tz
+from datetime import datetime
 
 from threading import Thread
 
@@ -50,6 +51,20 @@ class GCal:
             while rospy.get_rostime() < target and not rospy.is_shutdown():
                 rospy.sleep(1)
 
+    def shift_to_now(self):
+        times = [s.start_after for s in self.events.values()]
+        if len(times) < 1:
+            return
+        m = min(times)-rospy.get_rostime()
+        rospy.loginfo('now is %s', str(datetime.fromtimestamp(rospy.get_rostime().secs)))
+        for s in self.events.values():
+            s.start_after = s.start_after - m
+            s.end_before = s.end_before - m
+            sd = datetime.fromtimestamp(s.start_after.secs)
+            ed = datetime.fromtimestamp(s.end_before.secs)
+            rospy.loginfo('new event times for %s: %s -> %s', s.action, str(sd), str(ed))
+
+
     def update(self, added=[], removed=[]):
         rospy.loginfo('updating from google calendar %s', self.uri)
         self.previous_events = self.events.copy()
@@ -65,10 +80,10 @@ class GCal:
             rospy.loginfo('there were changes in the calendar to process')
             if self.add_cb is not None:
                 for a in added:
-                    self.add_cb(self.events[a])
+                    self.add_cb(a, self.events[a])
             if self.remove_cb is not None:
                 for r in removed:
-                    self.remove_cb(self.previous_events[r])
+                    self.remove_cb(a, self.previous_events[r])
             return True
         else:
             rospy.logdebug('no changes, keep watching')
