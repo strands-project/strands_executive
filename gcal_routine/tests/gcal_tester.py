@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-PKG = 'ical_routine'
+PKG = 'gcal_routine'
 NAME = 'gcal_tester'
 
 import rospy
@@ -8,7 +8,7 @@ import rostest
 import sys
 
 
-from ical_routine.tools import GCal
+from gcal_routine.tools import GCal
 from roslib.packages import find_resource
 
 

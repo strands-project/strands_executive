@@ -1,5 +1,0 @@
-<launch>
-
-  <test test-name="gcal_tester" pkg="ical_routine" type="gcal_tester.py" />
-
-</launch>
