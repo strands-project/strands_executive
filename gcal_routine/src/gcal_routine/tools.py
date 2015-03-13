@@ -20,17 +20,18 @@ def rostime_str(rt):
 class GCal:
 
     def __init__(self, calendar, key, add_cb=None,
-                 remove_cb=None, file_name=None):
+                 remove_cb=None, update_wait=60, file_name=None):
         self.tz_utc = tz.gettz('UTC')
         if file_name is not None:
             self.uri = file_name
         else:
             self.uri = self._get_url(calendar, key)
+        self.time_offset = rospy.Duration.from_sec(0)
         rospy.loginfo('using uri %s', self.uri)
         self.events = {}
         self.gcal = {}
         self.previous_events = {}
-        self.update_wait = 10
+        self.update_wait = update_wait
         self.add_cb = add_cb
         self.remove_cb = remove_cb
         self.update_worker = Thread(target=self._update_run)
@@ -47,7 +48,9 @@ class GCal:
     def _update_run(self):
         # make sure we can be killed here
         while not rospy.is_shutdown():
-            self.update()
+            added = []
+            removed = []
+            self.update(added, removed)
             # sleep until next check
             target = rospy.get_rostime()
             target.secs = target.secs + self.update_wait
@@ -58,23 +61,27 @@ class GCal:
         times = [s.start_after for s in self.events.values()]
         if len(times) < 1:
             return
-        m = min(times)-rospy.get_rostime()
+        self.time_offset = min(times) - rospy.get_rostime()
         rospy.logdebug('now is %s', rostime_str(rospy.get_rostime()))
         for s in self.events.values():
-            s.start_after = s.start_after - m
-            s.end_before = s.end_before - m
+            s.start_after = s.start_after - self.time_offset
+            s.end_before = s.end_before - self.time_offset
             rospy.logdebug('new event times for %s: %s -> %s',
                            s.action,
                            rostime_str(s.start_after),
                            rostime_str(s.end_before))
 
-
     def update(self, added, removed):
         rospy.loginfo('updating from google calendar %s', self.uri)
         self.previous_events = self.events.copy()
         if self.uri.lower().startswith('http'):
-            response = urllib.urlopen(self.uri)
-            self.gcal = json.loads(response.read())
+            try:
+                response = urllib.urlopen(self.uri)
+                self.gcal = json.loads(response.read())
+            except Exception, e:
+                rospy.logerror('failed to get response from %s: %s',
+                               self.uri, str(e))
+                return
         else:
             g = open(self.uri, 'rb')
             self.gcal = json.loads(g.read())
@@ -88,7 +95,7 @@ class GCal:
                     self.add_cb(a, self.events[a])
             if self.remove_cb is not None:
                 for r in removed:
-                    self.remove_cb(a, self.previous_events[r])
+                    self.remove_cb(r, self.previous_events[r])
             return True
         else:
             rospy.logdebug('no changes, keep watching')
@@ -119,8 +126,10 @@ class GCal:
         end_utc = end.astimezone(self.tz_utc)
 
         t = Task()
-        t.start_after = rospy.Time.from_sec(mktime(start_utc.timetuple()))
-        t.end_before = rospy.Time.from_sec(mktime(end_utc.timetuple()))
+        t.start_after = rospy.Time.from_sec(mktime(start_utc.timetuple())) \
+            - self.time_offset
+        t.end_before = rospy.Time.from_sec(mktime(end_utc.timetuple())) \
+            - self.time_offset
         if 'location' in gcal_event:
             t.start_node_id = gcal_event['location']
             t.end_node_id = gcal_event['location']

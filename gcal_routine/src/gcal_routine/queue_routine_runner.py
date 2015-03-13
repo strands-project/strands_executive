@@ -27,16 +27,20 @@ class GCalRoutineRunner(object):
         Thread(target=self._routine_run).start()
 
     def add_task(self, id, task):
-        rospy.loginfo('adding %s to the set of tasks', id)
         self.waiting_tasks[id] = task
+        rospy.loginfo('adding %s to the waiting queue.'
+                      ' Now we have %d tasks in the waiting queue.',
+                      id, len(self.waiting_tasks))
 
     def remove_task(self, i, task):
-        rospy.loginfo('remove task %s', i)
         if i in self.waiting_tasks:
             self.waiting_tasks.pop(i)
+            rospy.loginfo('removing %s from the waiting queue.'
+                          ' Now we have %d tasks in the waiting queue.',
+                          i, len(self.waiting_tasks))
         else:
             rospy.logwarn('task %s to be deleted was not in'
-                          'the waiting set. It may be from the past')
+                          ' the waiting set. It may be from the past', i)
 
     def _tasks_allowed_fn(self):
         return True
@@ -65,14 +69,16 @@ class GCalRoutineRunner(object):
         return tasks
 
     def schedule_tasks(self, tasks):
-        rospy.loginfo('Sending %d tasks to the scheduler' % (len(tasks)))
         if len(tasks) > 0:
-            if self.tasks_allowed():
-                self.add_tasks_srv(tasks)
-            else:
-                rospy.loginfo('Provided function prevented tasks'
-                              ' being send to the scheduler')
-
+            try:
+                if self.tasks_allowed():
+                    rospy.loginfo('Sending %d tasks to the scheduler' % (len(tasks)))
+                    self.add_tasks_srv(tasks)
+                else:
+                    rospy.loginfo('Provided function prevented tasks'
+                                  ' being send to the scheduler')
+            except Exception, e:
+                rospy.logerr('failed to call scheduler with error: %s', str(e))
     def _routine_run(self):
         while not rospy.is_shutdown():
             rospy.logdebug('looking for schedule-able tasks')
