@@ -1,13 +1,8 @@
 #!/usr/bin/env python
 
 
-from tempfile import mkstemp
 from strands_executive_msgs.msg import Task
-from os import remove
-from std_msgs.msg import Time
-from pprint import pprint
 import rospy
-from datetime import datetime
 from time import mktime
 from yaml import load
 import urllib
@@ -48,18 +43,7 @@ class GCal:
     def _update_run(self):
         # make sure we can be killed here
         while not rospy.is_shutdown():
-            added = []
-            removed = []
-            if self.update(added, removed):
-                rospy.loginfo('there were changes in the calendar to process')
-                if self.add_cb is not None:
-                    for a in added:
-                        self.add_cb(self.events[a])
-                if self.remove_cb is not None:
-                    for r in removed:
-                        self.remove_cb(self.previous_events[r])
-            else:
-                rospy.logdebug('no changes, keep watching')
+            self.update()
             # sleep until next check
             target = rospy.get_rostime()
             target.secs = target.secs + self.update_wait
@@ -76,7 +60,7 @@ class GCal:
             g = open(self.uri, 'rb')
             self.gcal = json.loads(g.read())
             g.close()
-        self.to_task_list()
+        self._to_task_list()
         if self._find_changes(added, removed):
             rospy.loginfo('there were changes in the calendar to process')
             if self.add_cb is not None:
@@ -108,7 +92,7 @@ class GCal:
         else:
             return False
 
-    def task_from_gcal(self, gcal_event):
+    def _task_from_gcal(self, gcal_event):
         start = parser.parse(gcal_event['start']['dateTime'])
         start_utc = start.astimezone(self.tz_utc)
         end = parser.parse(gcal_event['end']['dateTime'])
@@ -130,18 +114,11 @@ class GCal:
                               gcal_event['description'], str(e))
         return t
 
-    def to_task_list(self):
+    def _to_task_list(self):
         self.events = {}
         for gcal_event in self.gcal['items']:
             try:
                 k = gcal_event['id'] + gcal_event['updated']
-                self.events[k] = self.task_from_gcal(gcal_event)
+                self.events[k] = self._task_from_gcal(gcal_event)
             except Exception, e:
                 rospy.logerr('failed to convert event from iCal to task: %s', str(e))
-
-
-def add_func(a):
-    print 'added', a
-
-def remove_func(a):
-    print 'deleted', a
