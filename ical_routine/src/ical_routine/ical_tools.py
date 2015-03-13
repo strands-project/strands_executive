@@ -34,7 +34,10 @@ class GCal:
         self.update_wait = 10
         self.add_cb = add_cb
         self.remove_cb = remove_cb
-        self.update_worker = Thread(target=self._update_run).start()
+        self.update_worker = Thread(target=self._update_run)
+
+    def start_worker(self):
+        self.update_worker.start()
 
     def _get_url(self, calendar, key, max_results=2500):
         return 'https://www.googleapis.com/calendar/v3/calendars/' \
@@ -74,7 +77,21 @@ class GCal:
             self.gcal = json.loads(g.read())
             g.close()
         self.to_task_list()
-        return self._find_changes(added, removed)
+        if self._find_changes(added, removed):
+            rospy.loginfo('there were changes in the calendar to process')
+            if self.add_cb is not None:
+                for a in added:
+                    self.add_cb(self.events[a])
+            if self.remove_cb is not None:
+                for r in removed:
+                    self.remove_cb(self.previous_events[r])
+            return True
+        else:
+            rospy.logdebug('no changes, keep watching')
+            return False
+
+    def get_task_list(self):
+        return self.events
 
     def _find_changes(self, added=[], removed=[]):
         """
@@ -128,13 +145,3 @@ def add_func(a):
 
 def remove_func(a):
     print 'deleted', a
-
-
-if __name__ == '__main__':
-    rospy.init_node('ical_test')
-    ical = GCal('henry.strands%40hanheide.net',
-                'AIzaSyC1rqV2yecWwV0eLgmoQH7m7PdLNX1p6a0',
-                add_cb=add_func, remove_cb=remove_func)
-    #ical = GCal(None, 'AIzaSyC1rqV2yecWwV0eLgmoQH7m7PdLNX1p6a0',
-    #            file="test.json")
-    rospy.spin()
