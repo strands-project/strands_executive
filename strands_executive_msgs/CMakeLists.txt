@@ -34,8 +34,7 @@ add_service_files(
   SetExecutionStatus.srv 
   GetExecutionStatus.srv
   GetSchedule.srv
-  GetExpectedTravelTime.srv
-  AddMdpModel.srv
+  GetExpectedTravelTimesToWaypoint.srv
   UpdateNavStatistics.srv
   AddDeleteSpecialWaypoint.srv
   GetSpecialWaypoints.srv
