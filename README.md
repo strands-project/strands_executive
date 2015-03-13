@@ -1,39 +1,53 @@
 # STRANDS Executive
-Old documentation, being updated now (from 9.2.205)
 
-Executive control code for STRANDS robots. The basic unit of behaviour is a *task* as defined by `strands_executive_msgs/Task`. To get the robot to execute a task an appropriate instance of the `Task` message must be sent to the task executor framework. 
+An executive framework for a mobile robot. The basic unit of behaviour for the framework is a *task* as defined by `strands_executive_msgs/Task`. The framework triggers and manages the execution of tasks plus navigation between them. The framework includes a task scheduler to optimise the execution time of a list of times. 
 
-## Dependencies
 
-Notes, before you can run any of the scheduling stuff, you must run have the datacentre running, e.g.
+## Installation
+
+### Binary
+
+If you are using Ubuntu, the easiest way to install the executive framework is to [add the STRANDS apt releases repository](https://github.com/strands-project-releases/strands-releases/wiki#using-the-strands-repository). You can then run `sudo apt-get install ros-indigo-task-executor`. This will install the framework and it's dependencies alongside your existing ROS install under `/opt/ros/indigo`.
+
+### Source
+
+To compile from source you should clone this repository into your catkin workspace and compile as normal. For dependencies you will also need (at least) the following repsositories: [strands_navigation](https://github.com/strands-project/strands_navigation) and [mongodb_store](https://github.com/strands-project/mongodb_store). Source installs have been tested on Ubuntu 12.04, 14.04 and OS X.
+
+## Runtime Dependencies
+
+For the executive framework to function correctly, you must have the mongodb_store nodes running. These are used by the framework to store tasks with arbitrary arguments.
 
 ```bash
 roslaunch mongodb_store mongodb_store.launch
 ```
-or with path specifing, where should db be stored:
+or with path specifying, where should the db is stored:
 
 ```bash
 roslaunch mongodb_store mongodb_store.launch db_path:=/...
 ```
 
-and you need to be offering a 'topological_navigation', GotoNodeAction action. If you're not running the full topological navigation system, you can run
+Currently the framework abstracts over navigation actions using [the STRANDS topological navigation framework](https://github.com/strands-project/strands_navigation/tree/hydro-devel/topological_navigation). Therefore you must have this framework running. For testing, or if you're not running the full topological navigation system, you can run a simulple simulated topological system with the following command:
 
 ```bash
 roslaunch topological_utils dummy_topological_navigation.launch
 ```
 
-which will provide a fake map. TODO: more information about locations in map
+This produces a map with 9 nodes: `ChargingPoint` in the centre, with `v_-2`, `v_-1` to `v_2` running vertically and `h_-2` to `h_2` running horizontally, joining `ChargingPoint` in the middle.
+
+## Running the executive framework
+
+To start the executive framework, launch the following launch file.
+
+```bash
+roslaunch task_executor task-scheduler.launch
+```
+
 
 ## Running scheduled patrols
 
-To test the executive framework you can try running the robot around the topological map. To do this, first get your basic 2D navigation setup running (in simulation or reality). Next, build a [topological map](https://github.com/strands-project/strands_navigation/tree/hydro-devel/topological_navigation). Then (assuming you have no special transitions in your map), run the [monitored navigation](https://github.com/strands-project/strands_navigation/tree/hydro-devel/monitored_navigation) plus the topological navigation:
+To test the executive framework you can try running the robot around the topological map.
 
-```bash
-roslaunch monitored_navigation monitored_nav.launch
-roslaunch topological_navigation topological_navigation.launch map:=<topological_map_name> node_by_node:=false
-```
-
-Then you can start the executive framework:
+Start the executive framework:
 
 ```bash
 roslaunch task_executor task-scheduler.launch
@@ -45,39 +59,54 @@ With this up and running you can start the robot running continuous patrols usin
 rorun task_executor continuous_patrolling.py
 ```
 
-## Creating a Task
+If this runs successfully, then your basic systems is up and running safely.
 
-Most task instances will contain both the name of a [topological map node](https://github.com/strands-project/strands_navigation/tree/hydro-devel/topological_navigation) where the task should be executed, plus the name of a [SimpleActionServer](http://wiki.ros.org/actionlib) to be called at the node and its associated arguments. Tasks must contain one of these things, but not necessarily both (just a node name will just take the robot there, just an action will execute the action without moving the robot).
 
-To create a task, first create an instance of the `Task` message type. Examples are given in Python, as the helper functions currently only exist for Python, but C++ is also possible (and C++ helpers will be added soon).
+## Tasks
+
+This executive framework, schedules and manages the execution of *tasks*. A task maps directly to the execution of an [actionlib action server](http://wiki.ros.org/actionlib), allowing you to resuse or integrate your desired robot behaviours in a widely used ROS framework.
+
+Most task instances will contain both the name of a [topological map node](https://github.com/strands-project/strands_navigation/tree/hydro-devel/topological_navigation) where the task should be executed, plus the name of a [SimpleActionServer](http://wiki.ros.org/actionlib) to be called at the node and its associated arguments. Tasks must contain one of these, but not necessarily both.
+
+To create a task, first create an instance of the `Task` message type. Examples are given in Python, as the helper functions currently only exist for Python, but C++ is also possible (and C++ helpers will be added if someone asks for them).
 
 ```python
 from strands_executive_msgs.msg import Task
 task = Task()
 ```
 
-Then you can set the node id for where the task will be executed (or you can do this inline):
+Then you can set the node id for where the task will be executed (or you can do this inline in the constructor):
 
 ```python
 task.start_node_id = 'WayPoint1'
 ```
+If you don't add a start node id then the task will be executed wherever the robot is located when it starts executing the task. If your task will end at a different location than it starts you can also specify `end_node_id`. This allows the scheduler to make better estimates of travel time between tasks.
 
 To add the name of the action server, do:
-
 ```python
 task.action = 'do_dishes'
 ```
+Where 'do_dishes' is replaced by the action name argument you would give to the `actionlib.SimpleActionClient` constructor. If you do not specify an action, the executive will assume the task is to simply visit the location indicated by `start_node_id`.
 
-Where 'do_dishes' is replaced by the first argument you would give to the `actionlib.SimpleActionClient` constructor.
-
-You should also set the expected duration of the task. This will be used by the scheduler and also by the execution framework to determine whether it things your task may be misbehaving. The duration is a `rospy.Duration` instance and is defined in seconds. 
+You must also set the maximum length of time you expect your task to execute for. This is be used by the execution framework to determine whether your task is executing correctly, and by the scheduler to work out execution times. The duration is a `rospy.Duration` instance and is defined in seconds. 
 
 ```python
+# wash dishes for an hour
 dishes_duration = 60 * 60
 task.max_duration = rospy.Duration(dishes_duration)
 ```
 
-If your actionlib goal type needs arguments, you must then add them to the task **in the order they are used in your goal type constructor**. You can either add plain string arguments (which are stored in the task itself) or ROS message instances (which are stored in the [mongodb_store](https://github.com/strands-project/mongodb_store)). For example, for the following action which is available under [task_executor/action/TestExecution.action](https://github.com/strands-project/strands_executive/blob/hydro-devel/task_executor/action/TestExecution.action)
+You can also specify the time window during which the task should be executed. 
+
+```python
+# don't start the task until 10 minutes in the future
+task.start_after = rospy.get_rostime() + rospy.Duration(10 * 60)
+# and give a window of three times the max execution time in which to execute
+task.end_before = task.start_after + rospy.Duration(task.start_after.to_sec() * 3)
+```
+
+
+If the goal of the actionlib server related to your task  needs arguments, you must then add them to the task **in the order they are used in your goal type constructor**. Arguments are added to the task using the provided helper functions from [strands_executive_msgs.task_utils](https://github.com/strands-project/strands_executive/blob/hydro-release/strands_executive_msgs/src/strands_executive_msgs/task_utils.py). For example, for the following action which is available under [task_executor/action/TestExecution.action](https://github.com/strands-project/strands_executive/blob/hydro-devel/task_executor/action/TestExecution.action), you need to supply a string argument followed by a pose, then an int then a float.
 
 ```
 # something to print
@@ -93,16 +122,19 @@ float32 a_float
 float32 percent_complete
 ```
 
-You need to supply a string argument followed by a pose, then an int then a float. To add the string, do the following
+ To add the string, do the following
 
 ```python
 from strands_executive_msgs import task_utils
-task_utils.add_string_argument(task, 'my string argumment goes here')
+task_utils.add_string_argument(task, 'my string argument goes here')
 ```
 
-For the pose, this must be added to the mongodb_store message store and then the `ObjectID` of the pose is used to communicate its location. This is done as follows
+For the pose, this must be added to the `mongodb_store message` store and then the `ObjectID` of the pose is used to communicate its location. This is done as follows
 
 ```python
+from mongodb_store.message_store import MessageStoreProxy
+msg_store = MessageStoreProxy()
+
 p = Pose()
 object_id = msg_store.insert(p)
 task_utils.add_object_id_argument(task, object_id, Pose)
@@ -115,26 +147,49 @@ task_utils.add_int_argument(task, 24)
 task_utils.add_float_argument(task, 63.678)
 ```
 
-### Registering a Task
 
-A single task can be registered with the task executor and started:
+### Adding a Task
+
+Tasks can be added to the task executor for future execution via the `add_tasks` service. These tasks are queued or scheduled for execution, and may not be executed immediately.
 
 ```python
-add_task_srv_name = '/task_executor/add_task'
+add_tasks_srv_name = '/task_executor/add_tasks'
 set_exe_stat_srv_name = '/task_executor/set_execution_status'
-rospy.wait_for_service(add_task_srv_name)
+rospy.wait_for_service(add_tasks_srv_name)
 rospy.wait_for_service(set_exe_stat_srv_name)
-add_task_srv = rospy.ServiceProxy(add_task_srv_name, AddTask)
-set_execution_status = rospy.ServiceProxy(set_exe_stat_srv_name, SetExecutionStatus)
+add_tasks_srv = rospy.ServiceProxy(add_tasks_srv_name, strands_executive_msgs.srv.AddTask)
+set_execution_status = rospy.ServiceProxy(set_exe_stat_srv_name, strands_executive_msgs.srv.SetExecutionStatus)
     
 try:
 	# add task to the execution framework
-    task_id = add_task_srv(task)
-    # make sure execution is running -- this only needs to be done once      
+    task_id = add_tasks_srv([task])
+    # make sure the executive is running -- this only needs to be done once for the whole system not for every task
     set_execution_status(True)
 except rospy.ServiceException, e: 
 	print "Service call failed: %s"%e		
 ```
+
+### Demanding a Task
+
+If you want your task to be executed immediately, pre-empting the current task execution (or navigation to that task), you can use the `demand_task` service:
+
+```python
+demand_task_srv_name = '/task_executor/demand_task'
+set_exe_stat_srv_name = '/task_executor/set_execution_status'
+rospy.wait_for_service(demand_task_srv_name)
+rospy.wait_for_service(set_exe_stat_srv_name)
+demand_task_srv = rospy.ServiceProxy(demand_task_srv_name, strands_executive_msgs.srv.DemandTask)
+set_execution_status = rospy.ServiceProxy(set_exe_stat_srv_name, strands_executive_msgs.srv.SetExecutionStatus)
+    
+try:
+    # demand task execution immedidately
+    task_id = demand_task_srv([task])
+    # make sure the executive is running -- this only needs to be done once for the whole system not for every task
+    set_execution_status(True)
+except rospy.ServiceException, e: 
+    print "Service call failed: %s"%e       
+```
+
 ### Execution Information
 
 The current execution status can be obtained using the service `strands_executive_msgs/GetExecutionStatus` typically on `/task_executor/get_execution_status`. True means the execution system is running, false means that the execution system has either not been started or it has been paused (see below).
@@ -146,7 +201,7 @@ To just get the currently active task, use the service `strands_executive_msgs/G
 
 ### Interruptibility at Execution Time
 
-By default the execution of tasks is interruptible (via actionlib preempt). If you do not wish your task to be interrupted you can provide the `IsTaskInterruptible.srv` service at the name `<task name>_is_interruptible`, e.g. `do_dishes_is_interruptible` from the example above. You can change the return value at runtime as this will be checked prior to interruption. 
+By default the execution of tasks is interruptible (via actionlib preempt). Interruptions happen if another task is demanded while a task is running, or if the task exceeds its execution duration. If you do not wish your task to be interrupted in these condition you can provide the `IsTaskInterruptible.srv` service at the name `<task name>_is_interruptible`, e.g. `do_dishes_is_interruptible` from the example above. You can change the return value at runtime as this will be checked prior to interruption. 
 
 Here's an example from the node which provides the `wait_action`.
 
@@ -169,7 +224,7 @@ class WaitServer:
 
 ## Creating a Routine
 
-The scenario use case for task execution is that the robot has a *daily routine* which is a list of tasks which it carries out every day. This can be created with the `task_routine.DailyRoutine` object which is configured with start and end times for the robot's daily activities:
+Our use case for task execution is that the robot has a *daily routine* which is a list of tasks which it carries out every day. Such are routine can be created with the `task_routine.DailyRoutine` object which is configured with start and end times for the robot's daily activities:
 
 ```python
 	# some useful times
@@ -200,8 +255,7 @@ Tasks are then added using the `repeat_every*` methods. These take the given tas
 ```
 
 
-The `DailyRoutine` is a static thing (just a bunch of convenience functions really). The routine tasks are passed to the `DailyRoutineRunner` which manages the creation of specific task instances according to the schedule, and then sends them to the scheduler before they need to be added to teh schedule. 
-
+The `DailyRoutine` declares the structure of the routine. The routine tasks must be passed to the `DailyRoutineRunner` to manage the creation of specific task instances and their addition to the task executor. 
 
 ```python
 
