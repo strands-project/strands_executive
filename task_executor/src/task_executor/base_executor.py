@@ -179,6 +179,12 @@ class BaseTaskExecutor(object):
         return req.task.task_id
     add_task_ros_srv.type=AddTask
 
+    def get_active_task_ros_srv(self, req):
+        """
+        Gets the currently executing task.
+        """
+        return [self.active_task]
+    get_active_task_ros_srv.type=GetActiveTask
 
     def add_tasks_ros_srv(self, req):
         """
@@ -211,12 +217,19 @@ class BaseTaskExecutor(object):
             self.task_counter += 1
             req.task.execution_time = rospy.get_rostime()
 
+
+
             # stop anything else
             if self.active_task is not None:
+                self.pause_execution()
+                self.executing = False
                 self.cancel_active_task()
 
             # and inform implementation to let it take action
             self.task_demanded(req.task, self.active_task)                        
+
+            if not self.executing:
+                self.start_execution()
 
             self.log_task_event(req.task, TaskEvent.DEMANDED, rospy.get_rostime())                
             return [req.task.task_id, True, rospy.Duration(0)]        
