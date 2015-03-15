@@ -40,7 +40,6 @@ class TaskConfigurator:
                         sp = StringPair()
                         self._fill_slots(a, sp)
                         dest.arguments.append(sp)
-                        print(type(sp))
                 else:
                     # a bit of a hacky way to check if we need to recurse...
                     if str(type(dest.__getattribute__(s))).startswith('<class ') \
@@ -56,6 +55,11 @@ class TaskConfigurator:
         if id in self.available_tasks:
             rospy.loginfo('found task %s in available tasks', id)
             self._fill_slots(self.available_tasks[id], task)
+        else:
+            rospy.logwarn('no task %s in available tasks, config only taken from event', id)
+
+    def fill_task_from_yaml(self, id, task, yaml):
+        self._fill_slots(yaml, task)
 
 
 class GCal:
@@ -76,6 +80,7 @@ class GCal:
         self.add_cb = add_cb
         self.remove_cb = remove_cb
         self.update_worker = Thread(target=self._update_run)
+        self.task_configurator = TaskConfigurator()
 
     def start_worker(self):
         self.update_worker.start()
@@ -176,9 +181,13 @@ class GCal:
             t.end_node_id = gcal_event['location']
         t.max_duration = (t.end_before - t.start_after) / 2
         t.action = gcal_event['summary']
+        self.task_configurator.fill_task(t.action, t)
         if 'description' in gcal_event:
             try:
                 extra_args = load(gcal_event['description'])
+                self.task_configurator.fill_task_from_yaml(extra_args,
+                                                           t, extra_args)
+                rospy.logdebug('adding extra args results in %s', str(t))
             except Exception, e:
                 rospy.logwarn("couldn't parse extra args %s: %s",
                               gcal_event['description'], str(e))

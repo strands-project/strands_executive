@@ -4,7 +4,7 @@
         'max_duration': {secs: 300, nsecs: 0},
         'arguments': [
             {'first': 'wait_duration', 'second': '3600'},
-            {'first': 'extra_arg', 'second': 'None'}
+            {'first': 'notify_user', 'second': 'True'}
         ]
     },
     'patrol': {
