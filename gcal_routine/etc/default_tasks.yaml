@@ -1,7 +1,11 @@
 {
     'wait': {
         'action': 'wait_action',
-        'max_duration': {secs: 300, nsecs: 0}
+        'max_duration': {secs: 300, nsecs: 0},
+        'arguments': [
+            {'first': 'wait_duration', 'second': '3600'},
+            {'first': 'extra_arg', 'second': 'None'}
+        ]
     },
     'patrol': {
         'action': 'wait_action',

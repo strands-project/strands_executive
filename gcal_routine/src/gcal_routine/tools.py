@@ -3,15 +3,17 @@ PKG = 'gcal_routine'
 
 
 from strands_executive_msgs.msg import Task
+from mongodb_store_msgs.msg import StringPair
 import rospy
 from time import mktime
-from yaml import load, parse
+from yaml import load
 import urllib
 import json
 from dateutil import parser
 from dateutil import tz
 from datetime import datetime
 from roslib.packages import find_resource
+from pprint import pprint
 
 from threading import Thread
 
@@ -32,15 +34,22 @@ class TaskConfigurator:
     def _fill_slots(self, src, dest):
         for s in dest.__slots__:
             if s in src:
-                # a bit of a hacky way to check if we need to recurse...
-                if str(type(dest.__getattribute__(s))).startswith('<class ') \
-                        or type(dest.__getattribute__(s)) == dict:
-                    self._fill_slots(src[s], dest.__getattribute__(s))
-                elif type(dest.__getattribute__(s)) == list:
-                    dest.__getattribute__(s).extend(src[s])
+                if s == 'arguments':
+                    # special case for attributes
+                    for a in src[s]:
+                        sp = StringPair()
+                        self._fill_slots(a, sp)
+                        dest.arguments.append(sp)
+                        print(type(sp))
                 else:
-                    dest.__setattr__(s, src[s])
-
+                    # a bit of a hacky way to check if we need to recurse...
+                    if str(type(dest.__getattribute__(s))).startswith('<class ') \
+                            or type(dest.__getattribute__(s)) == dict:
+                        self._fill_slots(src[s], dest.__getattribute__(s))
+                    elif type(dest.__getattribute__(s)) == list:
+                        dest.__getattribute__(s).extend(src[s])
+                    else:
+                        dest.__setattr__(s, src[s])
 
 
     def fill_task(self, id, task):
@@ -188,4 +197,4 @@ if __name__ == '__main__':
     tc = TaskConfigurator()
     t = Task()
     tc.fill_task('wait', t)
-    print t
+    pprint(t)
