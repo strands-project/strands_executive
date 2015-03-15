@@ -1,0 +1,10 @@
+{
+    'wait': {
+        'action': 'wait_action',
+        'max_duration': {secs: 300, nsecs: 0}
+    },
+    'patrol': {
+        'action': 'wait_action',
+        'max_duration': {secs: 30, nsecs: 0}
+    }
+}

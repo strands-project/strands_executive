@@ -1,21 +1,53 @@
 #!/usr/bin/env python
+PKG = 'gcal_routine'
 
 
 from strands_executive_msgs.msg import Task
 import rospy
 from time import mktime
-from yaml import load
+from yaml import load, parse
 import urllib
 import json
 from dateutil import parser
 from dateutil import tz
 from datetime import datetime
+from roslib.packages import find_resource
 
 from threading import Thread
 
 
 def rostime_str(rt):
     return str(datetime.fromtimestamp(rt.secs))
+
+
+class TaskConfigurator:
+
+    def __init__(self):
+        stream = open(rospy.get_param(
+            '~/available_tasks_conf_file',
+            find_resource(PKG, 'default_tasks.yaml')[0]),
+            'r')
+        self.available_tasks = load(stream)
+
+    def _fill_slots(self, src, dest):
+        for s in dest.__slots__:
+            if s in src:
+                # a bit of a hacky way to check if we need to recurse...
+                if str(type(dest.__getattribute__(s))).startswith('<class ') \
+                        or type(dest.__getattribute__(s)) == dict:
+                    self._fill_slots(src[s], dest.__getattribute__(s))
+                elif type(dest.__getattribute__(s)) == list:
+                    dest.__getattribute__(s).extend(src[s])
+                else:
+                    dest.__setattr__(s, src[s])
+
+
+
+    def fill_task(self, id, task):
+        if id in self.available_tasks:
+            rospy.loginfo('found task %s in available tasks', id)
+            self._fill_slots(self.available_tasks[id], task)
+
 
 class GCal:
 
@@ -151,3 +183,9 @@ class GCal:
                 self.events[k] = self._task_from_gcal(gcal_event)
             except Exception, e:
                 rospy.logerr('failed to convert event from iCal to task: %s', str(e))
+
+if __name__ == '__main__':
+    tc = TaskConfigurator()
+    t = Task()
+    tc.fill_task('wait', t)
+    print t
