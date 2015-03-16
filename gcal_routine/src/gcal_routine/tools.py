@@ -26,7 +26,7 @@ class TaskConfigurator:
 
     def __init__(self):
         stream = open(rospy.get_param(
-            '~/available_tasks_conf_file',
+            '~available_tasks_conf_file',
             find_resource(PKG, 'default_tasks.yaml')[0]),
             'r')
         self.available_tasks = load(stream)
