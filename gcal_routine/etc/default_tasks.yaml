@@ -2,10 +2,6 @@
     'wait': {
         'action': 'wait_action',
         'max_duration': {secs: 300, nsecs: 0},
-        'arguments': [
-            {'first': 'wait_duration', 'second': '3600'},
-            {'first': 'notify_user', 'second': 'True'}
-        ]
     },
     'patrol': {
         'action': 'wait_action',
