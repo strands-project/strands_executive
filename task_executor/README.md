@@ -114,20 +114,22 @@ Removes the task with the given id from the schedule. If this task is currently 
 	
 Gets the task which is currently executing.
 
-#### Parameters
+#### Published Topics
 
-`~save_problems` (`bool`)
+`task_executor/events` [strands_executive_msgs/TaskEvent](https://github.com/strands-project/strands_executive/blob/hydro-release/strands_executive_msgs/msg/TaskEvent.msg))
 
-If true, the scheduling problems received by the scheduler (via `get_schedule`) are stored into the [mongodb_store message store](http://wiki.ros.org/mongodb_store#Message_Persistence:_message_store_node.py) collection 'scheduling_problems'. This allows for later replay via `rosrun scheduler replay_scheduling_problems.py`. Defaults to true.
+Events that happen as the task executor passes through its state machine for each task.
 
-`~scheduler_version` (`int`)
+`current_schedule` [strands_executive_msgs/ExecutionStatus](https://github.com/strands-project/strands_executive/blob/hydro-release/strands_executive_msgs/msg/ExecutionStatus.msg))
 
-Switch the version of the algorithm the scheduler is running. If not specified, the Mudrova and Hawes algorithm is used. If the value XXX specified, then the original Coltin et al algorothm is used.
+The list of upcoming tasks and what is currently being executed.
 
-`~output_file` (`string`)
 
-Path to a desired output file. If set, output from the scheduler is saved to this file.
 
-`~timeout` (`int`)
+### `fifo_task_executor.py`
 
-How many seconds to allow the scheduler to run before timing out and returning (still potentially returning a result). The default value is to not have a timeout.
+A greatly simplified task executor that executes tasks in the order they are added, and only supports task addition and very little else when compared to the `scheduled_task_executor`.
+
+### `schedule_status.py`
+
+Prints a summary of the `current_schedule` topic.
