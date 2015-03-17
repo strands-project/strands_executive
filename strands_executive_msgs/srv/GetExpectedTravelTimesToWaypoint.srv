@@ -1,5 +1,5 @@
 string target_waypoint
-float64 epoch
+int64 epoch
 ---
 string[] source_waypoints
 float64[] travel_times

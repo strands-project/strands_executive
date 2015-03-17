@@ -23,14 +23,24 @@ class MdpTravelTimeEstimator(object):
         self.file_name=top_map+".mdp"
         self.travel_times_to_waypoint_service = rospy.Service('/mdp_plan_exec/get_expected_travel_times_to_waypoint', GetExpectedTravelTimesToWaypoint, self.travel_times_to_waypoint_cb)                
         self.prism_estimator=PrismJavaTalker(8085,self.directory, self.file_name)
+        
+        self.last_epoch=-1
 
     def travel_times_to_waypoint_cb(self,req):
-        #set state and use fremen to set costs and probs
-        self.top_map_mdp.write_prism_model(self.directory+self.file_name)
+        epoch=req.epoch
+        if req.epoch==0:
+            epoch=rospy.Time.now()
+            print "TETE", epoch
+        if epoch != self.last_epoch:
+            self.last_epoch=epoch
+            print "TESTE2", epoch
+            self.top_map_mdp.get_fremen_stats(epoch.secs)
+            #update model with fremen
+            self.top_map_mdp.write_prism_model(self.directory+self.file_name)
         specification='R{"time"}min=? [ ( F "' + req.target_waypoint + '") ]'
         state_vector=self.prism_estimator.get_state_vector(specification)
-        print state_vector       
-        return GetExpectedTravelTimesToWaypointResponse(travel_times=state_vector)
+        state_vector_names=self.top_map_mdp.parse_sta_to_waypoints(self.directory+'original.sta', len(state_vector))
+        return GetExpectedTravelTimesToWaypointResponse(source_waypoints=state_vector_names, travel_times=state_vector)
         
 
     def main(self):
