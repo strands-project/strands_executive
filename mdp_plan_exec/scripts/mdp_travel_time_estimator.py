@@ -52,11 +52,13 @@ class MdpTravelTimeEstimator(object):
 
 if __name__ == '__main__':
     rospy.init_node('mdp_travel_time_estimator')
-    
-    if len(sys.argv)<2:
-        print "usage: rosrun mdp_plan_exec mdp_travel_time_estimator <topological_map_name>"
+    filtered_argv=rospy.myargv(argv=sys.argv)        
+    if len(filtered_argv)<2:
+        rospy.logerr("No topological map provided. usage: rosrun mdp_plan_exec mdp_travel_time_estimator <topological_map_name>")
         sys.exit(2)
-        
+    elif len(filtered_argv)>2:
+        rospy.logwarn("Too many arguments. Assuming topological map is the first one. usage: rosrun mdp_plan_exec mdp_travel_time_estimator <topological_map_name>")
+    
     mdp_estimator =  MdpTravelTimeEstimator(sys.argv[1])
     mdp_estimator.main()
     
