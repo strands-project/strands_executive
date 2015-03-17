@@ -101,7 +101,15 @@ class DailyRoutine(object):
 
 
     def repeat_every_delta(self, tasks, delta=timedelta(hours=1), times=1, start_time=None, duration=None):
-
+        """
+        Repeat the given tasks every delta, a given number of times from the start time for the total given duration.
+        Args:
+            tasks: The list of tasks to repeat
+            delta (datetime.timedelta): The delta for the repetition (e.g. if this is one hour then the tasks repeat every hour, with each task having an hour time window for execution)
+            times (int): The number of times to repeat the tasks in each window
+            start_time (datetime.time): The time of day when the repetition should start.
+            duration (datetime.timedelta): The total length of time that should not be exceeded by the complete list of repetitions
+        """
         if start_time is None:
             start_time = self.daily_start
         if duration is None:
