@@ -1,4 +1,4 @@
-# STRANDS Executive
+# The STRANDS Executive Framework
 
 An executive framework for a mobile robot. The basic unit of behaviour for the framework is a *task* as defined by `strands_executive_msgs/Task`. The framework triggers and manages the execution of tasks plus navigation between them. The framework includes a task scheduler to optimise the execution time of a list of times. 
 
