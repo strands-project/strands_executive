@@ -1,4 +1,4 @@
-# The STRANDS Task Executive
+# Task Executive
 
 A set of nodes and libraries for defining and executing long-term task-level behaviour.
 
