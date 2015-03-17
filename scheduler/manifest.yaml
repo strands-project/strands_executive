@@ -1,0 +1,19 @@
+actions: []
+authors: Lenka Mudrova
+brief: ''
+bugtracker: ''
+depends:
+- catkin
+- roscpp
+- strands_executive_msgs
+- rospy
+- scipoptsuite
+- mongodb_store
+description: A task scheduler implemented using mixed integer programming.
+license: MIT
+maintainers: Nick Hawes <n.a.hawes@cs.bham.ac.uk>, Lenka Mudrova <lenka.mudrova@gmail.com>
+msgs: []
+package_type: package
+repo_url: ''
+srvs: []
+url: http://wiki.ros.org/scheduler

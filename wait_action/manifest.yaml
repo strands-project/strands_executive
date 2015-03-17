@@ -1,0 +1,23 @@
+actions:
+- Wait
+authors: Jane Doe <n.a.hawes@cs.bham.ac.uk>
+brief: ''
+bugtracker: ''
+depends:
+- strands_executive_msgs
+- std_srvs
+- actionlib
+- message_runtime
+- rospy
+- message_generation
+- catkin
+- actionlib_msgs
+description: The wait_action package implements an action to wait for a configurable
+  length of time, or until woken.
+license: MIT
+maintainers: nah <n.a.hawes@cs.bham.ac.uk>
+msgs: []
+package_type: package
+repo_url: ''
+srvs: []
+url: ''

@@ -1,0 +1,42 @@
+actions:
+- ExecutePolicy
+- LearnTravelTimes
+authors: Nick Hawes <n.a.hawes@cs.bham.ac.uk>
+brief: ''
+bugtracker: ''
+depends:
+- mongodb_store_msgs
+- catkin
+- actionlib_msgs
+- message_runtime
+- std_msgs
+- geometry_msgs
+- message_generation
+- rospy
+- actionlib
+description: Messages used to interact with the STRANDS executive framework.
+license: MIT
+maintainers: Nick Hawes <n.a.hawes@cs.bham.ac.uk>
+msgs:
+- DurationList
+- DurationMatrix
+- ExecutionStatus
+- Task
+- TaskEvent
+package_type: package
+repo_url: ''
+srvs:
+- AddDeleteSpecialWaypoint
+- AddMdpModel
+- AddTask
+- AddTasks
+- CancelTask
+- DemandTask
+- GetActiveTask
+- GetExecutionStatus
+- GetExpectedTravelTime
+- GetSchedule
+- IsTaskInterruptible
+- SetExecutionStatus
+- UpdateNavStatistics
+url: ''

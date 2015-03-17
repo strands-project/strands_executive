@@ -1,0 +1,31 @@
+actions:
+- TestExecution
+authors: Nick Hawes <n.a.hawes@cs.bham.ac.uk>
+brief: ''
+bugtracker: ''
+depends:
+- mongodb_store_msgs
+- catkin
+- mongodb_store
+- actionlib
+- strands_executive_msgs
+- topological_utils
+- topological_navigation
+- python-dateutil
+- rostest
+- wait_action
+- rospy
+- scheduler
+- message_generation
+- geometry_msgs
+- message_runtime
+- actionlib_msgs
+description: A package for triggering and monitoring the execution of actionlib-based
+  tasks.
+license: MIT
+maintainers: Nick Hawes <n.a.hawes@cs.bham.ac.uk>
+msgs: []
+package_type: package
+repo_url: ''
+srvs: []
+url: ''
