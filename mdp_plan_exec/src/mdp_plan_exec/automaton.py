@@ -19,12 +19,20 @@ class Automaton(object):
         self.transitions=[[] for i in range(0,self.n_states)]
         self.inverse_transitions=[[] for i in range(0,self.n_states)]
         self.initial_state=int(line[3].replace('),',''))
-        if line[-4] != '1':
-            rospy.logerr("More than one acceptance pair. The automaton construction will not work.")
-        accepting_states_string=line[-1].replace('(','').replace(')','').replace('{','').replace('}','').replace('\n','').split(',')
-        if len(accepting_states_string)!=2:
-             rospy.logerr("More than one accepting state. The automaton construction will not work.")
-        self.accepting_states=[int(accepting_states_string[1])]
+        if line[-3]=='Finite':
+            accepting_states_string=line[-1].replace('{','').replace('}','').replace('\n','').split(',')
+            if len(accepting_states_string)!=1:
+                rospy.logerr("More than one accepting state. The automaton construction will not work.")
+            self.accepting_states=[int(accepting_states_string[0])]
+        else:
+            rospy.logwarn("Not a DFA, check formula")
+            if line[-4] != '1':
+                rospy.logerr("More than one acceptance pair. The automaton construction will not work.")
+            accepting_states_string=line[-1].replace('(','').replace(')','').replace('{','').replace('}','').replace('\n','').split(',')
+            print accepting_states_string
+            if len(accepting_states_string)!=2:
+                rospy.logerr("More than one accepting state. The automaton construction will not work.")
+            self.accepting_states=[int(accepting_states_string[1])]
         
         #iterate over useless labels defs
         i=4

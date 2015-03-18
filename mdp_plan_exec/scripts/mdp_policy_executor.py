@@ -1,0 +1,172 @@
+#! /usr/bin/env python
+
+import os
+import sys
+import rospy
+
+from mdp_plan_exec.top_map_mdp import TopMapMdp
+from mdp_plan_exec.product_mdp import ProductMdp
+from mdp_plan_exec.prism_java_talker import PrismJavaTalker
+
+from std_msgs.msg import String
+from actionlib import SimpleActionServer, SimpleActionClient
+from actionlib_msgs.msg import GoalStatus
+
+from strands_navigation_msgs.msg import NavRoute, ExecutePolicyModeAction, ExecutePolicyModeFeedback, ExecutePolicyModeGoal
+from strands_executive_msgs.msg import ExecutePolicyAction, ExecutePolicyFeedback, ExecutePolicyGoal
+from strands_executive_msgs.srv import GetSpecialWaypoints
+
+   
+class MdpPolicyExecutor(object):
+    def __init__(self,top_map):    
+        self.top_map_mdp=TopMapMdp(top_map)
+        self.directory = os.path.expanduser("~") + '/tmp/prism/policy_executor/'
+        try:
+            os.makedirs(self.directory)
+        except OSError as ex:
+            print 'error creating PRISM directory:',  ex
+        self.file_name=top_map+".mdp"
+        self.prism_policy_generator=PrismJavaTalker(8086,self.directory, self.file_name)
+        
+        self.current_prod_mdp_state=None
+        self.product_mdp=None
+        
+        self.policy_exec_preempted = False
+        rospy.loginfo("Creating topological navigation client.")
+        self.top_nav_policy_exec= SimpleActionClient('/topological_navigation/execute_policy_mode', ExecutePolicyModeAction)
+        self.top_nav_policy_exec.wait_for_server()
+        rospy.loginfo(" ...done")
+        
+        self.mdp_nav_as=SimpleActionServer('mdp_plan_exec/execute_policy', ExecutePolicyAction, execute_cb = self.execute_policy_cb, auto_start = False)
+        self.mdp_nav_as.register_preempt_callback(self.preempt_policy_execution_cb)
+        self.mdp_nav_as.start()
+        
+        #self.learning_travel_times=False
+        #self.learn_travel_times_action=SimpleActionServer('mdp_plan_exec/learn_travel_times', LearnTravelTimesAction, execute_cb = self.execute_learn_travel_times_cb, auto_start = False)
+        #self.learn_travel_times_action.register_preempt_callback(self.preempt_learning_cb)
+        #self.learn_travel_times_action.start()
+               
+        self.current_waypoint=None
+        self.closest_waypoint=None
+        self.current_waypoint_sub=rospy.Subscriber("/current_node", String, self.current_waypoint_cb)
+        self.closest_waypoint_sub=rospy.Subscriber("/closest_node", String, self.closest_waypoint_cb)
+        
+        self.special_waypoints_srv=rospy.ServiceProxy("/mdp_plan_exec/get_special_waypoints", GetSpecialWaypoints)
+        
+        self.policy_mode_pub=rospy.Publisher("/mdp_plan_exec/current_policy_mode", NavRoute,queue_size=1)
+
+    def current_waypoint_cb(self,msg):
+        self.current_waypoint=msg.data
+        
+    def closest_waypoint_cb(self,msg):
+        self.closest_waypoint=msg.data
+
+    def generate_prism_specification(self, goal):
+        special_waypoints=self.special_waypoints_srv()
+        if goal.task_type==ExecutePolicyGoal.GOTO_WAYPOINT:
+            if goal.target_id in special_waypoints.forbidden_waypoints:
+                rospy.logwarn("The goal is a forbidden waypoint. Aborting")
+                return None
+            elif self.current_waypoint in special_waypoints.forbidden_waypoints:
+                rospy.logwarn("The current position is forbidden. Aborting")
+                return None
+            if special_waypoints.forbidden_waypoints==[]:
+                return 'R{"time"}min=? [ (F "' + goal.target_id + '") ]'
+            else:
+                return 'R{"time"}min=? [ (' + special_waypoints.forbidden_waypoints_ltl_string + ' U "' + goal.target_id + '") ]'
+        elif goal.task_type==ExecutePolicyGoal.LEAVE_FORBIDDEN_AREA:
+            if special_waypoints.forbidden_waypoints==[]:
+                rospy.logwarn("No forbidden waypoints defined. Nothing to leave.")
+                return None
+            else:
+                return 'R{"time"}min=? [ (F ' + special_waypoints.forbidden_waypoints_ltl_string + ') ]'
+        elif goal.task_type==ExecutePolicyGoal.GOTO_CLOSEST_SAFE_WAYPOINT:
+            if special_waypoints.safe_waypoints==[]:
+                rospy.logwarn("No safe waypoints defined. Nowhere to go to.")
+                return None
+            else:
+                return 'R{"time"}min=? [ (F ' + special_waypoints.safe_waypoints_ltl_string + ') ]'
+        elif goal.task_type==ExecutePolicyGoal.COSAFE_LTL:
+            return 'R{"time"}min=? [ (' + goal.target_id + ') ]'
+    
+    def generate_prod_mdp(self,specification):
+        #update initial state
+        self.top_map_mdp.set_initial_state_from_waypoint(self.closest_waypoint)
+        self.top_map_mdp.write_prism_model(self.directory+self.file_name)
+        expected_time=float(self.prism_policy_generator.get_policy(specification))
+        feedback=ExecutePolicyFeedback(expected_time=expected_time)
+        self.mdp_nav_as.publish_feedback(feedback)
+        if feedback.expected_time==float("inf"):
+            rospy.logwarn("The goal is unattainable. Aborting...")
+            self.product_mdp=None
+        else:
+            self.product_mdp=ProductMdp(self.top_map_mdp,self.directory + '/prod.sta',self.directory + '/prod.lab',self.directory + '/prod.tra', self.directory+'prod.aut')
+            self.product_mdp.write_prism_model(self.directory+'prod_'+self.file_name)
+            self.product_mdp.set_policy(self.directory + '/adv.tra')  
+        
+    def generate_current_policy_mode(self, current_state):
+        current_dra_state = current_state["dra_state1"]
+        policy_msg = NavRoute()
+        for state_def, action in zip(self.product_mdp.product_state_defs,self.product_mdp.policy):
+            if action is not None and state_def["dra_state1"] == current_dra_state:
+                source = self.top_map_mdp.get_waypoint_prop(state_def["waypoint"])
+                policy_msg.source.append(source)
+                policy_msg.edge_id.append(action)
+        return policy_msg  
+
+    def execute_policy_cb(self,goal):
+        specification=self.generate_prism_specification(goal)
+        if specification is None:
+            self.mdp_nav_as.set_aborted()
+            return
+        rospy.loginfo("The specification is: " + specification)
+        self.generate_prod_mdp(specification)
+        if self.product_mdp is None:
+            self.mdp_nav_as.set_aborted()
+            return
+        policy_mode_msg=self.generate_current_policy_mode(self.product_mdp.initial_state)
+        self.policy_mode_pub.publish(policy_mode_msg)
+        self.top_nav_policy_exec.send_goal(ExecutePolicyModeGoal(route = policy_mode_msg))#, feedback_cb = self.top_nav_feedback_cb)
+        self.top_nav_policy_exec.wait_for_result()
+        status=self.top_nav_policy_exec.get_state()  
+        rospy.loginfo("Topological navigation execute policy action server exited with status: " + GoalStatus.to_string(status))
+        if status == GoalStatus.SUCCEEDED:
+            self.mdp_nav_as.set_succeeded()
+        elif status==GoalStatus.ABORTED:
+            self.mdp_nav_as.set_aborted()
+        elif status==GoalStatus.PREEMPTED:
+            self.mdp_nav_as.set_preempted()
+        else:
+            rospy.logwarn("Unexpected outcome from the topological navigaton execute policy action server. Setting as aborted")
+            self.mdp_nav_as.set_aborted()
+
+    def preempt_policy_execution_cb(self):     
+        self.top_nav_policy_exec.cancel_all_goals()
+    
+    ##TODO Add this and make this work with arbitrary (finite memory) policies
+    #def top_nav_feedback_cb(self,feedback):
+        #self.current_node = feedback.route_status
+        #current_action=self.policy_handler.product_mdp.policy[self.current_prod_mdp_state]
+        #self.current_prod_mdp_state = self.policy_handler.product_mdp.get_new_state(self.current_prod_mdp_state,current_action, self.current_node)
+        #if self.current_prod_mdp_state in self.policy_handler.product_mdp.goal_states:
+            #self.finishing_policy_mode_execution=True            
+     
+    def main(self):
+        # Wait for control-c
+        rospy.spin()       
+        if rospy.is_shutdown():
+            self.prism_policy_generator.shutdown(True)
+
+if __name__ == '__main__':
+    rospy.init_node('mdp_policy_executor')
+    filtered_argv=rospy.myargv(argv=sys.argv)    
+    if len(filtered_argv)<2:
+        rospy.logerr("No topological map provided. usage: rosrun mdp_plan_exec mdp_policy_executor <topological_map_name>")
+        sys.exit(2)
+    elif len(filtered_argv)>2:
+        rospy.logwarn("Too many arguments. Assuming topological map is the first one. usage: rosrun mdp_plan_exec mdp_policy_executor <topological_map_name>")
+        
+    mdp_executor =  MdpPolicyExecutor(filtered_argv[1])
+    mdp_executor.main()
+    
+    

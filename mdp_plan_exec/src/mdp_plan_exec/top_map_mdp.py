@@ -77,23 +77,15 @@ class TopMapMdp(Mdp):
         rospy.logerr("Waypoint not found!")
     
     def get_fremen_stats(self,epoch):
-        print "BUILDING"
         goal=TopologicalPredictionGoal(action='build', mapName=self.top_map_name, resultOrder=-1,durationOrder=-1)
         self.fremen_ac.send_goal(goal)
         self.fremen_ac.wait_for_result()
-        print "BUILTR"
         goal=TopologicalPredictionGoal(action='predict', predictionTime=epoch)
         self.fremen_ac.send_goal(goal)
         self.fremen_ac.wait_for_result()
         result=self.fremen_ac.get_result()
-        print "TESTE", result
         
 
-
- 
-
-        
-    #def set_initial_state_from_name(self,state_name):
-        #index=self.state_names.index(state_name)
-        #self.set_initial_state(index)
+    def set_initial_state_from_waypoint(self,current_waypoint):
+        self.initial_state=self.props_def[current_waypoint].conds
 

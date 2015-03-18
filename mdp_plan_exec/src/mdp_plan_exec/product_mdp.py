@@ -1,5 +1,7 @@
+import rospy
 from mdp import Mdp, MdpTransitionDef, MdpPropDef
 from automaton import Automaton
+
 
 
 class ProductMdp(Mdp):
@@ -13,25 +15,26 @@ class ProductMdp(Mdp):
         else:
             self.n_goals=1
         self.n_state_vars=original_mdp.n_state_vars+1
-        self.state_vars=original_mdp.state_vars
+        self.state_vars=list(original_mdp.state_vars)
         self.dra_state_name="dra_state"+str(self.n_goals)
         self.state_vars.append(self.dra_state_name)
-        self.state_vars_range=original_mdp.state_vars_range #ranges for the state vars
-        self.initial_state=original_mdp.initial_state #dict indexed by the state vars
+        self.state_vars_range=dict(original_mdp.state_vars_range) #ranges for the state vars
+        self.initial_state=dict(original_mdp.initial_state) #dict indexed by the state vars
         self.n_props=original_mdp.n_props+1 #number of propositional labels
-        self.props=original_mdp.props
+        self.props=list(original_mdp.props)
         self.accepting_prop_name="dra_acc_state"+str(self.n_goals)
         self.props.append(self.accepting_prop_name)#list of propositional label names
-        self.props_def=original_mdp.props_def #dict of MdpPropDef instances. keys are the propositional labels names
+        self.props_def=dict(original_mdp.props_def) #dict of MdpPropDef instances. keys are the propositional labels names
         self.n_actions=original_mdp.n_actions #number of actions
-        self.actions=original_mdp.actions #list of action names
+        self.actions=list(original_mdp.actions) #list of action names
         self.transitions=[] #list of MdpTransitionDef instances
         self.transitions_sources_flat=[]
-        self.reward_names=original_mdp.reward_names
+        self.reward_names=list(original_mdp.reward_names)
         self.ltl_reward_struct_name="goal" + str(self.n_goals) + "_rew"
         self.reward_names.append(self.ltl_reward_struct_name)
         self.current_policy=[]
-        
+        self.n_total_states=0
+
         #read sta product file       
         f = open(product_sta, 'r')
         line=f.readline()
@@ -40,13 +43,11 @@ class ProductMdp(Mdp):
         line=line.replace('\n', '')
         product_labels=line.split(',')
         for i in range(0, len(product_labels)):
-            if product_labels[i]=='_dra':
+            if product_labels[i]=='_dra' or product_labels[i]=='_da':
                 product_labels[i]=self.dra_state_name
                 break
-        print product_labels    
         
-        n_total_states=0
-        product_state_defs=[]
+        self.product_state_defs=[]
         for line in f:
             line=line.replace(')', '')
             line=line.replace('(', '')
@@ -56,9 +57,9 @@ class ProductMdp(Mdp):
             state={}
             for i in range(0, len(line)):
                 state[product_labels[i]]=int(line[i])
-            product_state_defs.append(state)
-            n_total_states=n_total_states+1
-        print("The product has a total of " + str(n_total_states) + " states.")    
+            self.product_state_defs.append(state)
+            self.n_total_states=self.n_total_states+1
+        rospy.loginfo("The product has a total of " + str(self.n_total_states) + " states.")    
         f.close()
         
         #read aut product file
@@ -67,17 +68,14 @@ class ProductMdp(Mdp):
         self.initial_state[self.dra_state_name]=self.automaton.initial_state
         accept_def=MdpPropDef(name=self.accepting_prop_name)
         conds={}
+
         for state in self.automaton.accepting_states:
             conds[self.dra_state_name]=state
         accept_def.conds=conds
         self.props_def[self.accepting_prop_name]=accept_def
-        
-        
-        
-        
 
         #read tra product file - to define mdp
-        self.inverse_mdp_graph=[[] for i in range(0,n_total_states)]
+        self.inverse_mdp_graph=[[] for i in range(0,self.n_total_states)]
         self.possible_reward_states=[]
         f = open(product_tra, 'r')
         f.readline()
@@ -89,10 +87,10 @@ class ProductMdp(Mdp):
             line=line.split(' ')
             old_trans=(from_state==int(line[0]) and action_number==int(line[1]))
             from_state=int(line[0])
-            from_state_def=product_state_defs[from_state]
+            from_state_def=self.product_state_defs[from_state]
             action_number=int(line[1])
             to_state=int(line[2])
-            to_state_def=product_state_defs[to_state]
+            to_state_def=self.product_state_defs[to_state]
             probability=float(line[3])
             action_name=line[4]
             if action_name=='':
@@ -133,105 +131,23 @@ class ProductMdp(Mdp):
                 n_deleted+=1
                 #self.transitions[i].rewards["time"]=0
                     
-        
-        
 
-
-     
     def get_original_transition(self, action_name, from_state_def):
         for transition in self.original_mdp.transitions:
             if transition.action_name == action_name and self.check_cond_sat(transition.pre_conds, from_state_def):
                 return transition
-        print 'TRANS NOT FOUND', from_state_def
-            
+        rospy.logerr('TRANS NOT FOUND'+str(from_state_def))
 
-
-     
-        #self.set_props()
-        
-        #self.policy_publisher = rospy.Publisher('/mdp_plan_exec/current_policy_mode', NavRoute)
-        
- 
-    #def set_props(self):
-        #self.n_props=self.original_mdp.n_props
-        #self.props=self.original_mdp.props
-        ##self.props.append('ltl_goal')
-        ##self.n_props=self.n_props+1
-        
-        #self.prop_map=[[False]*self.n_props for i in range(self.n_states)]
-        
-        #for i in range(0,self.n_states):
-            #prop_line=self.original_mdp.prop_map[self.state_labels[i][1]]
-            #prop_line.append(False)
-            #self.prop_map[i]=prop_line
-        
-
-    #def read_states(self,product_sta,product_lab):
-        #f = open(product_sta, 'r')
-        #f.readline()
-        
-        #self.n_states=0
-        #self.state_labels=[]
-        
-        
-        #for line in f:
-            #current_state_label=line.split(':')[1]
-            #current_state_label=current_state_label.replace(')', '')
-            #current_state_label=current_state_label.replace('(', '')
-            #current_state_label=current_state_label.split(',')
-            #current_state_label[0]=int(current_state_label[0])
-            #current_state_label[1]=int(current_state_label[1])
-            
-            #self.state_labels.append(current_state_label)
-            
-            
-            
-            #self.n_states=self.n_states+1
-            
-        #f.close()
-        
-        
-        
-        #f = open(product_lab, 'r')
-        
-        #line=f.readline()
-        
-        #init_index=int(line.split('="init"')[0])
-        
-        #target_index=line.split('="target"')[0]
-        #target_index=int(target_index.split(' ')[-1])
-        
-        
-        
-        
-        #self.goal_states=[]
-        #for line in f:
-            #line=line.split(':')
-            #state_index=int(line[0])
-            #labels=line[1].split(' ')
-            #del labels[0]
-            #n_labels=len(labels)
-            #for i in range(0,n_labels):
-                #if int(labels[i])==target_index:
-                    #self.goal_states.append(state_index)
-                #if int(labels[i])==init_index:
-                    #self.initial_state=state_index
-        
-        #f.close()
-        
-    
-
-
-    #def set_policy(self,policy_file):
-        #self.policy=[None]*self.n_states
-        #f=open(policy_file,'r')
-        #f.readline()
-        #for line in f:
-            #line=line.split(' ')
-            #self.policy[int(line[0])]=line[3].strip('\n')
-        #print self.policy
+    def set_policy(self,policy_file):
+        f=open(policy_file,'r')
+        f.readline()
+        self.policy=[None]*self.n_total_states
+        for line in f:
+            line=line.split(' ')
+            self.policy[int(line[0])]=line[3].strip('\n')
+        rospy.loginfo("Policy: " + str(self.policy))
         #self.publish_current_policy_mode(self.initial_state)
-        #f.close()    
+        f.close()    
                     
     
     #def set_initial_state_from_name(self,state_name):
@@ -274,23 +190,7 @@ class ProductMdp(Mdp):
                 
         
         
-    #def get_current_policy_mode(self, current_state):
-        #sources = []
-        #targets = []
-        #current_mode = self.state_labels[current_state][0]
-        #policy_msg = NavRoute()
-        #print current_mode
-        #for i in range(0,self.n_states):
-            #current_action = self.policy[i]
-            #if current_action is not None and self.state_labels[i][0] == current_mode:
-                #action_split = current_action.split('_')
-                #source = action_split[1]
-                #target = action_split[2]
-                #policy_msg.source.append(source)
-                #policy_msg.target.append(target)
-                
-        #return policy_msg   
-        
+   
         
         
         

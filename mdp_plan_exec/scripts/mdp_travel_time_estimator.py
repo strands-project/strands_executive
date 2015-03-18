@@ -30,10 +30,8 @@ class MdpTravelTimeEstimator(object):
         epoch=req.epoch
         if req.epoch==0:
             epoch=rospy.Time.now()
-            print "TETE", epoch
         if epoch != self.last_epoch:
             self.last_epoch=epoch
-            print "TESTE2", epoch
             self.top_map_mdp.get_fremen_stats(epoch.secs)
             #update model with fremen
             self.top_map_mdp.write_prism_model(self.directory+self.file_name)

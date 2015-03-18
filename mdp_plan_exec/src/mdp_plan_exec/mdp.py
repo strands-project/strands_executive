@@ -33,7 +33,7 @@ class Mdp(object):
         self.actions=[] #list of action names
         self.transitions=[] #list of MdpTransitionDef instances
         self.current_policy=[]
-        self.reward_names={}
+        self.reward_names=[]
 
     def check_cond_sat(self, cond, state):
         for var in cond:
