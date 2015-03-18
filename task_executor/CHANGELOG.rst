@@ -2,6 +2,15 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.16 (2014-11-26)
+-------------------
+* increasing timeout for nav
+* Edited task allowed function to check task details.
+* More none checking changes.
+* Use `is None` instead of `not`.
+  There's a reason it has been invented. This (and my next PR) probably fix the "local timezone doesn't work anymore" thing.
+* Contributors: Bruno Lacerda, Lucas Beyer, Nick Hawes
+
 0.0.15 (2014-11-23)
 -------------------
 * Added sanity checking to task routine.

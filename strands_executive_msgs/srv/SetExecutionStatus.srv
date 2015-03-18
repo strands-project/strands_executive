@@ -1,7 +1,10 @@
 # Set to true to start execution, or false to pause execution
 bool status
 ---
-# The state execution was in previously
+# The state execution was in before this call
 bool previous_status
-
+# Whether execution was successfully paused
+bool success
+# If not successful, how long you may have to wait until the call might be successful, i.e. how long is left on the current execution which refused to be interrupted
+duration remaining_execution_time
 

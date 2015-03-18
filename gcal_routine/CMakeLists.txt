@@ -1,23 +1,24 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(wait_action)
+project(gcal_routine)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  actionlib
-  actionlib_msgs
+  message_generation
   rospy
+  std_msgs
   strands_executive_msgs
+  mongodb_store_msgs
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
 
-# Uncomment this if the package has a setup.py. This macro ensures
-# modules and global scripts declared therein get installed
-# See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
+## Uncomment this if the package has a setup.py. This macro ensures
+## modules and global scripts declared therein get installed
+## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
 catkin_python_setup()
 
 ################################################
@@ -58,17 +59,18 @@ catkin_python_setup()
 #   Service2.srv
 # )
 
-# Generate actions in the 'action' folder
-add_action_files(
-  FILES
-  Wait.action
-)
+## Generate actions in the 'action' folder
+# add_action_files(
+#   FILES
+#   Action1.action
+#   Action2.action
+# )
 
-# Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
-  actionlib_msgs
-)
+## Generate added messages and services with any dependencies listed here
+# generate_messages(
+#   DEPENDENCIES
+#   std_msgs#   strands_executive_msgs
+# )
 
 ###################################
 ## catkin specific configuration ##
@@ -81,8 +83,8 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES wait_action
-#  CATKIN_DEPENDS actionlib actionlib_msgs rospy
+#  LIBRARIES gcal_routine
+#  CATKIN_DEPENDS message_generation rospy std_msgs strands_executive_msgs
 #  DEPENDS system_lib
 )
 
@@ -98,19 +100,19 @@ include_directories(
 )
 
 ## Declare a cpp library
-# add_library(wait_action
-#   src/${PROJECT_NAME}/wait_action.cpp
+# add_library(gcal_routine
+#   src/${PROJECT_NAME}/gcal_routine.cpp
 # )
 
 ## Declare a cpp executable
-# add_executable(wait_action_node src/wait_action_node.cpp)
+# add_executable(gcal_routine_node src/gcal_routine_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(wait_action_node wait_action_generate_messages_cpp)
+# add_dependencies(gcal_routine_node gcal_routine_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(wait_action_node
+# target_link_libraries(gcal_routine_node
 #   ${catkin_LIBRARIES}
 # )
 
@@ -121,12 +123,19 @@ include_directories(
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 
-install(DIRECTORY scripts/
-        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-        USE_SOURCE_PERMISSIONS)
+## Mark executable scripts (Python etc.) for installation
+## in contrast to setup.py, you can choose the destination
+install(PROGRAMS
+  scripts/gcal_routine_node.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY etc
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS wait_action wait_action_node
+# install(TARGETS gcal_routine gcal_routine_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -151,10 +160,17 @@ install(DIRECTORY scripts/
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_wait_action.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_gcal_routine.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+if (CATKIN_ENABLE_TESTING)
+  find_package(catkin REQUIRED COMPONENTS rostest)
+  add_rostest(tests/gcal_tester.test)
+endif()
+
+

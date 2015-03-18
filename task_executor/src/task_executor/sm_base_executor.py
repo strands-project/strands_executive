@@ -23,10 +23,14 @@ class ExecutorState(smach.State):
         self.executor = task_executor
 
 class TimerState(smach.State):
-    def __init__(self, duration, pause_secs=1):
+    def __init__(self, duration, pause_secs=1, can_finish=None):
         super(TimerState , self ).__init__(outcomes=['succeeded', 'preempted', 'aborted'])        
         self.duration = duration
         self.pause = rospy.Duration(pause_secs)
+        if can_finish is None:
+            self.can_finish = lambda: True
+        else:
+            self.can_finish = can_finish
 
     def execute(self, userdata):
         now = rospy.get_rostime()
@@ -35,12 +39,19 @@ class TimerState(smach.State):
             rospy.sleep(self.pause)
             now = rospy.get_rostime()
 
+        # now block if can_finish is not true
+        while not self.can_finish() and not self.preempt_requested() and not rospy.is_shutdown():             
+            rospy.sleep(self.pause)
+            rospy.loginfo('Waiting for signal that I can finish after timeout')
+
         if rospy.is_shutdown():
             return 'aborted'
         elif self.preempt_requested():
             return 'preempted'
         else:
             return 'succeeded'
+
+
 
 
 class TaskFailed(ExecutorState):
@@ -284,7 +295,12 @@ class AbstractTaskExecutor(BaseTaskExecutor):
                     with action_concurrence:
                         smach.Concurrence.add('MONITORED', SimpleActionState(task.action, action_clz, goal=goal))
                         wiggle_room = rospy.Duration(5)
-                        smach.Concurrence.add('MONITORING', TimerState(duration=(task.max_duration+wiggle_room)))
+
+                        # this prevents the task being interupted if it runs out of time but should still run
+                        def task_can_be_interrupted():
+                            return self.is_task_interruptible(task)
+
+                        smach.Concurrence.add('MONITORING', TimerState(duration=(task.max_duration+wiggle_room), can_finish=task_can_be_interrupted))
 
                     smach.StateMachine.add('TASK_EXECUTION',
                                     action_concurrence,

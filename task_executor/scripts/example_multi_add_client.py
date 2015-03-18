@@ -20,27 +20,34 @@ def get_services():
     return add_tasks_srv, set_execution_status
 
 
+def create_wait_task(node, secs=rospy.Duration(10)):
+    wait_task = Task(action='wait_action',start_node_id=node, end_node_id=node, max_duration=secs)
+    task_utils.add_time_argument(wait_task, rospy.Time())
+    task_utils.add_duration_argument(wait_task, secs)
+    return wait_task
+
 if __name__ == '__main__':
-    rospy.init_node("example_add_client")
+    rospy.init_node("example_multi_add_client")
 
     # get services to call into execution framework
     add_task, set_execution_status = get_services()
 
-    print 'Requesting wait at ', sys.argv[1]
-
-    max_duration = rospy.Duration(int(sys.argv[2]))
-    wait_task = Task(action='wait_action',start_node_id=sys.argv[1], max_duration=max_duration)
-    task_utils.add_time_argument(wait_task, rospy.Time())
-    task_utils.add_duration_argument(wait_task, max_duration)
-    
+    nodes = ['h_2', 'v_2', 'h_-2']    
+    tasks = map(create_wait_task, nodes)
 
     # wait_task = Task(action='',start_node_id=sys.argv[1], max_duration=max_duration)
 
-    task_id = add_task([wait_task])
+    task_id = add_task(tasks)
     
     # Set the task executor running (if it isn't already)
-    set_execution_status(True)
+    resp = set_execution_status(True)
 
     # now let's stop execution while it's going on
-    rospy.sleep(int(sys.argv[2])/2)
-    set_execution_status(False)
+    # rospy.sleep(4)
+    # resp = set_execution_status(False)
+    # rospy.loginfo('Success: %s' % resp.success)
+    # rospy.loginfo('Wait: %s' % resp.remaining_execution_time)
+
+    # # and start again
+    # rospy.sleep(2)
+    # set_execution_status(True)
