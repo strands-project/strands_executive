@@ -46,7 +46,6 @@ find_package(catkin REQUIRED genmsg actionlib_msgs)
 add_action_files(
   FILES
   ExecutePolicy.action
-  LearnTravelTimes.action
 )
 
 # Generate added messages and services with any dependencies listed here
