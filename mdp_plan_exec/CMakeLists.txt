@@ -6,6 +6,9 @@ project(mdp_plan_exec)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   rospy
+  std_msgs
+  actionlib
+  actionlib_msgs
   topological_navigation
   strands_navigation_msgs
   strands_executive_msgs
