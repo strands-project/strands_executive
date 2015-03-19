@@ -18,7 +18,25 @@ from strands_executive_msgs.srv import GetSpecialWaypoints
 
    
 class MdpPolicyExecutor(object):
-    def __init__(self,top_map):    
+    def __init__(self,top_map): 
+        got_service=False
+        while not got_service:
+            try:
+                rospy.wait_for_service('/mdp_plan_exec/get_special_waypoints', 1)
+                got_service=True
+            except rospy.ROSException,e:
+                rospy.loginfo("Waiting for get_special_waypoints service...")
+            if rospy.is_shutdown():
+                return       
+        self.special_waypoints_srv=rospy.ServiceProxy("/mdp_plan_exec/get_special_waypoints", GetSpecialWaypoints)
+        
+        
+        self.top_nav_policy_exec= SimpleActionClient('/topological_navigation/execute_policy_mode', ExecutePolicyModeAction)
+        got_server=self.top_nav_policy_exec.wait_for_server(rospy.Duration(1))
+        while not got_server:
+            rospy.loginfo("Waiting for topological navigation execute policy mode action server.")
+            got_server=self.top_nav_policy_exec.wait_for_server(rospy.Duration(1))
+        
         self.top_map_mdp=TopMapMdp(top_map)
         self.directory = os.path.expanduser("~") + '/tmp/prism/policy_executor/'
         try:
@@ -30,12 +48,6 @@ class MdpPolicyExecutor(object):
         
         self.current_prod_mdp_state=None
         self.product_mdp=None
-        
-        self.policy_exec_preempted = False
-        rospy.loginfo("Creating topological navigation client.")
-        self.top_nav_policy_exec= SimpleActionClient('/topological_navigation/execute_policy_mode', ExecutePolicyModeAction)
-        self.top_nav_policy_exec.wait_for_server()
-        rospy.loginfo(" ...done")
         
         self.mdp_nav_as=SimpleActionServer('mdp_plan_exec/execute_policy', ExecutePolicyAction, execute_cb = self.execute_policy_cb, auto_start = False)
         self.mdp_nav_as.register_preempt_callback(self.preempt_policy_execution_cb)
@@ -51,9 +63,9 @@ class MdpPolicyExecutor(object):
         self.current_waypoint_sub=rospy.Subscriber("/current_node", String, self.current_waypoint_cb)
         self.closest_waypoint_sub=rospy.Subscriber("/closest_node", String, self.closest_waypoint_cb)
         
-        self.special_waypoints_srv=rospy.ServiceProxy("/mdp_plan_exec/get_special_waypoints", GetSpecialWaypoints)
-        
         self.policy_mode_pub=rospy.Publisher("/mdp_plan_exec/current_policy_mode", NavRoute,queue_size=1)
+        
+        rospy.loginfo("MDP policy executor initialised.")
 
     def current_waypoint_cb(self,msg):
         self.current_waypoint=msg.data

@@ -22,9 +22,9 @@ class MdpTravelTimeEstimator(object):
             print 'error creating PRISM directory:',  ex
         self.file_name=top_map+".mdp"
         self.travel_times_to_waypoint_service = rospy.Service('/mdp_plan_exec/get_expected_travel_times_to_waypoint', GetExpectedTravelTimesToWaypoint, self.travel_times_to_waypoint_cb)                
-        self.prism_estimator=PrismJavaTalker(8085,self.directory, self.file_name)
-        
+        self.prism_estimator=PrismJavaTalker(8085,self.directory, self.file_name)        
         self.last_epoch=-1
+        rospy.loginfo("MDP travel times estimator initialised.")
 
     def travel_times_to_waypoint_cb(self,req):
         epoch=req.epoch

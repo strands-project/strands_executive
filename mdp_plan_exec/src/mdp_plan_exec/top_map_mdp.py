@@ -9,20 +9,28 @@ class TopMapMdp(Mdp):
     def __init__(self,top_map_name):
         Mdp.__init__(self)
         
+        got_service=False
+        while not got_service:
+            try:
+                rospy.wait_for_service("/topological_map_publisher/get_topological_map", 1)
+                got_service=True
+            except rospy.ROSException,e:
+                rospy.loginfo("Waiting for get_topological_map service...")
+            if rospy.is_shutdown():
+                return
         
         self.top_map_name=top_map_name
         self.get_top_map_srv=rospy.ServiceProxy("/topological_map_publisher/get_topological_map", GetTopologicalMap)
-
-        self.top_map=self.get_top_map_srv(self.top_map_name).map        
-        self.create_top_map_mdp_structure()
         
-        self.fremen_ac=actionlib.SimpleActionClient('/FreNaP', TopologicalPredictionAction)
-            
+        self.fremen_ac=actionlib.SimpleActionClient('/FreNaP', TopologicalPredictionAction)            
         got_server=self.fremen_ac.wait_for_server(rospy.Duration(1))
         while not got_server:
             rospy.loginfo("Waiting for TopologicalPrediction action.")
             got_server=self.fremen_ac.wait_for_server(rospy.Duration(1))
-            
+
+        self.top_map=self.get_top_map_srv(self.top_map_name).map        
+        self.create_top_map_mdp_structure()
+                    
         rospy.loginfo("Topological MDP initialised")
 
     def create_top_map_mdp_structure(self):
