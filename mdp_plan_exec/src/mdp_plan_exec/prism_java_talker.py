@@ -14,7 +14,7 @@ class PrismJavaTalker(object):
         os.chdir('/opt/prism-robots/prism')
         os.environ['PRISM_MAINCLASS'] = 'prism.PrismPythonTalker'
         self.java_server=subprocess.Popen(["bin/prism",str(PORT),dir_name, file_name])
-        rospy.sleep(5)
+        rospy.sleep(1)
         
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((HOST, PORT))

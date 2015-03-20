@@ -62,10 +62,24 @@ class ProductMdp(Mdp):
         rospy.loginfo("The product has a total of " + str(self.n_total_states) + " states.")    
         f.close()
         
+        #read lab file to find initial state
+        f=open(product_lab, 'r')
+        line=f.readline()        
+        init_index=int(line.split('="init"')[0])               
+        for line in f:
+            line=line.split(':')
+            state_index=int(line[0])
+            labels=line[1].split(' ')
+            del labels[0]
+            for label in labels:
+                if int(label)==init_index:
+                    self.initial_state=dict(self.product_state_defs[state_index])
+                    break
+        f.close()
+        
         #read aut product file
         self.automaton=Automaton(product_aut)
         self.state_vars_range[self.dra_state_name]=(0,self.automaton.n_states-1)
-        self.initial_state[self.dra_state_name]=self.automaton.initial_state
         accept_def=MdpPropDef(name=self.accepting_prop_name)
         conds={}
 
@@ -146,7 +160,6 @@ class ProductMdp(Mdp):
             line=line.split(' ')
             self.policy[int(line[0])]=line[3].strip('\n')
         rospy.loginfo("Policy: " + str(self.policy))
-        #self.publish_current_policy_mode(self.initial_state)
         f.close()    
                     
     

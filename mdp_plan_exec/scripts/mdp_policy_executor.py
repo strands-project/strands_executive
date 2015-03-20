@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-
 import os
 import sys
 import rospy
@@ -46,7 +45,7 @@ class MdpPolicyExecutor(object):
         self.file_name=top_map+".mdp"
         self.prism_policy_generator=PrismJavaTalker(8086,self.directory, self.file_name)
         
-        self.current_prod_mdp_state=None
+        self.current_prod_state=None
         self.product_mdp=None
         
         self.mdp_nav_as=SimpleActionServer('mdp_plan_exec/execute_policy', ExecutePolicyAction, execute_cb = self.execute_policy_cb, auto_start = False)
@@ -136,32 +135,50 @@ class MdpPolicyExecutor(object):
         if self.product_mdp is None:
             self.mdp_nav_as.set_aborted()
             return
-        policy_mode_msg=self.generate_current_policy_mode(self.product_mdp.initial_state)
-        self.policy_mode_pub.publish(policy_mode_msg)
-        self.top_nav_policy_exec.send_goal(ExecutePolicyModeGoal(route = policy_mode_msg))#, feedback_cb = self.top_nav_feedback_cb)
-        self.top_nav_policy_exec.wait_for_result()
-        status=self.top_nav_policy_exec.get_state()  
-        rospy.loginfo("Topological navigation execute policy action server exited with status: " + GoalStatus.to_string(status))
-        if status == GoalStatus.SUCCEEDED:
-            self.mdp_nav_as.set_succeeded()
-        elif status==GoalStatus.ABORTED:
-            self.mdp_nav_as.set_aborted()
-        elif status==GoalStatus.PREEMPTED:
-            self.mdp_nav_as.set_preempted()
-        else:
-            rospy.logwarn("Unexpected outcome from the topological navigaton execute policy action server. Setting as aborted")
-            self.mdp_nav_as.set_aborted()
+        self.current_prod_state=dict(self.product_mdp.initial_state)
+        
+        entered_exec_loop=False #needed to ensure that robot goes to exact pose when already in influence area of target
+        while self.current_prod_state["dra_state1"] != self.product_mdp.props_def["dra_acc_state1"].conds["dra_state1"] or not entered_exec_loop:
+            entered_exec_loop=True
+            policy_mode_msg=self.generate_current_policy_mode(self.current_prod_state)
+            self.policy_mode_pub.publish(policy_mode_msg)
+            self.top_nav_policy_exec.send_goal(ExecutePolicyModeGoal(route = policy_mode_msg), feedback_cb = self.top_nav_feedback_cb)
+            self.top_nav_policy_exec.wait_for_result()
+            status=self.top_nav_policy_exec.get_state()  
+            rospy.loginfo("Topological navigation execute policy action server exited with status: " + GoalStatus.to_string(status))
+            if status!=GoalStatus.SUCCEEDED:
+                if status==GoalStatus.ABORTED or self.current_prod_state is None:
+                    self.mdp_nav_as.set_aborted()
+                elif status==GoalStatus.PREEMPTED:
+                    self.mdp_nav_as.set_preempted()
+                else:
+                    rospy.logwarn("Unexpected outcome from the topological navigaton execute policy action server. Setting as aborted")
+                    self.mdp_nav_as.set_aborted()
+                return
+        rospy.loginfo("Policy execution successful.")
+        self.mdp_nav_as.set_succeeded()
+
 
     def preempt_policy_execution_cb(self):     
         self.top_nav_policy_exec.cancel_all_goals()
     
-    ##TODO Add this and make this work with arbitrary (finite memory) policies
-    #def top_nav_feedback_cb(self,feedback):
-        #self.current_node = feedback.route_status
-        #current_action=self.policy_handler.product_mdp.policy[self.current_prod_mdp_state]
-        #self.current_prod_mdp_state = self.policy_handler.product_mdp.get_new_state(self.current_prod_mdp_state,current_action, self.current_node)
-        #if self.current_prod_mdp_state in self.policy_handler.product_mdp.goal_states:
-            #self.finishing_policy_mode_execution=True            
+    def top_nav_feedback_cb(self,feedback):
+        rospy.loginfo("Reached waypoint " + feedback.route_status)
+        self.get_next_prod_state(feedback.route_status)
+        
+    def get_next_prod_state(self, current_waypoint):
+        waypoint_val=self.product_mdp.props_def[current_waypoint].conds['waypoint']
+        if waypoint_val==self.current_prod_state["waypoint"]:
+            return
+        for transition in self.product_mdp.transitions:
+            if self.product_mdp.check_cond_sat(transition.pre_conds, self.current_prod_state):
+                for prob_post_cond in transition.prob_post_conds:
+                    if prob_post_cond[1]["waypoint"]==waypoint_val:
+                        self.current_prod_state=dict(prob_post_cond[1])
+                        return
+        self.current_prod_state=None
+        rospy.logerr("Error getting MDP next state. Aborting.")
+        self.top_nav_policy_exec.cancel_all_goals()
      
     def main(self):
         # Wait for control-c
