@@ -2,6 +2,13 @@
 Changelog for package mdp_plan_exec
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update README.md
+* update README
+* test latex rendering
+* Contributors: Bruno Lacerda
+
 0.0.17 (2015-03-23)
 -------------------
 * code clean
