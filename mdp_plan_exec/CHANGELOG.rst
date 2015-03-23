@@ -2,8 +2,8 @@
 Changelog for package mdp_plan_exec
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.17 (2015-03-23)
+-------------------
 * code clean
   better tracking of execution to allow for general co-safe ltl specs
   correct behaviour when robot is already in influence area of target
