@@ -2,8 +2,8 @@
 Changelog for package wait_action
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.18 (2015-03-23)
+-------------------
 * Added   `strands_executive_msgs` to build depend list of wait_action. This should fix `#138 <https://github.com/strands-project/strands_executive/issues/138>`_.
 * Contributors: Nick Hawes
 

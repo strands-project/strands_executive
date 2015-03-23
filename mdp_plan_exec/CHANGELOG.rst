@@ -2,8 +2,8 @@
 Changelog for package mdp_plan_exec
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.18 (2015-03-23)
+-------------------
 * Update README.md
 * update README
 * test latex rendering
