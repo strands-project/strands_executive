@@ -57,7 +57,7 @@ if __name__ == '__main__':
     elif len(filtered_argv)>2:
         rospy.logwarn("Too many arguments. Assuming topological map is the first one. usage: rosrun mdp_plan_exec mdp_travel_time_estimator <topological_map_name>")
     
-    mdp_estimator =  MdpTravelTimeEstimator(sys.argv[1])
+    mdp_estimator =  MdpTravelTimeEstimator(filtered_argv[1])
     mdp_estimator.main()
     
     
