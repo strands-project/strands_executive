@@ -56,9 +56,9 @@ Generates and executes a policy for a given input task,  by performing value ite
 
 `/mdp_plan_exec/execute_policy` ([strands_executive_msgs/ExecutePolicy](https://github.com/strands-project/strands_executive/blob/hydro-release/strands_executive_msgs/action/ExecutePolicy.action)) 
 
-Given a `task_type` and `target_id`, generates a cost optimal policy and executes the navigation actions associated to it. The specification is a co-safe LTL formula generated taking into account the `task_type`:
+Given a `task_type` and `target_id`, generates a cost optimal policy and executes the navigation actions associated to it. The specification is a co-safe LTL formula generated taking into account the `task_type`. In the following `forbidden_waypoints_ltl_string` and `safe_waypoints_ltl_string` are the strings obtained from the `get_special_waypoints`service:
 
-* `task_type = GOTO_WAYPOINT`. This generates and executes a policy for formula `F target_id` (i.e., "reach `target_id`") if there are no forbidden  waypoints, or for formula `forbidden_waypoints_ltl_string U target_id`  (i.e., reach `target_id`while avoiding the forbidden waypoints), where `forbidden_waypoints_ltl_string` is the string obtained from the `get_special_waypoints`service.
+* `task_type = GOTO_WAYPOINT`. This generates and executes a policy for formula `F target_id` (i.e., "reach `target_id`") if there are no forbidden  waypoints, or for formula `forbidden_waypoints_ltl_string U target_id`  (i.e., reach `target_id`while avoiding the forbidden waypoints).
 * `task_type = LEAVE_FORBIDDEN_AREA`. This generates and executes a policy for formula `F forbidden_waypoints_ltl_string` (i.e., get out of the forbidden waypoints as soon as possible). It should be called when the robot ends up in forbidden areas of the environment due to some failure in execution.
 * `task_type = GOTO_CLOSEST_SAFE_WAYPOINT`. This generates and executes a policy for formula `F safe_waypoints_string` (i.e., reach a safe waypoint as soon as possible). It should be called when the robot is sent to a safe zone, for example by an end-user.
 * `task_type = COSAFE_LTL`. This generates and executes a policy for formula `target_id`. In this case, `target_id`is a general co-safe LTL formula written in the [PRISM specification language](http://www.prismmodelchecker.org/manual/PropertySpecification/SyntaxAndSemantics).
