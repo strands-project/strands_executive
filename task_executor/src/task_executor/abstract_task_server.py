@@ -5,12 +5,12 @@ import actionlib
 from strands_executive_msgs.srv import IsTaskInterruptible, CreateTask
 from actionlib.msg import TestAction
 
-class AbstractTaskServer:
+class AbstractTaskServer(object):
     def __init__(self, name, action_type=TestAction, interruptible=True):         
         self.name = name
         self.action_type = action_type
         self.interruptible = interruptible
-        self.server = actionlib.SimpleActionServer(self.name, action_type, self.execute, False) 
+        self.server = actionlib.SimpleActionServer(self.name, self.action_type, self.execute, False) 
         self.server.start()
         # this is not necessary in this node, but included for testing purposes
         rospy.Service('%s_is_interruptible' % self.name, IsTaskInterruptible, self.is_interruptible)
@@ -36,7 +36,6 @@ class AbstractTaskServer:
             self.server.set_preempted()
         else:
             self.server.set_succeeded()
-
 
 if __name__ == '__main__':
     rospy.init_node("abstract_task_server")
