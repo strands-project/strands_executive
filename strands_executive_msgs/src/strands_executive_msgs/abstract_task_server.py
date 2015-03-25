@@ -12,15 +12,11 @@ class AbstractTaskServer(object):
         self.interruptible = interruptible
         self.server = actionlib.SimpleActionServer(self.name, self.action_type, self.execute, False) 
         self.server.start()
-        # this is not necessary in this node, but included for testing purposes
         rospy.Service('%s_is_interruptible' % self.name, IsTaskInterruptible, self.is_interruptible)
         rospy.Service('%s_create' % self.name, CreateTask, self.create)
 
     def is_interruptible(self, req):
-        # rospy.loginfo('Yes, interrupt me, go ahead')
         return self.interuptible
-        # rospy.loginfo('No, I will never stop')
-        # return False
 
     def create(self, req):
         task = req.task
