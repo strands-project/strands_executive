@@ -4,8 +4,8 @@ import rospy
 from wait_action.msg import WaitAction
 from datetime import *
 from std_srvs.srv import Empty, EmptyResponse
-from task_executor.abstract_task_server import AbstractTaskServer
 from strands_executive_msgs import task_utils
+from strands_executive_msgs.abstract_task_server import AbstractTaskServer
 
 class WaitServer(AbstractTaskServer):
     def __init__(self):         
