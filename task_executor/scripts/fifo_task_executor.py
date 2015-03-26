@@ -3,7 +3,7 @@
 import rospy
 from Queue import Queue, Empty
 from strands_executive_msgs.msg import Task
-from task_executor.base_executor import AbstractTaskExecutor
+from task_executor.sm_base_executor import AbstractTaskExecutor
 
 
 class FIFOTaskExecutor(AbstractTaskExecutor):
