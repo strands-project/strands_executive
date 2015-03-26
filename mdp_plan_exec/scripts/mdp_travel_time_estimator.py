@@ -36,7 +36,7 @@ class MdpTravelTimeEstimator(object):
             #update model with fremen
             self.top_map_mdp.write_prism_model(self.directory+self.file_name)
         specification='R{"time"}min=? [ ( F "' + req.target_waypoint + '") ]'
-        state_vector=self.prism_estimator.get_state_vector(specification)
+        state_vector=map(rospy.Duration, self.prism_estimator.get_state_vector(specification))
         state_vector_names=self.top_map_mdp.parse_sta_to_waypoints(self.directory+'original.sta', len(state_vector))
         return GetExpectedTravelTimesToWaypointResponse(source_waypoints=state_vector_names, travel_times=state_vector)
         

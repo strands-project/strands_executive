@@ -10,7 +10,7 @@ from actionlib_msgs.msg import GoalStatus
 from geometry_msgs.msg import Pose, Point, Quaternion
 from mongodb_store.message_store import MessageStoreProxy
 from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
-from strands_navigation_msgs.srv import EstimateTravelTime
+
 from std_srvs.srv import Empty, EmptyResponse
 from std_msgs.msg import String
 import threading
@@ -55,16 +55,19 @@ class BaseTaskExecutor(object):
         """ Called to clear all tasks from schedule, with the exception of the currently executing one. """
         pass
 
+
+    # "Constants" to determine which nav service to use
+    TOPOLOGICAL_NAV=0
+    MDP_NAV=1
+
     def __init__(self):
         self.task_counter = 1        
         self.msg_store = MessageStoreProxy() 
         self.logging_msg_store = MessageStoreProxy(collection='task_events') 
         
-        expected_time_srv_name = 'topological_navigation/travel_time_estimator'
-        rospy.loginfo('Waiting for %s' % expected_time_srv_name)
-        rospy.wait_for_service(expected_time_srv_name)
-        rospy.loginfo('... and got %s' % expected_time_srv_name)
-        self.expected_time = rospy.ServiceProxy(expected_time_srv_name, EstimateTravelTime)        
+        self.nav_service = BaseTaskExecutor.TOPOLOGICAL_NAV
+        # self.nav_service = BaseTaskExecutor.MDP_NAV
+        self.expected_time_srv = None
 
         self.executing = False
         # start with some faked but likely one in case of problems
@@ -119,12 +122,55 @@ class BaseTaskExecutor(object):
         if task.start_node_id == '':
             return rospy.Duration(10)
         elif self.current_node == 'none':
-            return self.get_navigation_duration(start=self.closest_node, end=task.start_node_id)
+            return self.get_navigation_duration(start=self.closest_node, end=task.start_node_id, task=task)
         else:
-            return self.get_navigation_duration(start=self.current_node, end=task.start_node_id)
+            return self.get_navigation_duration(start=self.current_node, end=task.start_node_id, task=task)
+
+    def create_expected_time_service(self):
+        if self.expected_time_srv is None:
+            if self.nav_service == BaseTaskExecutor.TOPOLOGICAL_NAV:
+                from strands_navigation_msgs.srv import EstimateTravelTime
+                expected_time_srv_name = 'topological_navigation/travel_time_estimator'
+                rospy.loginfo('Waiting for %s' % expected_time_srv_name)
+                rospy.wait_for_service(expected_time_srv_name)
+                rospy.loginfo('... and got %s' % expected_time_srv_name)
+                self.expected_time_srv = rospy.ServiceProxy(expected_time_srv_name, EstimateTravelTime)        
+            elif self.nav_service == BaseTaskExecutor.MDP_NAV:
+                from strands_executive_msgs.srv import GetExpectedTravelTimesToWaypoint
+                expected_time_srv_name = 'mdp_plan_exec/get_expected_travel_times_to_waypoint'
+                rospy.loginfo('Waiting for %s' % expected_time_srv_name)
+                rospy.wait_for_service(expected_time_srv_name)
+                rospy.loginfo('... and got %s' % expected_time_srv_name)
+                self.expected_time_srv = rospy.ServiceProxy(expected_time_srv_name, GetExpectedTravelTimesToWaypoint)        
+            else:
+                raise RuntimeError('Unknown nav service: %s'% self.nav_service)
 
 
-    def get_navigation_duration(self, start, end):
+    def mdp_expected_time(self, start, end, task = None):
+
+        # if task is none, assume immediate execution
+        if task is None:
+            epoch = rospy.get_rostime()             
+        # else take the epoch from the earliest execution time
+        else:
+            epoch = task.start_after
+
+        resp = self.expected_time_srv(target_waypoint=end, epoch=epoch)
+
+        return resp.travel_times[resp.source_waypoints.index(start)]
+
+
+    def expected_time(self, start, end, task = None):
+        self.create_expected_time_service()
+
+        if self.nav_service == BaseTaskExecutor.TOPOLOGICAL_NAV:
+            return self.expected_time_srv(start=start, target=end).travel_time
+        elif self.nav_service == BaseTaskExecutor.MDP_NAV:
+            return self.mdp_expected_time(start, end, task)
+        else:
+            raise RuntimeError('Unknown nav service: %s'% self.nav_service)
+
+    def get_navigation_duration(self, start, end, task = None):
 
         try:            
             # prevent concurrent calls to expected_time service. 
@@ -133,11 +179,10 @@ class BaseTaskExecutor(object):
                 # if we're going nowhere, return some default
                 return rospy.Duration(10)
             else:
-                et = self.expected_time(start=start, target=end)
-                # rospy.loginfo('expected travel time %s' % et.travel_time)
+                et = self.expected_time(start, end, task)
+                # rospy.loginfo('expected travel time %s' % et)
                 # allow a bit of time for any transition -- mainly for testing cases
-                return rospy.Duration(max(et.travel_time.to_sec() * 20, 10))
-                # return rospy.Duration(120)            
+                return rospy.Duration(max(et.to_sec() * 2, 10))
         except Exception, e:
             rospy.logwarn('Caught exception when getting expected time: %s' % e)
             return rospy.Duration(10)
