@@ -65,9 +65,17 @@ class BaseTaskExecutor(object):
         self.task_counter = 1        
         self.msg_store = MessageStoreProxy() 
         self.logging_msg_store = MessageStoreProxy(collection='task_events') 
-        
-        # self.nav_service = BaseTaskExecutor.TOPOLOGICAL_NAV
+
         self.nav_service = BaseTaskExecutor.MDP_NAV
+
+        nav_service = rospy.get_param('~nav_service', 'mdp')
+
+        if nav_service.lower().startswith('top'):
+            self.nav_service = BaseTaskExecutor.TOPOLOGICAL_NAV
+            rospy.loginfo('Using topological navigation')
+        else: 
+            rospy.loginfo('Using mdp navigation')
+
         self.expected_time_srv = None
 
         self.executing = False

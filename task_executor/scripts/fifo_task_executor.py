@@ -16,9 +16,6 @@ class FIFOTaskExecutor(AbstractTaskExecutor):
         super( FIFOTaskExecutor, self ).__init__()
         self.tasks = Queue()
         
-        # only use top nav, this is really for testing
-        self.nav_service = BaseTaskExecutor.TOPOLOGICAL_NAV
-
         self.advertise_services()
 
 
