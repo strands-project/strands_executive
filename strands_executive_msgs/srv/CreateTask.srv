@@ -1,4 +1,4 @@
 # This service returns the currently executing task
-Task task
+String yaml
 ---
 Task task
