@@ -6,7 +6,7 @@ from strands_executive_msgs.srv import IsTaskInterruptible, CreateTask
 from strands_executive_msgs.msg import Task
 from actionlib.msg import TestAction
 from mongodb_store_msgs.msg import StringPair
-
+from yaml import load
 
 
 class AbstractTaskServer(object):
@@ -51,7 +51,8 @@ class AbstractTaskServer(object):
         task.action = self.name
         if task.end_node_id is None:
             task.end_node_id = task.start_node_id
-        self._fill_slots(task, req.yaml)
+	if len(req.yaml) > 0:
+        	self._fill_slots(load(req.yaml), task)
         return task
 
     def execute(self, goal):
