@@ -1,0 +1,13 @@
+<launch>
+
+  <node pkg="scheduler" type="scheduler_node" name="schedule_server"  output="screen"/>
+
+  <!-- task system using topological navigation -->
+  <node pkg="task_executor" type="scheduled_task_executor.py" name="scheduled_task_executor"  output="screen">
+  	  <param name="nav_service" type="string" value="topological_nav" />
+  </node>
+
+  <!-- Utility node used for generating wait behaviours -->
+  <node pkg="wait_action" type="wait_node.py" name="wait_node"  output="screen"/>    
+
+</launch>

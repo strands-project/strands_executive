@@ -7,7 +7,9 @@
 
   <include file="$(find topological_utils)/launch/dummy_topological_navigation.launch" />
 
-  <node pkg="task_executor" type="fifo_task_executor.py" name="fifo_task_executor" />
+  <node pkg="task_executor" type="fifo_task_executor.py" name="fifo_task_executor">
+  	<param name="nav_service" type="string" value="topological_nav" />
+  </node>
   
   <test test-name="fifo_tester" pkg="task_executor" type="fifo_tester.py" />
 

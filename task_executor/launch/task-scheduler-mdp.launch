@@ -1,0 +1,26 @@
+<launch>
+
+  <arg name="topological_map"/>
+  
+
+  <!-- fremen  -->
+  <node pkg="frenap" type="frenap" name="frenap"/>
+
+  <!-- run mdp plan exec -->
+  <include file="$(find mdp_plan_exec)/launch/mdp_plan_exec.launch">
+  	<arg name="topological_map" value="$(arg topological_map)" />
+  </include>
+
+
+  <node pkg="scheduler" type="scheduler_node" name="schedule_server"  output="screen"/>
+
+  <!-- task system using mdp navigation -->
+  <node pkg="task_executor" type="scheduled_task_executor.py" name="scheduled_task_executor"  output="screen">
+  	<param name="nav_service" type="string" value="mdp" />
+  </node>
+
+  
+  <!-- Utility node used for generating wait behaviours -->
+  <node pkg="wait_action" type="wait_node.py" name="wait_node"  output="screen"/>    
+
+</launch>
