@@ -23,7 +23,7 @@ class AbstractTaskServer(object):
         rospy.Service('%s_create' % self.name, CreateTask, self.create)
 
     def is_interruptible(self, req):
-        return self.interuptible
+        return self.interruptible
 
     def _fill_slots(self, src, dest):
         for s in dest.__slots__:
