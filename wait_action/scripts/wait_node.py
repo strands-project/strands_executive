@@ -1,25 +1,15 @@
 #!/usr/bin/env python
 
 import rospy
-import actionlib
-from wait_action.msg import *
+from wait_action.msg import WaitAction
 from datetime import *
 from std_srvs.srv import Empty, EmptyResponse
-from strands_executive_msgs.srv import IsTaskInterruptible
+from strands_executive_msgs import task_utils
+from strands_executive_msgs.abstract_task_server import AbstractTaskServer
 
-
-class WaitServer:
+class WaitServer(AbstractTaskServer):
     def __init__(self):         
-        self.server = actionlib.SimpleActionServer('wait_action', WaitAction, self.execute, False) 
-        self.server.start()
-        # this is not necessary in this node, but included for testing purposes
-        rospy.Service('wait_action_is_interruptible', IsTaskInterruptible, self.is_interruptible)
-
-    def is_interruptible(self, req):
-        # rospy.loginfo('Yes, interrupt me, go ahead')
-        return True
-        # rospy.loginfo('No, I will never stop')
-        # return False
+        super(WaitServer, self).__init__('wait_action', action_type=WaitAction)
 
     def end_wait(self, req):
         
@@ -29,6 +19,12 @@ class WaitServer:
             self.server.set_preempted()
         return EmptyResponse()
 
+    def create(self, req):
+        t = super(WaitServer, self).create(req)
+        task_utils.add_time_argument(t, rospy.Time())
+        task_utils.add_duration_argument(t, t.max_duration)
+        return t
+        
     def execute(self, goal):
         # rospy.loginfo("waiting: %s" % goal) 
 
@@ -49,7 +45,7 @@ class WaitServer:
         rospy.loginfo("target wait time: %s" % datetime.fromtimestamp(target.secs))	
 
         # how often to provide feedback 
-        feedback_secs = 5
+        feedback_secs = 5.0
         feedback = WaitFeedback()
         # how long to wait
         wait_duration_secs = target.secs - now.secs
