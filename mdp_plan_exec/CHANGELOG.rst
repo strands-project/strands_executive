@@ -2,6 +2,13 @@
 Changelog for package mdp_plan_exec
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Integrated mdp travel time service.
+  The current setup allows and code switch back to top nav if necessary. Tested with both.
+  This also fixes a problem in the /mdp_plan_exec/get_expected_travel_times_to_waypoint service where it was expecting a duration for epoch but the service definition was of int.
+* Contributors: Nick Hawes
+
 0.0.18 (2015-03-23)
 -------------------
 * Update README.md
