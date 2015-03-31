@@ -7,7 +7,7 @@ import unittest
 import rostest
 import sys
 
-
+from strands_executive_msgs.srv import AddTasks
 from gcal_routine.tools import GCal
 from gcal_routine.tools import rostime_str
 from gcal_routine.queue_routine_runner import GCalRoutineRunner
@@ -43,7 +43,13 @@ class GCalTest(unittest.TestCase):
         gcal.shift_to_now()
 
     def test_runner(self):
-        runner = GCalRoutineRunner(None, update_wait=0.5)
+        add_tasks_srv_name = '/task_executor/add_tasks'
+        rospy.loginfo("Waiting for task_executor service...")
+        rospy.wait_for_service(add_tasks_srv_name)
+        rospy.loginfo("Done")
+        add_tasks_srv = rospy.ServiceProxy(add_tasks_srv_name, AddTasks)
+
+        runner = GCalRoutineRunner(add_tasks_srv, update_wait=0.5)
         gcal = GCal(None,
                     None,
                     add_cb=runner.add_task, remove_cb=runner.remove_task,
@@ -53,7 +59,7 @@ class GCalTest(unittest.TestCase):
         self.assertTrue(gcal.update(added, removed))
         gcal.shift_to_now()
         self.assertEqual(len(gcal.get_task_list()), 4)
-        rospy.sleep(5)
+        rospy.sleep(15)
         # after this time, the first task should already
         # be sent to the scheduler
         self.assertEqual(len(runner.waiting_tasks), 3)
