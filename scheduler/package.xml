@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>scheduler</name>
-  <version>0.0.16</version>
+  <version>0.0.18</version>
   <description>A task scheduler implemented using mixed integer programming.</description>
 
   <maintainer email="n.a.hawes@cs.bham.ac.uk">Nick Hawes</maintainer>
@@ -9,7 +9,7 @@
 
   <license>MIT</license>
 
-  <!-- <url type="website">http://wiki.ros.org/scheduler</url> -->
+  <url type="website">http://wiki.ros.org/scheduler</url>
 
   <author>Lenka Mudrova</author>
 

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>task_executor</name>
-  <version>0.0.16</version>
+  <version>0.0.18</version>
   <description>A package for triggering and monitoring the execution of actionlib-based tasks.</description>
  
   <maintainer email="n.a.hawes@cs.bham.ac.uk">Nick Hawes</maintainer>
@@ -22,7 +22,8 @@
   <build_depend>actionlib</build_depend>
   <build_depend>actionlib_msgs</build_depend>
   <build_depend>topological_navigation</build_depend>
-  
+  <build_depend>mdp_plan_exec</build_depend>
+  <build_depend>frenap</build_depend>
 
   <run_depend>message_runtime</run_depend>
   <run_depend>actionlib</run_depend>
@@ -37,6 +38,8 @@
   <run_depend>python-dateutil</run_depend>
   <run_depend>scheduler</run_depend>
   <run_depend>wait_action</run_depend>
+  <run_depend>mdp_plan_exec</run_depend>
+  <run_depend>frenap</run_depend>
 
   <test_depend>rostest</test_depend>
   <test_depend>topological_utils</test_depend>

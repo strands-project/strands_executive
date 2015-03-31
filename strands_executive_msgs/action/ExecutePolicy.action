@@ -1,9 +1,9 @@
 uint8 GOTO_WAYPOINT=0 #target_id is only taken into account for this task type.
 uint8 LEAVE_FORBIDDEN_AREA=1
 uint8 GOTO_CLOSEST_SAFE_WAYPOINT=2
+uint8 COSAFE_LTL=3
 uint8 task_type
 string target_id
-string time_of_day #for future use, for now should always be 'all_day'
 ---
 
 ---

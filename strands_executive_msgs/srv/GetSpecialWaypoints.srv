@@ -1,0 +1,6 @@
+
+---
+string[] safe_waypoints
+string safe_waypoints_ltl_string
+string[] forbidden_waypoints
+string forbidden_waypoints_ltl_string

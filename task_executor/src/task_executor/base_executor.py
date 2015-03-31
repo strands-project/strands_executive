@@ -3,14 +3,15 @@
 import rospy
 
 from strands_executive_msgs.msg import Task, TaskEvent
-from strands_executive_msgs.srv import *
+
 import mongodb_store.util as dc_util
 import actionlib
 from actionlib_msgs.msg import GoalStatus
 from geometry_msgs.msg import Pose, Point, Quaternion
 from mongodb_store.message_store import MessageStoreProxy
-from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
-from strands_navigation_msgs.srv import EstimateTravelTime
+
+from strands_executive_msgs.srv import *
+
 from std_srvs.srv import Empty, EmptyResponse
 from std_msgs.msg import String
 import threading
@@ -55,16 +56,27 @@ class BaseTaskExecutor(object):
         """ Called to clear all tasks from schedule, with the exception of the currently executing one. """
         pass
 
+
+    # "Constants" to determine which nav service to use
+    TOPOLOGICAL_NAV=0
+    MDP_NAV=1
+
     def __init__(self):
         self.task_counter = 1        
         self.msg_store = MessageStoreProxy() 
         self.logging_msg_store = MessageStoreProxy(collection='task_events') 
-        
-        expected_time_srv_name = 'topological_navigation/travel_time_estimator'
-        rospy.loginfo('Waiting for %s' % expected_time_srv_name)
-        rospy.wait_for_service(expected_time_srv_name)
-        rospy.loginfo('... and got %s' % expected_time_srv_name)
-        self.expected_time = rospy.ServiceProxy(expected_time_srv_name, EstimateTravelTime)        
+
+        self.nav_service = BaseTaskExecutor.MDP_NAV
+
+        nav_service = rospy.get_param('~nav_service', 'mdp')
+
+        if nav_service.lower().startswith('top'):
+            self.nav_service = BaseTaskExecutor.TOPOLOGICAL_NAV
+            rospy.loginfo('Using topological navigation')
+        else: 
+            rospy.loginfo('Using mdp navigation')
+
+        self.expected_time_srv = None
 
         self.executing = False
         # start with some faked but likely one in case of problems
@@ -114,17 +126,60 @@ class BaseTaskExecutor(object):
         raise RuntimeError('No action associated with topic: %s'% action_name)
 
 
-    def expected_navigation_duration(self, task):
+    def expected_navigation_duration_now(self, end):
         # if we're going nowhere, return some default
-        if task.start_node_id == '':
+        if end == '':
             return rospy.Duration(10)
         elif self.current_node == 'none':
-            return self.get_navigation_duration(start=self.closest_node, end=task.start_node_id)
+            return self.get_navigation_duration(start=self.closest_node, end=end)
         else:
-            return self.get_navigation_duration(start=self.current_node, end=task.start_node_id)
+            return self.get_navigation_duration(start=self.current_node, end=end)
+
+    def create_expected_time_service(self):
+        if self.expected_time_srv is None:
+            if self.nav_service == BaseTaskExecutor.TOPOLOGICAL_NAV:
+                from strands_navigation_msgs.srv import EstimateTravelTime
+                expected_time_srv_name = 'topological_navigation/travel_time_estimator'
+                rospy.loginfo('Waiting for %s' % expected_time_srv_name)
+                rospy.wait_for_service(expected_time_srv_name)
+                rospy.loginfo('... and got %s' % expected_time_srv_name)
+                self.expected_time_srv = rospy.ServiceProxy(expected_time_srv_name, EstimateTravelTime)        
+            elif self.nav_service == BaseTaskExecutor.MDP_NAV:
+                from strands_executive_msgs.srv import GetExpectedTravelTimesToWaypoint
+                expected_time_srv_name = 'mdp_plan_exec/get_expected_travel_times_to_waypoint'
+                rospy.loginfo('Waiting for %s' % expected_time_srv_name)
+                rospy.wait_for_service(expected_time_srv_name)
+                rospy.loginfo('... and got %s' % expected_time_srv_name)
+                self.expected_time_srv = rospy.ServiceProxy(expected_time_srv_name, GetExpectedTravelTimesToWaypoint)        
+            else:
+                raise RuntimeError('Unknown nav service: %s'% self.nav_service)
 
 
-    def get_navigation_duration(self, start, end):
+    def mdp_expected_time(self, start, end, task = None):
+
+        # if task is none, assume immediate execution
+        if task is None:
+            epoch = rospy.get_rostime()             
+        # else take the epoch from the earliest execution time
+        else:
+            epoch = task.start_after
+
+        resp = self.expected_time_srv(target_waypoint=end, epoch=epoch)
+
+        return resp.travel_times[resp.source_waypoints.index(start)]
+
+
+    def expected_time(self, start, end, task = None):
+        self.create_expected_time_service()
+
+        if self.nav_service == BaseTaskExecutor.TOPOLOGICAL_NAV:
+            return self.expected_time_srv(start=start, target=end).travel_time
+        elif self.nav_service == BaseTaskExecutor.MDP_NAV:
+            return self.mdp_expected_time(start, end, task)
+        else:
+            raise RuntimeError('Unknown nav service: %s'% self.nav_service)
+
+    def get_navigation_duration(self, start, end, task = None):
 
         try:            
             # prevent concurrent calls to expected_time service. 
@@ -133,11 +188,9 @@ class BaseTaskExecutor(object):
                 # if we're going nowhere, return some default
                 return rospy.Duration(10)
             else:
-                et = self.expected_time(start=start, target=end)
-                # rospy.loginfo('expected travel time %s' % et.travel_time)
-                # allow a bit of time for any transition -- mainly for testing cases
-                return rospy.Duration(max(et.travel_time.to_sec() * 20, 10))
-                # return rospy.Duration(120)            
+                et = self.expected_time(start, end, task)
+                # rospy.loginfo('expected travel time %s' % et)                
+                return rospy.Duration(max(et.to_sec(), 10))
         except Exception, e:
             rospy.logwarn('Caught exception when getting expected time: %s' % e)
             return rospy.Duration(10)
@@ -326,7 +379,7 @@ class BaseTaskExecutor(object):
 
         expected_nav_duration = rospy.Duration(0)
         if self.active_task.start_node_id != '':                    
-            expected_nav_duration = self.expected_navigation_duration(task)
+            expected_nav_duration = self.expected_navigation_duration_now(self.active_task.start_node_id)
             rospy.loginfo('expected_nav_duration:  %s' % expected_nav_duration.to_sec())
 
         total_task_duration = expected_nav_duration + task.max_duration
@@ -383,211 +436,213 @@ class BaseTaskExecutor(object):
 
 # NOTE THIS AbstractTaskExecutor IS NOT USED BY THE CURRENT IMPLEMENTATION
 
-class AbstractTaskExecutor(BaseTaskExecutor):
+# Will cut in the future...
 
-    def __init__(self):
-        super( AbstractTaskExecutor, self ).__init__()      
+# class AbstractTaskExecutor(BaseTaskExecutor):
+
+#     def __init__(self):
+#         super( AbstractTaskExecutor, self ).__init__()      
                
-        self.nav_client = None
-        self.action_client = None
+#         self.nav_client = None
+#         self.action_client = None
         
-    def execute_task(self, task):
+#     def execute_task(self, task):
 
-        self.log_task_event(task, TaskEvent.TASK_STARTED, rospy.get_rostime())
+#         self.log_task_event(task, TaskEvent.TASK_STARTED, rospy.get_rostime())
 
-        expected_nav_duration = self.prepare_task(task)
+#         expected_nav_duration = self.prepare_task(task)
 
-        if self.active_task.start_node_id != '':                    
-            self.start_task_navigation(expected_nav_duration)
-        elif self.active_task.action != '':                    
-            self.start_task_action()
-        else:
-            warning = 'Provided task had no start_node_id or action %s' % self.active_task
-            rospy.logwarn(warning)
-            self.log_task_event(self.active_task, TaskEvent.TASK_COMPLETE, now, warning)
+#         if self.active_task.start_node_id != '':                    
+#             self.start_task_navigation(expected_nav_duration)
+#         elif self.active_task.action != '':                    
+#             self.start_task_action()
+#         else:
+#             warning = 'Provided task had no start_node_id or action %s' % self.active_task
+#             rospy.logwarn(warning)
+#             self.log_task_event(self.active_task, TaskEvent.TASK_COMPLETE, now, warning)
 
-            self.active_task = None            
-
-
+#             self.active_task = None            
 
 
-    def cancel_active_task(self):
-        self.cancel_active_task_cb(None)
 
-    def cancel_active_task_cb(self, event):
-        """ Cancel any active nav or task action """
-        if event is not None:
-            rospy.logwarn("Cancelling task that has overrun %s" % self.active_task.task_id)
-        else:
-            rospy.logwarn("Cancelling task %s" % self.active_task.task_id)
 
-        now = rospy.get_rostime()
-        cancelled = self.active_task
-        self.active_task = None
+#     def cancel_active_task(self):
+#         self.cancel_active_task_cb(None)
 
-        if self.nav_client is not None: 
-            self.nav_timeout_timer.shutdown()
-            if self.nav_client.get_state() == GoalStatus.ACTIVE:
-                self.nav_client.cancel_goal()                            
-            self.nav_client = None
-            self.log_task_event(cancelled, TaskEvent.NAVIGATION_PREEMPTED, now)                
+#     def cancel_active_task_cb(self, event):
+#         """ Cancel any active nav or task action """
+#         if event is not None:
+#             rospy.logwarn("Cancelling task that has overrun %s" % self.active_task.task_id)
+#         else:
+#             rospy.logwarn("Cancelling task %s" % self.active_task.task_id)
+
+#         now = rospy.get_rostime()
+#         cancelled = self.active_task
+#         self.active_task = None
+
+#         if self.nav_client is not None: 
+#             self.nav_timeout_timer.shutdown()
+#             if self.nav_client.get_state() == GoalStatus.ACTIVE:
+#                 self.nav_client.cancel_goal()                            
+#             self.nav_client = None
+#             self.log_task_event(cancelled, TaskEvent.NAVIGATION_PREEMPTED, now)                
 
             
-        if self.action_client  is not None:
-            self.action_timeout_timer.shutdown()
-            if self.action_client.get_state() == GoalStatus.ACTIVE:
-                self.action_client.cancel_goal()            
-            self.action_client = None
-            self.log_task_event(cancelled, TaskEvent.EXECUTION_PREEMPTED, now)                        
+#         if self.action_client  is not None:
+#             self.action_timeout_timer.shutdown()
+#             if self.action_client.get_state() == GoalStatus.ACTIVE:
+#                 self.action_client.cancel_goal()            
+#             self.action_client = None
+#             self.log_task_event(cancelled, TaskEvent.EXECUTION_PREEMPTED, now)                        
 
 
-        self.task_failed(cancelled)
+#         self.task_failed(cancelled)
         
-        if event is not None:
-            self.log_task_event(cancelled, TaskEvent.CANCELLED_MANUALLY, now)
+#         if event is not None:
+#             self.log_task_event(cancelled, TaskEvent.CANCELLED_MANUALLY, now)
         
-        self.log_task_event(cancelled, TaskEvent.TASK_FINISHED, now)
+#         self.log_task_event(cancelled, TaskEvent.TASK_FINISHED, now)
 
-    def cancel_navigation(self, event):
-        """ Called on nav timeout """
-        rospy.logwarn("Cancelling navigation that has overrun for task %s" % self.active_task.task_id)
+#     def cancel_navigation(self, event):
+#         """ Called on nav timeout """
+#         rospy.logwarn("Cancelling navigation that has overrun for task %s" % self.active_task.task_id)
 
-        # cancel navigation
-        if self.nav_client is not None:
-            if self.nav_client.get_state() == GoalStatus.ACTIVE:
-                self.nav_client.cancel_goal()
-            self.nav_client = None
+#         # cancel navigation
+#         if self.nav_client is not None:
+#             if self.nav_client.get_state() == GoalStatus.ACTIVE:
+#                 self.nav_client.cancel_goal()
+#             self.nav_client = None
 
-            # fail task 
-            now = rospy.get_rostime()
-            cancelled = self.active_task
-            self.active_task = None
+#             # fail task 
+#             now = rospy.get_rostime()
+#             cancelled = self.active_task
+#             self.active_task = None
 
-            self.log_task_event(cancelled, TaskEvent.NAVIGATION_PREEMPTED, now)                
-            self.task_failed(cancelled)
-            self.log_task_event(cancelled, TaskEvent.TASK_FINISHED, now)
-        else:
-            rospy.logwarn('Tried to cancel a navigation action that was None')
+#             self.log_task_event(cancelled, TaskEvent.NAVIGATION_PREEMPTED, now)                
+#             self.task_failed(cancelled)
+#             self.log_task_event(cancelled, TaskEvent.TASK_FINISHED, now)
+#         else:
+#             rospy.logwarn('Tried to cancel a navigation action that was None')
 
-    def start_task_action(self):
+#     def start_task_action(self):
 
-        try:
-            rospy.loginfo('Starting to execute %s' % self.active_task.action)
-            self.log_task_event(self.active_task, TaskEvent.EXECUTION_STARTED, rospy.get_rostime())
+#         try:
+#             rospy.loginfo('Starting to execute %s' % self.active_task.action)
+#             self.log_task_event(self.active_task, TaskEvent.EXECUTION_STARTED, rospy.get_rostime())
 
-            (action_string, goal_string) = self.get_task_types(self.active_task.action)
-            action_clz = dc_util.load_class(dc_util.type_to_class_string(action_string))
-            goal_clz = dc_util.load_class(dc_util.type_to_class_string(goal_string))
+#             (action_string, goal_string) = self.get_task_types(self.active_task.action)
+#             action_clz = dc_util.load_class(dc_util.type_to_class_string(action_string))
+#             goal_clz = dc_util.load_class(dc_util.type_to_class_string(goal_string))
 
-            self.action_client = actionlib.SimpleActionClient(self.active_task.action, action_clz)
-            self.action_client.wait_for_server()
+#             self.action_client = actionlib.SimpleActionClient(self.active_task.action, action_clz)
+#             self.action_client.wait_for_server()
 
-            argument_list = self.get_arguments(self.active_task.arguments)
+#             argument_list = self.get_arguments(self.active_task.arguments)
 
-            # print "ARGS:"
-            # print argument_list
+#             # print "ARGS:"
+#             # print argument_list
 
-            goal = goal_clz(*argument_list)         
+#             goal = goal_clz(*argument_list)         
 
-            rospy.logdebug('Sending goal to %s' % self.active_task.action)
-            self.action_client.send_goal(goal, self.task_execution_complete_cb) 
+#             rospy.logdebug('Sending goal to %s' % self.active_task.action)
+#             self.action_client.send_goal(goal, self.task_execution_complete_cb) 
             
-            wiggle_room = rospy.Duration(5)
-            # start a timer to kill off tasks that overrun
-            self.action_timeout_timer = rospy.Timer(self.active_task.max_duration + wiggle_room, self.cancel_active_task_cb, oneshot=True)
+#             wiggle_room = rospy.Duration(5)
+#             # start a timer to kill off tasks that overrun
+#             self.action_timeout_timer = rospy.Timer(self.active_task.max_duration + wiggle_room, self.cancel_active_task_cb, oneshot=True)
 
-        except Exception, e:
-            rospy.logwarn('Exception in start_task_action: %s', e)
-            # do bookkeeping before causing update
-            completed = self.active_task
-            self.active_task = None            
-            self.task_failed(completed)
+#         except Exception, e:
+#             rospy.logwarn('Exception in start_task_action: %s', e)
+#             # do bookkeeping before causing update
+#             completed = self.active_task
+#             self.active_task = None            
+#             self.task_failed(completed)
 
-    def start_task_navigation(self, expected_duration):
-        # always reconnect in case of issues before
-        self.nav_client = actionlib.SimpleActionClient('topological_navigation', GotoNodeAction)
-        self.nav_client.wait_for_server()
-        rospy.logdebug("Created action client")
+#     def start_task_navigation(self, expected_duration):
+#         # always reconnect in case of issues before
+#         self.nav_client = actionlib.SimpleActionClient('topological_navigation', GotoNodeAction)
+#         self.nav_client.wait_for_server()
+#         rospy.logdebug("Created action client")
 
-        # start a timer to kill off tasks that overrun
-        self.nav_timeout_timer = rospy.Timer(expected_duration, self.cancel_navigation, oneshot=True)
-        # self.nav_timeout_timer = rospy.Timer(rospy.Duration(360), self.cancel_navigation, oneshot=True)
+#         # start a timer to kill off tasks that overrun
+#         self.nav_timeout_timer = rospy.Timer(expected_duration, self.cancel_navigation, oneshot=True)
+#         # self.nav_timeout_timer = rospy.Timer(rospy.Duration(360), self.cancel_navigation, oneshot=True)
 
-        nav_goal = GotoNodeGoal(target = self.active_task.start_node_id)
+#         nav_goal = GotoNodeGoal(target = self.active_task.start_node_id)
 
-        self.log_task_event(self.active_task, TaskEvent.NAVIGATION_STARTED, rospy.get_rostime())
+#         self.log_task_event(self.active_task, TaskEvent.NAVIGATION_STARTED, rospy.get_rostime())
 
-        self.nav_client.send_goal(nav_goal, self.navigation_complete_cb)
-        rospy.loginfo("navigating to %s for action %s" % (self.active_task.start_node_id, self.active_task.action))
-
-
-
-    def navigation_complete_cb(self, goal_status, result):
-
-        # if self.nav_client was set to None then navigation was cancelled and we don't care about the response to the call back
-
-        if self.nav_client is not None:
-
-            now = rospy.get_rostime()
-            # stop the countdown
-            self.nav_timeout_timer.shutdown()
-
-            if self.nav_client.get_state() == GoalStatus.SUCCEEDED:
+#         self.nav_client.send_goal(nav_goal, self.navigation_complete_cb)
+#         rospy.loginfo("navigating to %s for action %s" % (self.active_task.start_node_id, self.active_task.action))
 
 
-                rospy.loginfo('Navigation to %s succeeded' % self.active_task.start_node_id)        
-                self.log_task_event(self.active_task, TaskEvent.NAVIGATION_SUCCEEDED, now)                
 
-                if self.active_task.action != '':                                        
-                    self.start_task_action()
-                else:
-                    # do bookkeeping before causing update
-                    completed = self.active_task
-                    self.active_task = None                    
+#     def navigation_complete_cb(self, goal_status, result):
 
-                    self.task_succeeded(completed)
-            else:
-                if self.nav_client.get_state() == GoalStatus.PREEMPTED:
-                    rospy.loginfo('Navigation to %s timed out' % self.active_task.start_node_id)        
-                    self.log_task_event(self.active_task, TaskEvent.NAVIGATION_PREEMPTED, now)                
-                else: 
-                    rospy.loginfo('Navigation to %s failed' % self.active_task.start_node_id)        
-                    self.log_task_event(self.active_task, TaskEvent.NAVIGATION_FAILED, now)                
+#         # if self.nav_client was set to None then navigation was cancelled and we don't care about the response to the call back
+
+#         if self.nav_client is not None:
+
+#             now = rospy.get_rostime()
+#             # stop the countdown
+#             self.nav_timeout_timer.shutdown()
+
+#             if self.nav_client.get_state() == GoalStatus.SUCCEEDED:
+
+
+#                 rospy.loginfo('Navigation to %s succeeded' % self.active_task.start_node_id)        
+#                 self.log_task_event(self.active_task, TaskEvent.NAVIGATION_SUCCEEDED, now)                
+
+#                 if self.active_task.action != '':                                        
+#                     self.start_task_action()
+#                 else:
+#                     # do bookkeeping before causing update
+#                     completed = self.active_task
+#                     self.active_task = None                    
+
+#                     self.task_succeeded(completed)
+#             else:
+#                 if self.nav_client.get_state() == GoalStatus.PREEMPTED:
+#                     rospy.loginfo('Navigation to %s timed out' % self.active_task.start_node_id)        
+#                     self.log_task_event(self.active_task, TaskEvent.NAVIGATION_PREEMPTED, now)                
+#                 else: 
+#                     rospy.loginfo('Navigation to %s failed' % self.active_task.start_node_id)        
+#                     self.log_task_event(self.active_task, TaskEvent.NAVIGATION_FAILED, now)                
             
-                # do bookkeeping before causing update
-                completed = self.active_task
-                self.active_task = None                
+#                 # do bookkeeping before causing update
+#                 completed = self.active_task
+#                 self.active_task = None                
 
-                self.task_failed(completed)
-                self.log_task_event(completed, TaskEvent.TASK_FINISHED, now)
+#                 self.task_failed(completed)
+#                 self.log_task_event(completed, TaskEvent.TASK_FINISHED, now)
 
             
 
 
-    def task_execution_complete_cb(self, goal_status, result):
+#     def task_execution_complete_cb(self, goal_status, result):
 
-        if self.action_client is not None:
-            self.action_timeout_timer.shutdown()
-            now = rospy.get_rostime()
+#         if self.action_client is not None:
+#             self.action_timeout_timer.shutdown()
+#             now = rospy.get_rostime()
 
 
-            # do bookkeeping before causing update
-            completed = self.active_task
+#             # do bookkeeping before causing update
+#             completed = self.active_task
 
-            self.active_task = None            
+#             self.active_task = None            
 
-            if self.action_client.get_state() == GoalStatus.SUCCEEDED:
-                rospy.loginfo('Execution of task %s succeeded' % completed.task_id)        
-                self.log_task_event(completed, TaskEvent.EXECUTION_SUCCEEDED, now)                
-                self.task_succeeded(completed)
-            else:
-                if self.action_client.get_state() == GoalStatus.PREEMPTED:
-                    self.log_task_event(completed, TaskEvent.EXECUTION_PREEMPTED, now)                
-                else:
-                    self.log_task_event(completed, TaskEvent.EXECUTION_FAILED, now)                            
-                self.task_failed(completed)
+#             if self.action_client.get_state() == GoalStatus.SUCCEEDED:
+#                 rospy.loginfo('Execution of task %s succeeded' % completed.task_id)        
+#                 self.log_task_event(completed, TaskEvent.EXECUTION_SUCCEEDED, now)                
+#                 self.task_succeeded(completed)
+#             else:
+#                 if self.action_client.get_state() == GoalStatus.PREEMPTED:
+#                     self.log_task_event(completed, TaskEvent.EXECUTION_PREEMPTED, now)                
+#                 else:
+#                     self.log_task_event(completed, TaskEvent.EXECUTION_FAILED, now)                            
+#                 self.task_failed(completed)
 
-            self.log_task_event(completed, TaskEvent.TASK_FINISHED, now)   
+#             self.log_task_event(completed, TaskEvent.TASK_FINISHED, now)   
 
 
     

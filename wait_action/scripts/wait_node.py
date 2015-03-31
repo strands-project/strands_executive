@@ -1,38 +1,33 @@
 #!/usr/bin/env python
 
 import rospy
-import actionlib
-from wait_action.msg import *
+from wait_action.msg import WaitAction
 from datetime import *
 from std_srvs.srv import Empty, EmptyResponse
-from strands_executive_msgs.srv import IsTaskInterruptible
+from strands_executive_msgs import task_utils
+from strands_executive_msgs.abstract_task_server import AbstractTaskServer
 
-
-class WaitServer:
-    def __init__(self):         
-        self.server = actionlib.SimpleActionServer('wait_action', WaitAction, self.execute, False) 
-        self.server.start()
-        # this is not necessary in this node, but included for testing purposes
-        rospy.Service('wait_action_is_interruptible', IsTaskInterruptible, self.is_interruptible)
-
-    def is_interruptible(self, req):
-        # rospy.loginfo('Yes, interrupt me, go ahead')
-        return True
-        # rospy.loginfo('No, I will never stop')
-        # return False
+class WaitServer(AbstractTaskServer):
+    def __init__(self):
+        super(WaitServer, self).__init__('wait_action', action_type=WaitAction)
 
     def end_wait(self, req):
-        
+
         if self.server.is_active():
             rospy.loginfo("Preempting sleep")
             self.server.preempt_request = True
             self.server.set_preempted()
         return EmptyResponse()
 
-    def execute(self, goal):
-        # rospy.loginfo("waiting: %s" % goal) 
+    def create(self, req):
+        t = super(WaitServer, self).create(req)
+        task_utils.add_time_argument(t, rospy.Time())
+        task_utils.add_duration_argument(t, t.max_duration)
+        return t
 
-        end_wait_srv = rospy.Service('/wait_action/end_wait', Empty, self.end_wait) 
+    def execute(self, goal):
+        end_wait_srv = rospy.Service('/wait_action/end_wait',
+                                     Empty, self.end_wait)
 
         now = rospy.get_rostime()
         target = goal.wait_until
@@ -46,10 +41,11 @@ class WaitServer:
             # rospy.loginfo("waiting a really long time")
 
 
-        rospy.loginfo("target wait time: %s" % datetime.fromtimestamp(target.secs))	
+        rospy.loginfo("target wait time: %s" \
+            % datetime.fromtimestamp(target.secs))	
 
         # how often to provide feedback 
-        feedback_secs = 5
+        feedback_secs = 5.0
         feedback = WaitFeedback()
         # how long to wait
         wait_duration_secs = target.secs - now.secs

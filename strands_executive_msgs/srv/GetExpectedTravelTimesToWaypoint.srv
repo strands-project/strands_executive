@@ -1,0 +1,5 @@
+string target_waypoint
+time epoch
+---
+string[] source_waypoints
+duration[] travel_times

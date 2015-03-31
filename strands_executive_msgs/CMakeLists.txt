@@ -29,15 +29,16 @@ add_service_files(
   FILES
   AddTask.srv
   AddTasks.srv
+  CreateTask.srv
   DemandTask.srv
   CancelTask.srv
   SetExecutionStatus.srv 
   GetExecutionStatus.srv
   GetSchedule.srv
-  GetExpectedTravelTime.srv
-  AddMdpModel.srv
+  GetExpectedTravelTimesToWaypoint.srv
   UpdateNavStatistics.srv
   AddDeleteSpecialWaypoint.srv
+  GetSpecialWaypoints.srv
   IsTaskInterruptible.srv
   GetActiveTask.srv
 )
@@ -48,7 +49,6 @@ find_package(catkin REQUIRED genmsg actionlib_msgs)
 add_action_files(
   FILES
   ExecutePolicy.action
-  LearnTravelTimes.action
 )
 
 # Generate added messages and services with any dependencies listed here
