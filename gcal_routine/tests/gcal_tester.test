@@ -1,5 +1,13 @@
 <launch>
 
+  <include file="$(find mongodb_store)/launch/mongodb_store.launch" >
+  	<arg name="test_mode" value="true" />
+  </include>
+
+  <include file="$(find task_executor)/task-scheduler.launch" />
+
+  <node name="test_action" pkg="gcal_routine" type="test_action_server.py" />
+
   <test test-name="gcal_tester" pkg="gcal_routine" type="gcal_tester.py" />
 
 </launch>
