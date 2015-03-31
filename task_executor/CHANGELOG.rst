@@ -2,8 +2,8 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.19 (2015-03-31)
+-------------------
 * Added rostest for task_executor with scheduler
 * Added param to task_executor to configure navigation type.
   Refactored launch and test files to use this flag.

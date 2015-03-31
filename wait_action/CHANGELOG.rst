@@ -2,8 +2,8 @@
 Changelog for package wait_action
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.19 (2015-03-31)
+-------------------
 * added documentation and made it a *real* abstract class
 * moved abstract_task_server into strands_executive_msgs and refactored wait_action
 * made wait_action to use the new abstract_task_server as an example

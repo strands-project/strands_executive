@@ -3,8 +3,8 @@ Changelog for package strands_executive_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Forthcoming
------------
+0.0.19 (2015-03-31)
+-------------------
 * added documentation and made it a *real* abstract class
 * Fixing a typo in abstract_task_server
 * finished a first draft of the factory from a YAML string
