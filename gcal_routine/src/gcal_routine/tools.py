@@ -3,16 +3,14 @@ PKG = 'gcal_routine'
 
 
 from strands_executive_msgs.msg import Task
-from mongodb_store_msgs.msg import StringPair
 import rospy
 from time import mktime
-from yaml import load
 import urllib
 import json
 from dateutil import parser
 from dateutil import tz
 from datetime import datetime
-from roslib.packages import find_resource
+from strands_executive_msgs.srv import CreateTask
 from pprint import pprint
 
 from threading import Thread
@@ -20,46 +18,6 @@ from threading import Thread
 
 def rostime_str(rt):
     return str(datetime.fromtimestamp(rt.secs))
-
-
-class TaskConfigurator:
-
-    def __init__(self):
-        stream = open(rospy.get_param(
-            '~available_tasks_conf_file',
-            find_resource(PKG, 'default_tasks.yaml')[0]),
-            'r')
-        self.available_tasks = load(stream)
-
-    def _fill_slots(self, src, dest):
-        for s in dest.__slots__:
-            if s in src:
-                if s == 'arguments':
-                    # special case for attributes
-                    for a in src[s]:
-                        sp = StringPair()
-                        self._fill_slots(a, sp)
-                        dest.arguments.append(sp)
-                else:
-                    # a bit of a hacky way to check if we need to recurse...
-                    if str(type(dest.__getattribute__(s))).startswith('<class ') \
-                            or type(dest.__getattribute__(s)) == dict:
-                        self._fill_slots(src[s], dest.__getattribute__(s))
-                    elif type(dest.__getattribute__(s)) == list:
-                        dest.__getattribute__(s).extend(src[s])
-                    else:
-                        dest.__setattr__(s, src[s])
-
-
-    def fill_task(self, id, task):
-        if id in self.available_tasks:
-            rospy.loginfo('found task %s in available tasks', id)
-            self._fill_slots(self.available_tasks[id], task)
-        else:
-            rospy.logwarn('no task %s in available tasks, config only taken from event', id)
-
-    def fill_task_from_yaml(self, id, task, yaml):
-        self._fill_slots(yaml, task)
 
 
 class GCal:
@@ -80,7 +38,6 @@ class GCal:
         self.add_cb = add_cb
         self.remove_cb = remove_cb
         self.update_worker = Thread(target=self._update_run)
-        self.task_configurator = TaskConfigurator()
 
     def start_worker(self):
         self.update_worker.start()
@@ -125,8 +82,8 @@ class GCal:
                 response = urllib.urlopen(self.uri)
                 self.gcal = json.loads(response.read())
             except Exception, e:
-                rospy.logerror('failed to get response from %s: %s',
-                               self.uri, str(e))
+                rospy.logerr('failed to get response from %s: %s',
+                             self.uri, str(e))
                 return
         else:
             g = open(self.uri, 'rb')
@@ -134,8 +91,13 @@ class GCal:
             g.close()
         self._to_task_list()
         if self._find_changes(added, removed):
-            rospy.loginfo('there were changes in the calendar to process +:%d -:%d',
+            rospy.loginfo('changes in the calendar to process +%d -%d',
                           len(added), len(removed))
+
+            for a in added:
+                rospy.loginfo('instantiate %s' % a)
+                self.events[a] = self.task_from_gcal(self.events[a])
+
             if self.add_cb is not None:
                 for a in added:
                     self.add_cb(a, self.events[a])
@@ -165,32 +127,39 @@ class GCal:
         else:
             return False
 
-    def _task_from_gcal(self, gcal_event):
+    def task_from_gcal(self, gcal_event):
         start = parser.parse(gcal_event['start']['dateTime'])
         start_utc = start.astimezone(self.tz_utc)
         end = parser.parse(gcal_event['end']['dateTime'])
         end_utc = end.astimezone(self.tz_utc)
 
-        t = Task()
+        action_name = gcal_event['summary']
+        factory_name = '/' + action_name + "_create"
+        try:
+            factory = rospy.ServiceProxy(factory_name, CreateTask)
+            if 'description' in gcal_event:
+                t = factory.call(gcal_event['description']).task
+            else:
+                t = factory.call('').task
+        except Exception as e:
+            rospy.logwarn("Couldn't instantiate task from factory %s."
+                          "error: %s."
+                          "Using default constructor." %
+                          (factory_name, str(e)))
+            t = Task()
+            t.action = gcal_event['summary']
+        print t
         t.start_after = rospy.Time.from_sec(mktime(start_utc.timetuple())) \
             - self.time_offset
         t.end_before = rospy.Time.from_sec(mktime(end_utc.timetuple())) \
             - self.time_offset
         if 'location' in gcal_event:
             t.start_node_id = gcal_event['location']
-            t.end_node_id = gcal_event['location']
-        t.max_duration = (t.end_before - t.start_after) / 2
-        t.action = gcal_event['summary']
-        self.task_configurator.fill_task(t.action, t)
-        if 'description' in gcal_event:
-            try:
-                extra_args = load(gcal_event['description'])
-                self.task_configurator.fill_task_from_yaml(extra_args,
-                                                           t, extra_args)
-                rospy.logdebug('adding extra args results in %s', str(t))
-            except Exception, e:
-                rospy.logwarn("couldn't parse extra args %s: %s",
-                              gcal_event['description'], str(e))
+            if len(t.end_node_id) == 0:
+                t.end_node_id = gcal_event['location']
+        if t.max_duration.secs == 0:
+            t.max_duration = (t.end_before - t.start_after) / 2
+
         return t
 
     def _to_task_list(self):
@@ -198,12 +167,11 @@ class GCal:
         for gcal_event in self.gcal['items']:
             try:
                 k = gcal_event['id'] + gcal_event['updated']
-                self.events[k] = self._task_from_gcal(gcal_event)
-            except Exception, e:
-                rospy.logerr('failed to convert event from iCal to task: %s', str(e))
+                self.events[k] = gcal_event
+            except Exception as e:
+                rospy.logerr('failed to convert event from iCal to task: %s',
+                             str(e))
 
 if __name__ == '__main__':
-    tc = TaskConfigurator()
     t = Task()
-    tc.fill_task('wait', t)
     pprint(t)
