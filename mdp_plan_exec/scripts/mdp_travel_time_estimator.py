@@ -27,14 +27,9 @@ class MdpTravelTimeEstimator(object):
         rospy.loginfo("MDP travel times estimator initialised.")
 
     def travel_times_to_waypoint_cb(self,req):
-        epoch=req.epoch
-        if req.epoch==0:
-            epoch=rospy.Time.now()
-        if epoch != self.last_epoch:
-            self.last_epoch=epoch
-            self.top_map_mdp.get_fremen_stats(epoch.secs)
-            #update model with fremen
-            self.top_map_mdp.write_prism_model(self.directory+self.file_name)
+        if req.epoch != self.last_epoch:
+            self.last_epoch=req.epoch
+            self.top_map_mdp.set_mdp_action_durations(self.directory+self.file_name, req.epoch)            
         specification='R{"time"}min=? [ ( F "' + req.target_waypoint + '") ]'
         state_vector=map(rospy.Duration, self.prism_estimator.get_state_vector(specification))
         state_vector_names=self.top_map_mdp.parse_sta_to_waypoints(self.directory+'original.sta', len(state_vector))

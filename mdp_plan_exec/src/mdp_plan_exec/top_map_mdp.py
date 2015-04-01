@@ -1,8 +1,7 @@
 from mdp import Mdp, MdpTransitionDef, MdpPropDef
 import rospy
 import actionlib
-from strands_navigation_msgs.srv import GetTopologicalMap
-from frenap.msg import TopologicalPredictionAction, TopologicalPredictionGoal
+from strands_navigation_msgs.srv import GetTopologicalMap, PredictEdgeState
 
 
 class TopMapMdp(Mdp):
@@ -17,16 +16,20 @@ class TopMapMdp(Mdp):
             except rospy.ROSException,e:
                 rospy.loginfo("Waiting for get_topological_map service...")
             if rospy.is_shutdown():
+                return            
+        got_service=False
+        while not got_service:
+            try:
+                rospy.wait_for_service("/topological_prediction/predict_edges", 1)
+                got_service=True
+            except rospy.ROSException,e:
+                rospy.loginfo("Waiting for predict_edges service...")
+            if rospy.is_shutdown():
                 return
         
         self.top_map_name=top_map_name
         self.get_top_map_srv=rospy.ServiceProxy("/topological_map_publisher/get_topological_map", GetTopologicalMap)
-        
-        self.fremen_ac=actionlib.SimpleActionClient('/FreNaP', TopologicalPredictionAction)            
-        got_server=self.fremen_ac.wait_for_server(rospy.Duration(1))
-        while not got_server:
-            rospy.loginfo("Waiting for TopologicalPrediction action.")
-            got_server=self.fremen_ac.wait_for_server(rospy.Duration(1))
+        self.get_edge_estimates=rospy.ServiceProxy("/topological_prediction/predict_edges", PredictEdgeState)        
 
         self.top_map=self.get_top_map_srv(self.top_map_name).map        
         self.create_top_map_mdp_structure()
@@ -84,14 +87,18 @@ class TopMapMdp(Mdp):
                 return key
         rospy.logerr("Waypoint not found!")
     
-    def get_fremen_stats(self,epoch):
-        goal=TopologicalPredictionGoal(action='build', mapName=self.top_map_name, resultOrder=-1,durationOrder=-1)
-        self.fremen_ac.send_goal(goal)
-        self.fremen_ac.wait_for_result()
-        goal=TopologicalPredictionGoal(action='predict', predictionTime=epoch)
-        self.fremen_ac.send_goal(goal)
-        self.fremen_ac.wait_for_result()
-        result=self.fremen_ac.get_result()
+    def set_mdp_action_durations(self, file_name, epoch=None):
+        if epoch is None:
+            epoch=rospy.Time.now()
+        predictions=self.get_edge_estimates(epoch)
+        if len(predictions.edge_ids) != self.n_actions:
+            rospy.lowarn("Did not receive travel time estimations for all edges, the total navigatio expected values will not be correct")
+        for (edge, prob, duration) in zip(predictions.edge_ids, predictions.probs, predictions.durations):
+            index=self.actions.index(edge)
+            transition=self.transitions[index]
+            self.transitions[index].prob_post_conds=[(prob, dict(transition.prob_post_conds[0][1])), (1-prob, dict(transition.pre_conds))]
+            self.transitions[index].rewards["time"]=duration.to_sec()       
+        self.write_prism_model(file_name)
         
 
     def set_initial_state_from_waypoint(self,current_waypoint):
