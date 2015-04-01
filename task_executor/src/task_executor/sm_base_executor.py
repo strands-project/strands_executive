@@ -8,8 +8,6 @@ import actionlib
 from actionlib_msgs.msg import GoalStatus
 from geometry_msgs.msg import Pose, Point, Quaternion
 from mongodb_store.message_store import MessageStoreProxy
-from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
-# from strands_executive_msgs.msg import ExecutePolicyAction, ExecutePolicyGoal
 from std_srvs.srv import Empty, EmptyResponse
 from std_msgs.msg import String
 from task_executor.base_executor import BaseTaskExecutor
@@ -255,17 +253,27 @@ class AbstractTaskExecutor(BaseTaskExecutor):
                 nav_concurrence.userdata.task = task
 
                 with nav_concurrence:
-                    # where we want to go
-                    # nav_goal = ExecutePolicyGoal(task_type=ExecutePolicyGoal.GOTO_WAYPOINT, target_id=task.start_node_id, time_of_day='all_day')
-                    nav_goal = GotoNodeGoal(target = task.start_node_id)
+
+                    if self.nav_service == BaseTaskExecutor.TOPOLOGICAL_NAV:
+                        from topological_navigation.msg import GotoNodeAction, GotoNodeGoal
+                        # where we want to go
+                        nav_goal = GotoNodeGoal(target = task.start_node_id)
+                        nav_action_clz = GotoNodeAction                        
+                        nav_action_name = 'topological_navigation'
+                    elif self.nav_service == BaseTaskExecutor.MDP_NAV:
+                        from strands_executive_msgs.msg import ExecutePolicyAction, ExecutePolicyGoal
+                        nav_goal = ExecutePolicyGoal(task_type=ExecutePolicyGoal.GOTO_WAYPOINT, target_id=task.start_node_id)
+                        nav_action_clz = ExecutePolicyAction
+                        nav_action_name = 'mdp_plan_exec/execute_policy'
+                    else:
+                        raise RuntimeError('Unknown nav service: %s'% self.nav_service)
+
                     # let nav run for three times the length it usually takes before terminating
-                    monitor_duration = self.expected_navigation_duration(task) * 3
+                    monitor_duration = self.expected_navigation_duration_now(task.start_node_id) * 3
 
                     smach.Concurrence.add('MONITORED',
-                                            # SimpleActionState('mdp_plan_exec/execute_policy',
-                                                # ExecutePolicyAction,
-                                                SimpleActionState('topological_navigation',
-                                                GotoNodeAction,
+                                                SimpleActionState(nav_action_name,
+                                                nav_action_clz,
                                                 goal=nav_goal))
                     smach.Concurrence.add('MONITORING', TimerState(duration=monitor_duration))
 

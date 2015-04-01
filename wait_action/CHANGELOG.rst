@@ -2,6 +2,18 @@
 Changelog for package wait_action
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.19 (2015-03-31)
+-------------------
+* added documentation and made it a *real* abstract class
+* moved abstract_task_server into strands_executive_msgs and refactored wait_action
+* made wait_action to use the new abstract_task_server as an example
+* Contributors: Marc Hanheide
+
+0.0.18 (2015-03-23)
+-------------------
+* Added   `strands_executive_msgs` to build depend list of wait_action. This should fix `#138 <https://github.com/strands-project/strands_executive/issues/138>`_.
+* Contributors: Nick Hawes
+
 0.0.16 (2014-11-26)
 -------------------
 

@@ -36,7 +36,7 @@ if __name__ == '__main__':
                                     'henry.strands%40hanheide.net'),
                     rospy.get_param('~key',
                                     'AIzaSyC1rqV2yecWwV0eLgmoQH7m7PdLNX1p6a0'),
-                    update_wait=rospy.get_param('~gcal_poll_wait_sec', 60),
+                    update_wait=rospy.get_param('~gcal_poll_wait_sec', 10),
                     add_cb=runner.add_task, remove_cb=runner.remove_task)
     else:
         gcal = GCal(rospy.get_param('~calendar',
