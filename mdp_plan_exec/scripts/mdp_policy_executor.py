@@ -35,6 +35,8 @@ class MdpPolicyExecutor(object):
         while not got_server:
             rospy.loginfo("Waiting for topological navigation execute policy mode action server.")
             got_server=self.top_nav_policy_exec.wait_for_server(rospy.Duration(1))
+            if rospy.is_shutdown():
+                return
         
         self.top_map_mdp=TopMapMdp(top_map)
         self.directory = os.path.expanduser("~") + '/tmp/prism/policy_executor/'
