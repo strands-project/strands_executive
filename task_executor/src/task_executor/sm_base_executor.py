@@ -268,8 +268,8 @@ class AbstractTaskExecutor(BaseTaskExecutor):
                     else:
                         raise RuntimeError('Unknown nav service: %s'% self.nav_service)
 
-                    # let nav run for three times the length it usually takes before terminating
-                    monitor_duration = self.expected_navigation_duration_now(task.start_node_id) * 3
+                    # let nav run for 1.5 times the length it usually takes before terminating
+                    monitor_duration = self.expected_navigation_duration_now(task.start_node_id) * 1.5
 
                     smach.Concurrence.add('MONITORED',
                                                 SimpleActionState(nav_action_name,
