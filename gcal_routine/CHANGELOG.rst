@@ -2,6 +2,13 @@
 Changelog for package gcal_routine
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.19 (2015-03-31)
+-------------------
+* now uses the top launch file to make the test work...
+* better unit testing including scheduler
+* gcal_routine now using factory task service
+* Contributors: Marc Hanheide
+
 0.0.18 (2015-03-23)
 -------------------
 

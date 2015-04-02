@@ -15,7 +15,7 @@
    "htmlLink": "https://www.google.com/calendar/event?eid=Nzg3MWF0ZWt2NjducmM0bGJsczBjN3ZyaWtfMjAxNTA0MTNUMDgwMDAwWiBoZW5yeS5zdHJhbmRzQGhhbmhlaWRlLm5ldA",
    "created": "2015-03-12T15:25:21.000Z",
    "updated": "2015-03-12T16:36:44.525Z",
-   "summary": "morning routine",
+   "summary": "test_action",
    "description": "{arguments: [{'first': 'extra_arg', 'second': 'None'}]}",
    "location": "place5",
    "creator": {
@@ -53,7 +53,7 @@
    "htmlLink": "https://www.google.com/calendar/event?eid=Nzg3MWF0ZWt2NjducmM0bGJsczBjN3ZyaWtfMjAxNTA0MTRUMDgwMDAwWiBoZW5yeS5zdHJhbmRzQGhhbmhlaWRlLm5ldA",
    "created": "2015-03-12T15:25:21.000Z",
    "updated": "2015-03-12T16:36:44.525Z",
-   "summary": "morning routine",
+   "summary": "test_action",
    "description": "{arguments: [{'first': 'extra_arg', 'second': 'None'}]}",
    "location": "place5",
    "creator": {
@@ -88,7 +88,7 @@
    "htmlLink": "https://www.google.com/calendar/event?eid=Nzg3MWF0ZWt2NjducmM0bGJsczBjN3ZyaWtfMjAxNTA0MTVUMDgwMDAwWiBoZW5yeS5zdHJhbmRzQGhhbmhlaWRlLm5ldA",
    "created": "2015-03-12T15:25:21.000Z",
    "updated": "2015-03-12T16:36:44.525Z",
-   "summary": "morning routine",
+   "summary": "test_action",
    "description": "{arguments: [{'first': 'extra_arg', 'second': 'None'}]}",
    "location": "place5",
    "creator": {

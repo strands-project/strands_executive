@@ -130,10 +130,6 @@ install(PROGRAMS
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-install(DIRECTORY etc
-	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
-
 ## Mark executables and/or libraries for installation
 # install(TARGETS gcal_routine gcal_routine_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
