@@ -155,7 +155,12 @@ class BaseTaskExecutor(object):
                 raise RuntimeError('Unknown nav service: %s'% self.nav_service)
 
 
+    def get_mdp_vector(self, target, epoch):
+        self.create_expected_time_service()
+        return self.expected_time_srv(target_waypoint=target, epoch=epoch)
+
     def mdp_expected_time(self, start, end, task = None):
+
 
         # if task is none, assume immediate execution
         if task is None:
@@ -164,7 +169,7 @@ class BaseTaskExecutor(object):
         else:
             epoch = task.start_after
 
-        resp = self.expected_time_srv(target_waypoint=end, epoch=epoch)
+        resp = self.get_mdp_vector(end, epoch)
 
         return resp.travel_times[resp.source_waypoints.index(start)]
 

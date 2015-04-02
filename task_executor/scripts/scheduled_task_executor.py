@@ -5,6 +5,7 @@ from Queue import Queue, Empty
 from strands_executive_msgs.msg import Task, ExecutionStatus, DurationMatrix, DurationList
 from strands_executive_msgs.srv import GetSchedule
 from task_executor.sm_base_executor import AbstractTaskExecutor
+from task_executor.base_executor import BaseTaskExecutor
 from threading import Thread
 from task_executor.execution_schedule import ExecutionSchedule
 from operator import attrgetter
@@ -173,6 +174,57 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
 
     def get_duration_matrix(self, tasks):
+        """
+        Creates the matrix of durations between waypoints needed as input to the scheuler.
+        Output is a DurationMatrix encoding  duration[i][j] where this is the duration expected for travelling between the end of the ith task in tasks and the start of the jth element.
+        """
+        if self.nav_service == BaseTaskExecutor.TOPOLOGICAL_NAV:
+            return self.get_duration_matrix_top_nav(tasks)
+        elif self.nav_service == BaseTaskExecutor.MDP_NAV:
+            return self.get_duration_matrix_mdp(tasks)
+        else:
+            raise RuntimeError('Unknown nav service: %s'% self.nav_service)
+
+
+    def get_duration_matrix_mdp(self, tasks):
+        """
+        Creates the matrix of durations between waypoints needed as input to the scheuler.
+        Output is a DurationMatrix encoding  duration[i][j] where this is the duration expected for travelling between the end of the ith task in tasks and the start of the jth element.
+        """
+
+        # mdp returns vector of times from ALL START nodes to a SINGLE TARGET for a SINGLE TIME 
+        # therefore we can combine calls from any start node to the same target for the same time 
+
+
+        # used to cache reseults of calls to mdp service
+        travel_durations = dict()
+
+        # thing we need to return
+        dm = DurationMatrix()
+
+        for first_task in tasks:
+            dm.durations.append(DurationList())
+            for second_task in tasks:
+                start = first_task.end_node_id
+                epoch = second_task.start_after
+                target = second_task.start_node_id
+
+                # we need to get the travel_duration for this tuple if we haven't seen the time before or the target for this time before
+                if epoch not in travel_durations or target not in travel_durations[epoch]:
+                    if epoch not in travel_durations:
+                        travel_durations[epoch] = dict()
+                    # call mdp duration service
+                    resp = self.get_mdp_vector(target, epoch)
+                    travel_durations[epoch][target] = resp
+                else:
+                    # rospy.loginfo('Saving a call: %s %s %s', start, epoch.secs, target)                    
+                    resp = travel_durations[epoch][target]
+
+                dm.durations[-1].durations.append(resp.travel_times[resp.source_waypoints.index(start)])
+
+        return dm
+
+    def get_duration_matrix_top_nav(self, tasks):
         """
         Creates the matrix of durations between waypoints needed as input to the scheuler.
         Output is a DurationMatrix encoding  duration[i][j] where this is the duration expected for travelling between the end of the ith task in tasks and the start of the jth element.
