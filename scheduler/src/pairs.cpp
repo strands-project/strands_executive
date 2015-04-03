@@ -123,7 +123,7 @@ int decidedInterval(Task * i, Task * j, double distij, double distji)
     }
     else
     {
-      return -1; //there is a flaw in input data, both combinations are not possible
+      return -1; //there is a flaw in input data, both combinations are not possible      
     }
   }
 
@@ -138,7 +138,7 @@ int decidedInterval(Task * i, Task * j, double distij, double distji)
 
 int chooseInt(int time_ij, int time_ji)
 {
-  if(time_ij < time_ji)
+  if(time_ij <= time_ji) //added equal
   {
     return 1;
   }
@@ -157,6 +157,11 @@ int Pairs::setPairs_new(double ** dist_a)
 {
   vector<vector<int>>::iterator it;
   vector<int> opairs(4);  //one pair, always containing two integers + order of pair, when setted by preVar method + the type of pair
+
+  int track[numTasks][numTasks]; //an array to keep track of pair preceding variables and detect possible flaws
+  for(int a=0; a<numTasks;a++)
+    for(int b=0; b<numTasks;b++)
+      track[a][b] = 2; //inicialization 
 
   //setting pairs based on the fact if their windows are overlapping. Thus we need to decide if i precede j, or j precede i
   for (int a=0; a<numTasks; a++)
@@ -190,7 +195,7 @@ int Pairs::setPairs_new(double ** dist_a)
       opairs[0] = a;//tasksToS->at(i)->getID();
       opairs[1] = b;//tasksToS->at(j)->getID();
       opairs[2] = -1; // this will be set in preVar method
-      opairs[3] = -1;
+      
 
 
       /*
@@ -223,10 +228,8 @@ int Pairs::setPairs_new(double ** dist_a)
             it makes no sense to chose ordering, 
             however, dist(i,j) or dist(j,i) can be different and they might change the ordering. 
             Thus, we decide here which is the best ordering */
-            opairs[3]=decidedInterval(i,j,distij, distji);
-            if(opairs[3] == 2)
-              opairs[3] = chooseInt(time_ij, time_ji);
-        
+
+            opairs[3]=decidedInterval(i,j,distij, distji);      
             set = true;
           }
         }
@@ -235,9 +238,6 @@ int Pairs::setPairs_new(double ** dist_a)
         {
            //both options (i precedes j, j precedes i) are generally possible
            opairs[3]=decidedInterval(i,j,distij, distji);
-           //this is really pruning
-            if(opairs[3] == 2)
-              opairs[3] = chooseInt(time_ij, time_ji);
            set = true;
         }
         //i finish j
@@ -265,9 +265,6 @@ int Pairs::setPairs_new(double ** dist_a)
         else if((sj<si)&&(ej>ei))
         {
           opairs[3]= decidedInterval(i,j,distij, distji);
-          //this is really pruning
-          if(opairs[3] == 2)
-            opairs[3] = chooseInt(time_ij, time_ji);
           set = true;
         }
         else if((ei == ej)&&(sj<si))
@@ -278,13 +275,55 @@ int Pairs::setPairs_new(double ** dist_a)
       }
        if(set)
        {
-         it = pairs.begin() + numPairs;
-         pairs.insert(it,opairs);
-         numPairs++;
-  
+         if(track[a][b] == 2) //any combination
+         {
+           if(opairs[3]==2) //equal or during and we havent got yet constraint
+           {
+             opairs[3] = chooseInt(time_ij, time_ji); //chose one
+           }
+           track[a][b] = opairs[3];
+           it = pairs.begin() + numPairs;
+           pairs.insert(it,opairs);
+           numPairs++;
+         }
+         else //we have allready constraint
+         {
+           if(opairs[3] == 2) //order doesnt matter, choose the set constraint
+           {
+             opairs[3] = track[a][b];
+           }
+           if(track[a][b] == opairs[3]) //constraint are same
+           {
+             it = pairs.begin() + numPairs;
+             pairs.insert(it,opairs);
+             numPairs++;
+           }
+           else //flaw
+           {
+             return -1;
+           }
+         } 
+         
        }
 
+    }//end of b loop
+    //we have a row of track array, from that, we can set up how the next row should look like
+    int act_f = track[a][a+1];
+    for(int b=a+2;b<numTasks;b++)
+    {
+      if(act_f == track[a][b])
+      {
+        track[a+1][b] = 2; // any combination
+      }
+      else
+      {
+        track[a+1][b] = track[a][b];
+      }
     }
   }
+  for(int a=0;a<numTasks;a++)
+    for(int b=0;b<numTasks;b++)
+      cout << track[a][b] << " ";
+    cout << "\n";
   return numPairs;
 }

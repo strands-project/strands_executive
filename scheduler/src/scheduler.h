@@ -43,7 +43,7 @@ class Scheduler
   int setPreVar(ScipUser *);
   int findTaskNow();
   std::vector<int> findConditions();
-  bool solve(int, std::string, const int & timeout = 0);
+  int solve(int, std::string, const int & timeout = 0);
   
   
 };

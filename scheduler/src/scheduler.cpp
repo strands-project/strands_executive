@@ -45,6 +45,8 @@ bn::matrix<double> createUniformDurationMatrix(vector<Task *>* tasks, double dis
 
 }
 
+
+
 /** 
   Constructor - initialisation of the scheduling problem. It also sets an array of distance for later usage. 
   @param - vector of pointers to tasks, which should be schedule
@@ -416,6 +418,10 @@ int Scheduler::setPreVar(ScipUser * solver)
   for (j=0; j<(int)pairs.size();j++)
   {
     vector<int> p = pairs.at(j);
+    if(pairs.at(j).at(3) == -1) //flaw in input data
+    {
+      return -2;
+    }
     if(!pairSet[j])
     {
       pairSet[j] = true;
@@ -427,6 +433,7 @@ int Scheduler::setPreVar(ScipUser * solver)
   return 0;
 }
 
+
 /**
   This is the main method for a scheduler, which calls the rest
 
@@ -436,7 +443,7 @@ int Scheduler::setPreVar(ScipUser * solver)
          timeout - if given, the SCIP solver will be killed after this time is reached
   @return if the SCIP finds a solution or not
 */
-bool Scheduler::solve(int version, string filename, const int & timeout)
+int Scheduler::solve(int version, string filename, const int & timeout)
 {
   //scheduler save to file: 
   //preprocessing time to create pairs, setting the constraints, infeas, objective criteria, time to solve, number of tasks, if it worked
@@ -469,7 +476,7 @@ bool Scheduler::solve(int version, string filename, const int & timeout)
  
   Pairs * pr = new Pairs(tasksToS);
   
-  
+  cout<< "in scheduleeeeeeeer\n";
   if(version==1)  {
     //Brian Coltin
     numPairs = pr->setPairs_BC();
@@ -480,9 +487,12 @@ bool Scheduler::solve(int version, string filename, const int & timeout)
   } 
   else {
     //if parameter is not set
+   
     numPairs = pr->setPairs_new(duration_matrix);
   }
 
+  if(numPairs == -1) //flaw in pairs occured
+    return -3;
   pr->getPairs(&pairs);
 
   //creating a vector for t variables (t = execution time)
@@ -491,13 +501,16 @@ bool Scheduler::solve(int version, string filename, const int & timeout)
   if (err != SCIP_OKAY)
     return -1;
 
+
   //checking if some tasurationnow" or "precondition" flag. If yes, pairs needs to be set in different way
   int e = setPreVar(solver);
 
+  if(e==-2)
+    return -2;
   if (e==-1)
     return -1;
 
-
+  
   //create constraurationat holds s<= t <= e
   vector<SCIP_CONS *> * t_con = new vector<SCIP_CONS *>(numTasks,(SCIP_CONS *) NULL); 
 
@@ -533,8 +546,8 @@ bool Scheduler::solve(int version, string filename, const int & timeout)
 
   //call destructor for SCIP problem
   delete solver;
-
-  return *worked;
+  cout << "end of scheduler";
+  return (int)*worked;
 }
 
 
