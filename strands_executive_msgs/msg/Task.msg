@@ -36,5 +36,8 @@ duration max_duration
 # The scheduler execution time
 time execution_time
 
+# Priority of a task - higher number = higher priority
+uint64 priority
+
 # Additional arguments to the action server. These are interpreted in two ways, either "","string" is interpreted as a string or "ros message type", "datacentre id" is a reference to the ObjectID of an entry in the datacentre obtained from the result of MongoInsertMsg.srv. 
 mongodb_store_msgs/StringPair[] arguments
