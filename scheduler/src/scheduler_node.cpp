@@ -34,13 +34,14 @@ Task * createSchedulerTask(const strands_executive_msgs::Task & _task, const ros
 
   auto startAfter = _earliestStart > _task.start_after ? _earliestStart : _task.start_after;
 
-  // ROS_INFO_STREAM("" << _earliestStart);
-  // ROS_INFO_STREAM("" << _task.start_after);
-  // ROS_INFO_STREAM("" << startAfter);
+  ROS_INFO_STREAM("" << _earliestStart);
+  ROS_INFO_STREAM("" <<  startAfter);
+   ROS_INFO_STREAM("" << _task.start_after);
+    ROS_INFO_STREAM("" << _task.end_before);
   
 
 	Task* t = new Task(_task.task_id,
-						startAfter.toSec(),
+						_task.start_after.toSec(),//startAfter.toSec(),
 						_task.end_before.toSec(),
 						_task.max_duration.toSec(),
 						_task.start_node_id,
@@ -65,6 +66,7 @@ double ** createDurationArray(const strands_executive_msgs::DurationMatrix & dm,
     for (int j = 0; j < dl.durations.size(); ++j)
     {
       array[i][j] = dl.durations[j].toSec();
+      cout << "pole" << array[i][j];
     }
   }
 
@@ -85,12 +87,16 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
 
   // for(strands_executive_msgs::Task task : req.tasks) {
   for(auto & task : req.tasks) {
-    // ROS_INFO_STREAM(task.task_id << " start " << task.start_after << ", end " << task.end_before
+    //ROS_INFO_STREAM(task.task_id << " start " << task.start_after << ", end " << task.end_before
     //     << ", duration " << task.max_duration);    
 
     bool first = task.task_id == req.first_task ? true : false;
 
-  	tasks.push_back(createSchedulerTask(task, req.earliest_start, first));
+        Task * sch_task = createSchedulerTask(task, req.earliest_start, first);
+  	tasks.push_back(sch_task);
+        cout<< sch_task ->getStart();
+        cout << *sch_task;
+        
     if(first) {
       ROS_INFO_STREAM(task.task_id << " is first");
     }
@@ -120,34 +126,37 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
   double ** duration_array = createDurationArray(req.durations, max_duration);
   Scheduler scheduler(&tasks, duration_array, max_duration);
 
-   ROS_INFO_STREAM("Going to solve");    
+   ROS_INFO_STREAM("Going to solve");   
+
+
  
+cout<< "version" << scheduler_version << "\n";
+cout << "timeout" << timeout << "\n";
 
-  if(scheduler.solve(scheduler_version, output_file, timeout)) {
+   int sch_result = scheduler.solve(scheduler_version, output_file, timeout);
+   if(sch_result == 1) 
+   {
+     cout << "solved";
+     std::sort(tasks.begin(), tasks.end(), compareTasks);
 
-  
-
-  	std::sort(tasks.begin(), tasks.end(), compareTasks);
-
-
-   // clean up duration matrix... yuck! Lenka, smart pointers or, ideally, boost matrix
-    for (int i = 0; i < tasks.size(); ++i)
-    {
-      delete duration_array[i];
-    }
-    delete duration_array;
+     // clean up duration matrix... yuck! Lenka, smart pointers or, ideally, boost matrix
+     for (int i = 0; i < tasks.size(); ++i)
+     {
+       delete duration_array[i];
+     }
+     delete duration_array;
 
 
-  	for(auto & tp : tasks) {
-  		res.task_order.push_back(tp->getID());
-  		res.execution_times.push_back(ros::Time(tp->getExecTime()));
-  		delete tp;
-  	} 
+     for(auto & tp : tasks) 
+     {
+       res.task_order.push_back(tp->getID());
+       res.execution_times.push_back(ros::Time(tp->getExecTime()));
+       delete tp;
+     } 
 
-  }
-  else {
-
-  
+   }
+  else if(sch_result==0) {
+    cout << "not solved";
 
    // clean up duration matrix... yuck! Lenka, smart pointers or, ideally, boost matrix
     for (int i = 0; i < tasks.size(); ++i)
@@ -160,9 +169,17 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
 	  for(auto & tp : tasks) {
 	  	delete tp;
 	  } 
-	}
+  }
+  else if(sch_result == -1)
+  {
+    ROS_INFO_STREAM("Some scip error occured\n"); //TODO clean matrix
+  }
+  else if(sch_result == -2)
+  {
+    ROS_INFO_STREAM("Input problem had flaw, scheduler didnt attempt\n"); //TODO clean matrix
+  }
 
-
+  cout << "get schedule ended";
   return true;
 }
 
