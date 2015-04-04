@@ -195,9 +195,25 @@ int Pairs::setPairs_new(double ** dist_a)
 
       double distij = dist_a[a][b];
       double distji = dist_a[b][a];
+   
+      //when i precedes j
+      double ti = si;
+      double tj = si+di+distij;
+      if(tj<sj)
+        tj = sj;
+      //criterion
+      double time_ij = (ti+di-si)+(tj+dj-sj);
 
-      double time_ij = si+di+distij - sj;
-      double time_ji = sj+dj+distji - si;
+      //when j precedes i
+      tj = sj;
+      ti = sj+dj+distji;
+      if(ti<si)
+        ti = si;
+      double time_ji = (ti+di-si)+(tj+dj-sj);
+
+      //old version 
+      //double time_ij = si+di+distij - sj;
+      //double time_ji = sj+dj+distji - si;
 
       double ij = di+dj+distij;
       double ji = di+dj+distji;
