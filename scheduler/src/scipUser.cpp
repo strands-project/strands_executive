@@ -82,7 +82,7 @@ SCIP_Retcode ScipUser::tVar(int num_tasks, vector<SCIP_VAR *> * t_var)
                      var_name,               // name
                      0.0,                    // lower bound
                      SCIP_DEFAULT_INFINITY,                    // upper bound
-                     1.0,         // objective reflects priority, it multiplies time of the variable to affect global optimum
+                     1,         // objective reflects priority, it multiplies time of the variable to affect global optimum
                      SCIP_VARTYPE_CONTINUOUS,   // variable type
                      true,                   // initial
                      false,                  // forget the rest ...
@@ -647,6 +647,8 @@ SCIP_Retcode ScipUser::scipSolve(vector<Task*> * tasksToS, SCIP_VAR * vars[], bo
     results << SCIPgetSolOrigObj(scip,sol) << " " << elapsed_seconds.count() << " " << num_tasks;
   }
 
+  //cout << "criterion:" <<  SCIPgetSolOrigObj(scip,sol);
+
   if(sol == NULL)
   {
     *worked = false;
@@ -665,16 +667,20 @@ SCIP_Retcode ScipUser::scipSolve(vector<Task*> * tasksToS, SCIP_VAR * vars[], bo
     if(!filename.empty())
     {
       results << " " << 1 << "\n";
+      schedule_file.open(filename+"schedule.txt",std::ios_base::app);
     }
     SCIP_CALL(SCIPgetSolVals(scip,sol, num_tasks, vars, vals)); 
-    schedule_file.open(filename+"schedule.txt",std::ios_base::app);
+    
     for(int i=0; i < num_tasks; i++)
     {
       tasksToS->at(i)->setExecTime(vals[i]);
-      schedule_file << vals[i] << " ";
+      if(!filename.empty())
+        schedule_file << vals[i] << " ";
     }
-    schedule_file <<"\n";
-    schedule_file.close();
+    if(!filename.empty()){
+      schedule_file <<"\n";
+      schedule_file.close();
+    }
   }	
   results.close();
   return SCIP_OKAY;
