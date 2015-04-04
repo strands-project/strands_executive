@@ -17,6 +17,7 @@ class Pairs
   vector<Task *> * tasksToS;
 public:
   Pairs(vector<Task *> *);
+  ~Pairs();
   int setPairs_BC();
   int setPairs_new(double **);
   void getPairs(vector<vector<int>> *);
