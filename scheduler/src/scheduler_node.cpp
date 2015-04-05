@@ -173,7 +173,7 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
   }
   else if(sch_result == -2)
   {
-    ROS_INFO("SCHEDULER: The input problem had flaw, scheduler didnt attempt\n"); //TODO clean matrix
+    ROS_INFO("SCHEDULER: The input problem had a flaw, scheduler didnt attempt\n"); //TODO clean matrix
     clean_matrix(duration_array, tasks.size());
     for(auto & tp : tasks) {
       delete tp;
@@ -181,7 +181,7 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
   }
   else if(sch_result == -3)
   {
-    ROS_INFO("SCHEDULER: created flaw in pair assigning, scheduler didnt attempt\n"); //TODO
+    ROS_WARN("SCHEDULER: created a flaw in pair assigning, scheduler didnt attempt\n"); //TODO
     clean_matrix(duration_array, tasks.size());
     for(auto & tp : tasks) {
       delete tp;
