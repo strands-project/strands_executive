@@ -7,7 +7,7 @@
 
 #include "task.h"
 #include "scheduler.h"
-#include "priorities.h"
+//#include "priorities.h"
 
 using namespace std;
 
@@ -58,9 +58,9 @@ int main (int argc, char** argv)
     //window_end = window_start + (task_duration * 2);
   }*/
 
-  tasks.push_back(new Task(1, 1428069688.704307079, 1428069748.704307079, 5, s1, s2, 1));
-  tasks.push_back(new Task(1, 1428069688.704307079, 1428069748.704307079, 5, s1, s2, 1));
-  tasks.push_back(new Task(1, 1428069688.704307079, 1428069748.704307079, 5, s1, s2, 1));
+  tasks.push_back(new Task(1, 1428069688.704307079, 1428069694.704307079, 5, s1, s2, 1));
+  tasks.push_back(new Task(1, 1428069688.704307079, 1428069694.704307079, 5, s1, s2, 1));
+  tasks.push_back(new Task(1, 1428069688.704307079, 1428069694.704307079, 5, s1, s2, 1));
 
   
      
@@ -84,8 +84,8 @@ int main (int argc, char** argv)
   vector<Task*> * result = new vector<Task*>();
 
   cout << "in main" << duration_array[0][1];
-  Priorities priorities(&tasks, duration_array, 1.0);
-  priorities.getSubset(result, rest);
+  //Priorities priorities(&tasks, duration_array, 1.0);
+  //priorities.getSubset(result, rest);
   
   
 
