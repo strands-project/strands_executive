@@ -19,11 +19,13 @@ class Task
   bool cond;   //if the task has preceding tasks
   vector<Task*> * precon; //tasks which needs to happen before this task
   double exec_time;
+  int priority; //this is propage to minimisation criteria, when task's completion time is penalised by this number.
 
   public:
-  Task (unsigned int, double, double, double, string, string);
-  Task (unsigned int, double, double, double, string, string,bool);
-  Task (unsigned int, double, double, double, string, string,vector<Task*> *);
+  Task (unsigned int, double, double, double, string, string); //default priority = 1
+  Task (unsigned int, double, double, double, string, string, int); //support of user priority
+  Task (unsigned int, double, double, double, string, string,bool); //on demand task doesnt have to have priority as it is executed immediately
+  Task (unsigned int, double, double, double, string, string,vector<Task*> *, int); //task and it preceding tasks
   unsigned int getID();
   double getStart();
   double getEnd();
@@ -36,6 +38,8 @@ class Task
   vector<Task*> * getPrecon();
   double getExecTime();
   void setExecTime(double);
+  int getPriority();
+  void setPriority(int);
   friend ostream& operator<<(ostream&, const Task&);
 };
 

@@ -39,16 +39,22 @@ Task * createSchedulerTask(const strands_executive_msgs::Task & _task, const ros
   //ROS_INFO_STREAM("" << _task.start_after);
   //ROS_INFO_STREAM("" << _task.end_before);
   
+  //ensure, that task have valid time window
+  if(startAfter.toSec() <= (_task.end_before.toSec() - _task.max_duration.toSec()))
+  {
 
-  Task* t = new Task(_task.task_id,
-						_task.start_after.toSec(),//startAfter.toSec(),
+    Task* t = new Task(_task.task_id,
+						startAfter.toSec(),
 						_task.end_before.toSec(),
 						_task.max_duration.toSec(),
 						_task.start_node_id,
 						_task.end_node_id, 
             _demand);
-
-  return t;
+    return t;
+  }
+  else //task is not valid
+    return NULL;
+  
 }
 
 // bool compareTasks (const Task * i, const Task * j) { 
@@ -84,7 +90,7 @@ void clean_matrix(double ** duration_array, int size)
 bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
          			strands_executive_msgs::GetSchedule::Response &res) {
   
-  ROS_INFO_STREAM("Got a request for a schedule " << req.tasks.size() << " tasks ");
+  ROS_INFO_STREAM("SCHEDULER: Got a request for a schedule " << req.tasks.size() << " tasks ");
 
   static ros::NodeHandle nh;
 
@@ -100,12 +106,22 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
 
     bool first = task.task_id == req.first_task ? true : false;
 
-        Task * sch_task = createSchedulerTask(task, req.earliest_start, first);
-  	tasks.push_back(sch_task);
+    Task * sch_task = createSchedulerTask(task, req.earliest_start, first);
+    
+    if (sch_task != NULL)   
+      tasks.push_back(sch_task);
+    else
+    {
+      ROS_INFO("SCHEDULER: some task have invalid startime and deadline, probably it is invalid because of currently executed tasks");
+      for(auto & tp : tasks) {
+        delete tp;
+      } 
+      return true;
+    }
 
         
     if(first) {
-      ROS_INFO_STREAM(task.task_id << " is first");
+      ROS_INFO_STREAM("SCHEDULER:"<< task.task_id << " is first");
     }
   }
 
@@ -133,7 +149,7 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
   double ** duration_array = createDurationArray(req.durations, max_duration);
   Scheduler scheduler(&tasks, duration_array, max_duration);
 
-  ROS_INFO_STREAM("Going to solve");   
+  ROS_INFO_STREAM("SCHEDULER: Going to solve");   
 
 
    int sch_result = scheduler.solve(scheduler_version, output_file, timeout);
@@ -204,24 +220,24 @@ int main(int argc, char **argv)
 
   if(ros::param::has("~scheduler_version")) {
     ros::param::get("~scheduler_version", scheduler_version);
-    ROS_INFO_STREAM("Running scheduler version " << scheduler_version);
+    ROS_INFO_STREAM("SCHEDULER: Running scheduler version " << scheduler_version);
   } 
 
   if(ros::param::has("~output_file")) {
     ros::param::get("~output_file", output_file);
-    ROS_INFO_STREAM("Saving experimental output to " << output_file);
+    ROS_INFO_STREAM("SCHEDULER: Saving experimental output to " << output_file);
   } 
 
   if(ros::param::has("~timeout")) {
     ros::param::get("~timeout", timeout);
-    ROS_INFO_STREAM("Using timeout " << timeout);
+    ROS_INFO_STREAM("SCHEDULER: Using timeout " << timeout);
   } 
 
   if(save_problems) {
-    ROS_INFO("Writing scheduling problems to mongodb_store");
+    ROS_INFO("SCHEDULER: Writing scheduling problems to mongodb_store");
   }
   else{
-    ROS_INFO("Not writing scheduling problems to mongodb_store");
+    ROS_INFO("SCHEDULER: Not writing scheduling problems to mongodb_store");
   }
 
   	ros::NodeHandle nh;

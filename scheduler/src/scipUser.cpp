@@ -150,7 +150,7 @@ SCIP_Retcode ScipUser::setOneTcons(int i, vector<SCIP_VAR *> * t_var, vector<SCI
 		vars0,//&vars,
 		vals0,
 		s,//  	lhs,
-		SCIP_DEFAULT_INFINITY,//  	rhs,
+		x,//SCIP_DEFAULT_INFINITY,//  	rhs,
 		true,   // 	initial,
 		true,    //  	separate,
 		true,  //  	enforce,
@@ -164,7 +164,7 @@ SCIP_Retcode ScipUser::setOneTcons(int i, vector<SCIP_VAR *> * t_var, vector<SCI
   ));
   
 
-  SCIP_CONS* con2 = (SCIP_CONS*)NULL;
+  /*SCIP_CONS* con2 = (SCIP_CONS*)NULL;
   SCIPsnprintf(con_name, 255, "e_%d", i);
 
   SCIP_CALL(SCIPcreateConsLinear (scip,
@@ -185,10 +185,10 @@ SCIP_Retcode ScipUser::setOneTcons(int i, vector<SCIP_VAR *> * t_var, vector<SCI
 		false, //  	dynamic,
 		false,//  	removable,
 		false//  	stickingatnode
-  ));
+  ));*/
 
   //create a conjunction
-  SCIP_CONS* conj;
+  /*SCIP_CONS* conj;
   SCIPsnprintf(con_name, 255, "junse_%d", i);
   SCIP_CONS* arr_jun[2];
   arr_jun[0] = con;
@@ -203,21 +203,25 @@ SCIP_Retcode ScipUser::setOneTcons(int i, vector<SCIP_VAR *> * t_var, vector<SCI
                 false,
                 false,
                 false
-  ));
+  ));*/
 
-  SCIP_CALL( SCIPaddCons(scip, conj) );
-  SCIP_CALL( SCIPreleaseCons(scip, &con));
-  SCIP_CALL( SCIPreleaseCons(scip, &con2));
+   //old
+  //SCIP_CALL( SCIPaddCons(scip, conj) );
+  SCIP_CALL( SCIPaddCons(scip, con) );
+  //SCIP_CALL( SCIPreleaseCons(scip, &con));
+  //SCIP_CALL( SCIPreleaseCons(scip, &con2));
 
   //SCIP_CALL(SCIPprintCons(scip,	conj, NULL));
   //cout << "\n"; 	
-  t_con->at(i) = conj;	
+  //old
+  //t_con->at(i) = conj;	
 
+  t_con->at(i) = con;
   
-  delete con;
-  con = NULL;
-  delete con2;
-  con2 = NULL;
+  //delete con;
+  //con = NULL;
+  //delete con2;
+  //con2 = NULL;
 
 
   
@@ -238,6 +242,7 @@ SCIP_Retcode ScipUser::setTcons(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t
     SCIP_Real d = tasksToS->at(i)->getDuration(); 
     SCIP_Real s = tasksToS->at(i)->getStart();
     SCIP_Real e = tasksToS->at(i)->getEnd();
+
     SCIP_CALL(setOneTcons(i, t_var, t_con, s, e-d));   
   }
   return SCIP_OKAY;
