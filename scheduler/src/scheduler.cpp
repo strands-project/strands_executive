@@ -113,7 +113,6 @@ int Scheduler::solve(int version, string filename, const int & timeout)
   }*/
 
 
-  cout<< "in scheduleeeeeeeer\n";
   ScipUser * solver = new ScipUser();
   err = solver->getEr();
   if (err != SCIP_OKAY)
@@ -179,7 +178,7 @@ int Scheduler::solve(int version, string filename, const int & timeout)
   //call destructor for SCIP problem and pairs
   delete solver;
   delete pr;
-  cout << "end of scheduler";
+ 
   return (int)*worked;
 }
 
