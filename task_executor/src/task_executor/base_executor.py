@@ -163,7 +163,7 @@ class BaseTaskExecutor(object):
 
 
         # if task is none, assume immediate execution
-        if task is None:
+        if task is None or task.start_after is None:
             epoch = rospy.get_rostime()             
         # else take the epoch from the earliest execution time
         else:
