@@ -3,8 +3,6 @@
   <arg name="topological_map"/>
   
 
-  <!-- fremen  -->
-  <node pkg="frenap" type="frenap" name="frenap"/>
 
   <!-- run mdp plan exec -->
   <include file="$(find mdp_plan_exec)/launch/mdp_plan_exec.launch">
