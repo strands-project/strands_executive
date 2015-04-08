@@ -86,6 +86,7 @@ class BaseTaskExecutor(object):
         rospy.Subscriber('/closest_node', String, self.update_topological_closest_node)
         self.active_task = None
         self.active_task_completes_by = rospy.get_rostime()
+        self.logging_lock = threading.Lock()
         self.service_lock = threading.Lock()
         self.expected_time_lock = threading.RLock()
 
@@ -210,23 +211,29 @@ class BaseTaskExecutor(object):
 
         
     def log_task_events(self, tasks, event, time, description=""):
-        for task in tasks:
-            te = TaskEvent(task=task, event=event, time=time, description=description)
-
-            try:
-                self.task_event_publisher.publish(te)
-                self.logging_msg_store.insert(te)
-            except Exception, e:
-                rospy.logwarn('Caught exception when logging: %s' % e)
+        try:
+            self.logging_lock.acquire()
+            for task in tasks:
+                te = TaskEvent(task=task, event=event, time=time, description=description)
+                try:
+                    self.task_event_publisher.publish(te)
+                    self.logging_msg_store.insert(te)
+                except Exception, e:
+                    rospy.logwarn('Caught exception when logging: %s' % e)
+        finally:
+            self.logging_lock.release()
 
 
     def log_task_event(self, task, event, time, description=""):
-        te = TaskEvent(task=task, event=event, time=time, description=description)
         try:
+            self.logging_lock.acquire()
+            te = TaskEvent(task=task, event=event, time=time, description=description)
             self.task_event_publisher.publish(te)
             self.logging_msg_store.insert(te)
         except Exception, e:
             rospy.logwarn('Caught exception when logging: %s' % e)
+        finally:
+            self.logging_lock.release()
 
 
     def add_task_ros_srv(self, req):
