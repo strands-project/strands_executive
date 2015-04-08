@@ -87,7 +87,7 @@ class BaseTaskExecutor(object):
         self.active_task = None
         self.active_task_completes_by = rospy.get_rostime()
         self.service_lock = threading.Lock()
-        self.expected_time_lock = threading.Lock()
+        self.expected_time_lock = threading.RLock()
 
         self.task_event_publisher = rospy.Publisher('task_executor/events', TaskEvent, queue_size=20)
 
@@ -156,8 +156,13 @@ class BaseTaskExecutor(object):
 
 
     def get_mdp_vector(self, target, epoch):
-        self.create_expected_time_service()
-        return self.expected_time_srv(target_waypoint=target, epoch=epoch)
+        try:            
+            # expected_time_lock is reentrant
+            self.expected_time_lock.acquire()
+            self.create_expected_time_service()
+            return self.expected_time_srv(target_waypoint=target, epoch=epoch)
+        finally:
+            self.expected_time_lock.release()
 
     def mdp_expected_time(self, start, end, task = None):
 
