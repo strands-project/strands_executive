@@ -129,7 +129,7 @@ class TestEntry(unittest.TestCase):
             for n in range(test_tasks):
                 wait_duration += action_sleep +action_sleep + action_sleep
 
-            executor.wait_for_completion(wait_duration + wait_duration)
+            executor.wait_for_completion(wait_duration + wait_duration + wait_duration + wait_duration)
 
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
