@@ -125,7 +125,7 @@ install(
 
 if (CATKIN_ENABLE_TESTING)
   find_package(catkin REQUIRED COMPONENTS rostest)
-  add_rostest(tests/fifo_tester.test)
+  # add_rostest(tests/fifo_tester.test)
   add_rostest(tests/scheduled_exe_tester.test)
 endif()
 
