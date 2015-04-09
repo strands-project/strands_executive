@@ -62,7 +62,7 @@ class BaseTaskExecutor(object):
     MDP_NAV=1
 
     def __init__(self):
-        self.task_counter = 1        
+        self.task_counter = 1
         self.msg_store = MessageStoreProxy() 
         self.logging_msg_store = MessageStoreProxy(collection='task_events') 
 
@@ -281,7 +281,7 @@ class BaseTaskExecutor(object):
             self.service_lock.acquire()
 
             if self.active_task is not None and not self.is_task_interruptible(self.active_task):
-                return [0, False, self.active_task_completes_by - rospy.get_rostime()]
+                return [False, 0, self.active_task_completes_by - rospy.get_rostime()]
 
             req.task.task_id = self.task_counter        
             self.task_counter += 1
@@ -302,7 +302,7 @@ class BaseTaskExecutor(object):
                 self.start_execution()
 
             self.log_task_event(req.task, TaskEvent.DEMANDED, rospy.get_rostime())                
-            return [req.task.task_id, True, rospy.Duration(0)]        
+            return [True, req.task.task_id, rospy.Duration(0)]        
         finally:    
             self.service_lock.release()
 
