@@ -366,6 +366,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
         throw_num = floor(amount*amount_tasks ) # compute amount percentage
 
+
         if (throw_num < 1):  #throw always at least one
           throw_num = 1
 
@@ -377,7 +378,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
   
         throw_index =amount_tasks - throw_num 
 
-        
+
         if(self.active_task is not None):
           if(low_prio.priority<= self.active_task.priority): #we want to throw away tasks
             rospy.loginfo('Schedule not found, trying to discard %s tasks with priority %s', str(throw_num), str(low_prio.priority))
@@ -492,6 +493,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
             while(not sched_result and (len(additional_tasks)>0)): #schedule is not found, but we have still new tasks to throw away
                 to_schedule = []
                 to_schedule.extend(to_old_schedule)
+
 
                 
                 sub_additional, throwen_away, priority_reached = self.throw_away_tasks(additional_tasks, 0.2) #throw away 20% if tasks have same prio
