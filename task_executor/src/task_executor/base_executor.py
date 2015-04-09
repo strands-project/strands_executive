@@ -86,8 +86,9 @@ class BaseTaskExecutor(object):
         rospy.Subscriber('/closest_node', String, self.update_topological_closest_node)
         self.active_task = None
         self.active_task_completes_by = rospy.get_rostime()
+        self.logging_lock = threading.Lock()
         self.service_lock = threading.Lock()
-        self.expected_time_lock = threading.Lock()
+        self.expected_time_lock = threading.RLock()
 
         self.task_event_publisher = rospy.Publisher('task_executor/events', TaskEvent, queue_size=20)
 
@@ -155,16 +156,26 @@ class BaseTaskExecutor(object):
                 raise RuntimeError('Unknown nav service: %s'% self.nav_service)
 
 
+    def get_mdp_vector(self, target, epoch):
+        try:            
+            # expected_time_lock is reentrant
+            self.expected_time_lock.acquire()
+            self.create_expected_time_service()
+            return self.expected_time_srv(target_waypoint=target, epoch=epoch)
+        finally:
+            self.expected_time_lock.release()
+
     def mdp_expected_time(self, start, end, task = None):
 
+
         # if task is none, assume immediate execution
-        if task is None:
+        if task is None or task.start_after is None:
             epoch = rospy.get_rostime()             
         # else take the epoch from the earliest execution time
         else:
             epoch = task.start_after
 
-        resp = self.expected_time_srv(target_waypoint=end, epoch=epoch)
+        resp = self.get_mdp_vector(end, epoch)
 
         return resp.travel_times[resp.source_waypoints.index(start)]
 
@@ -200,23 +211,29 @@ class BaseTaskExecutor(object):
 
         
     def log_task_events(self, tasks, event, time, description=""):
-        for task in tasks:
-            te = TaskEvent(task=task, event=event, time=time, description=description)
-
-            try:
-                self.task_event_publisher.publish(te)
-                self.logging_msg_store.insert(te)
-            except Exception, e:
-                rospy.logwarn('Caught exception when logging: %s' % e)
+        try:
+            self.logging_lock.acquire()
+            for task in tasks:
+                te = TaskEvent(task=task, event=event, time=time, description=description)
+                try:
+                    self.task_event_publisher.publish(te)
+                    self.logging_msg_store.insert(te)
+                except Exception, e:
+                    rospy.logwarn('Caught exception when logging: %s' % e)
+        finally:
+            self.logging_lock.release()
 
 
     def log_task_event(self, task, event, time, description=""):
-        te = TaskEvent(task=task, event=event, time=time, description=description)
         try:
+            self.logging_lock.acquire()
+            te = TaskEvent(task=task, event=event, time=time, description=description)
             self.task_event_publisher.publish(te)
             self.logging_msg_store.insert(te)
         except Exception, e:
             rospy.logwarn('Caught exception when logging: %s' % e)
+        finally:
+            self.logging_lock.release()
 
 
     def add_task_ros_srv(self, req):
