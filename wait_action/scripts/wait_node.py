@@ -10,8 +10,9 @@ from strands_executive_msgs.abstract_task_server import AbstractTaskServer
 
 
 class WaitServer(AbstractTaskServer):
-    def __init__(self):
-        super(WaitServer, self).__init__('wait_action', action_type=WaitAction)
+    def __init__(self, interruptible=False):
+        super(WaitServer, self).__init__('wait_action', action_type=WaitAction,
+                                         interruptible=interruptible)
 
     def end_wait(self, req):
 
@@ -74,12 +75,14 @@ class WaitServer(AbstractTaskServer):
 
 
 if __name__ == '__main__':
+
     rospy.init_node("wait_node")
 
+    interruptible = rospy.get_param("~interruptible", False)
     # wait for simulated time to kick in as rospy.get_rostime() is 0 until first clock message received
     while not rospy.is_shutdown() and rospy.get_rostime().secs == 0:
         pass
 
-    waiter = WaitServer()
+    waiter = WaitServer(interruptible=interruptible)
 
     rospy.spin()
