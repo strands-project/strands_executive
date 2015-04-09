@@ -10,8 +10,8 @@ from strands_executive_msgs.abstract_task_server import AbstractTaskServer
 
 
 class WaitServer(AbstractTaskServer):
-    def __init__(self, interruptible=False):
-        super(WaitServer, self).__init__('wait_action', action_type=WaitAction,
+    def __init__(self, interruptible=False, name='wait_action'):
+        super(WaitServer, self).__init__(name, action_type=WaitAction,
                                          interruptible=interruptible)
 
     def end_wait(self, req):
@@ -83,6 +83,6 @@ if __name__ == '__main__':
     while not rospy.is_shutdown() and rospy.get_rostime().secs == 0:
         pass
 
-    waiter = WaitServer(interruptible=interruptible)
+    waiter = WaitServer(interruptible=interruptible, name=rospy.get_name())
 
     rospy.spin()
