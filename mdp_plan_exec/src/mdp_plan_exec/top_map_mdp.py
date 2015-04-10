@@ -95,7 +95,7 @@ class TopMapMdp(Mdp):
         predictions=self.get_edge_estimates(epoch)
         print "CALLED PREDICT SERVICE"
         if len(predictions.edge_ids) != self.n_actions:
-            rospy.lowarn("Did not receive travel time estimations for all edges, the total navigatio expected values will not be correct")
+            rospy.logwarn("Did not receive travel time estimations for all edges, the total navigatio expected values will not be correct")
         for (edge, prob, duration) in zip(predictions.edge_ids, predictions.probs, predictions.durations):
             index=self.actions.index(edge)
             transition=self.transitions[index]
