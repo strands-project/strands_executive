@@ -88,12 +88,9 @@ class TopMapMdp(Mdp):
         rospy.logerr("Waypoint not found!")
     
     def set_mdp_action_durations(self, file_name, epoch=None):
-        print "ENTERED SET MDP"
         if epoch is None:
             epoch=rospy.Time.now()
-        print "CALING PREDICT SERVICE"
         predictions=self.get_edge_estimates(epoch)
-        print "CALLED PREDICT SERVICE"
         if len(predictions.edge_ids) != self.n_actions:
             rospy.logwarn("Did not receive travel time estimations for all edges, the total navigatio expected values will not be correct")
         for (edge, prob, duration) in zip(predictions.edge_ids, predictions.probs, predictions.durations):
@@ -102,7 +99,6 @@ class TopMapMdp(Mdp):
             self.transitions[index].prob_post_conds=[(prob, dict(transition.prob_post_conds[0][1])), (1-prob, dict(transition.pre_conds))]
             self.transitions[index].rewards["time"]=duration.to_sec()       
         self.write_prism_model(file_name)
-        print "LEAVING SET MDP"
         
 
     def set_initial_state_from_waypoint(self,current_waypoint):
