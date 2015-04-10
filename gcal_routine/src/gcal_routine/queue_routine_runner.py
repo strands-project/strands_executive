@@ -72,13 +72,21 @@ class GCalRoutineRunner(object):
         if len(tasks) > 0:
             try:
                 if self.tasks_allowed():
-                    rospy.loginfo('Sending %d tasks to the scheduler' % (len(tasks)))
+                    prio = rospy.get_param('~priority', 2)
+                    rospy.loginfo('setting priority of tasks to %d'
+                                  % prio)
+                    for t in tasks:
+                        t.priority = prio
+
+                    rospy.loginfo('Sending %d tasks to the scheduler'
+                                  % (len(tasks)))
                     self.add_tasks_srv(tasks)
                 else:
                     rospy.loginfo('Provided function prevented tasks'
                                   ' being send to the scheduler')
             except Exception, e:
                 rospy.logerr('failed to call scheduler with error: %s', str(e))
+
     def _routine_run(self):
         while not rospy.is_shutdown():
             rospy.logdebug('looking for schedule-able tasks')
