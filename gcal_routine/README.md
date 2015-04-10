@@ -31,6 +31,7 @@ This allows to define pre-defined values depending on the *action* entered in th
 * `~pre_start_window_min`: Number of minutes that tasks are submitted to the scheduler *prior* to their `start_after` time. (default: 15 minutes)
 * `routine_update_wait_sec`: seconds to sleep between checks for new tasks to be valid to be sent to the scheduler (default: 10s)
 * `~gcal_poll_wait_sec`: seconds between polls to the Google calendar. Default is 60s (i.e. 1 poll per minute). You don't want this to be too small or Google will ban the account due to high bandwidth. Once per minute is a good start.
+* `~priority`: Priority to assign to task. Default is 2.
 
 
 All events in a Google calendar are translated into UTC time for the generation of tasks. So it should work in any time zone. 
