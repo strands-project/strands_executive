@@ -2,7 +2,7 @@
   This class contains methods to determine, which tasks are overlapping, and it establishes the pairs - containing tasks' ids.
 
   @author Lenka Mudrova
-  @version 1.0 29/10/2014
+  @version 2.0 04/04/2015
 */
 #include "pairs.h"
 #include "task.h"
@@ -23,6 +23,17 @@ Pairs::Pairs(vector<Task *> * input_tasks)
   tasksToS = input_tasks;
   numTasks = tasksToS -> size();
   numPairs = 0;
+}
+
+/**
+  A destructor
+*/
+Pairs::~Pairs()
+{
+  tasksToS = NULL;
+  numTasks = 0;
+  numPairs = 0;
+  pairs.clear();
 }
 
 /**
@@ -83,52 +94,52 @@ int Pairs::setPairs_BC()
 }
 
 /**
+  This method check if combination of tasks are even possible and do not create a flaw
+  @param overlap represent a time which two tasks have together
+  @param consumed is the time consumed by both task + travel
+  @param value is expected order
+  @return True if tasks are ok, False if there is a flaw
+*/
+int checkFeasibility(double overlap, double consumed, int value)
+{
+  if (overlap > consumed)
+    return value;
+  else
+    return -1;
+}
+
+/**
   For intervals, where both options (I precedes J, J precedes I) are logically possible (equal, i during j, j during i), 
   we would like to test, if time, which is needed for travel, doesnt exclude one option
   @param pointers to task I and J, time neded to travel from I to J, from J to I
   @return the type of a pair
 */
-int decidedInterval(Task * i, Task * j, double distij, double distji)
+int decidedInterval(double overlap1, double overlap2, double ij, double ji)
 {
-  double si = i->getStart();
-  double ei = i->getEnd();
-  double di = i->getDuration();
+  int v1 = checkFeasibility(overlap1, ij, 1);
+  int v2 = checkFeasibility(overlap2, ji, 0);
 
-  double sj = j->getStart();
-  double ej = j->getEnd();
-  double dj = j->getDuration();
-
-  double ij = di+dj+distij;
-  double ji = di+dj+distji;
-
-  //old version
-  //double overlap = min(ei,ej) - max(si,sj);
-  double overlap1 = ej-si;
-  double overlap2 = ei-sj;
-
-  
-  if((ij<=overlap1)&&(ji<=overlap2)) //both combinations are possible
-  {
+  if((v1>=0)&&(v2>=0))//both combinations are possible
     return 2;
-  }
   else
   {
-    if(ij<=overlap1) //only combination that i precedes j is possbile during overlap
+    if(v1>=0) //only combination that i precedes j is possbile during overlap
     {
       return 1;
     }
-    else if(ji<=overlap2) //only combination that j precedes i
+    else if(v2>=0) //only combination that j precedes i
     {
       return 0;
     }
     else
     {
-      return -1; //there is a flaw in input data, both combinations are not possible
+      return -1; //there is a flaw in input data, both combinations are not possible      
     }
   }
 
-
 }
+
+
 
 /**
   If both situations (I precedes J, J precedes I) are still possible, we simly choose one which minimises the time to execute both tasks
@@ -138,7 +149,7 @@ int decidedInterval(Task * i, Task * j, double distij, double distji)
 
 int chooseInt(int time_ij, int time_ji)
 {
-  if(time_ij < time_ji)
+  if(time_ij <= time_ji) //added equal
   {
     return 1;
   }
@@ -151,12 +162,19 @@ int chooseInt(int time_ij, int time_ji)
 /**
   This method is mine proposed approach, which sets the pairs according Allen's interval algebra
   @param a pointer to 2d array of computed distances (this save a computation time)
-  @return number of determined pairs
+  @return number of determined pairs if everything is OK
+          or -1 when there is a flaw in input data (two tasks cannot be scheduled)
+          or -2 if I created a flaw in pairs combinations
 */
 int Pairs::setPairs_new(double ** dist_a)
 {
   vector<vector<int>>::iterator it;
   vector<int> opairs(4);  //one pair, always containing two integers + order of pair, when setted by preVar method + the type of pair
+
+  int track[numTasks][numTasks]; //an array to keep track of pair preceding variables and detect possible flaws
+  for(int a=0; a<numTasks;a++)
+    for(int b=0; b<numTasks;b++)
+      track[a][b] = 2; //inicialization 
 
   //setting pairs based on the fact if their windows are overlapping. Thus we need to decide if i precede j, or j precede i
   for (int a=0; a<numTasks; a++)
@@ -177,20 +195,37 @@ int Pairs::setPairs_new(double ** dist_a)
 
       double distij = dist_a[a][b];
       double distji = dist_a[b][a];
+   
+      //when i precedes j
+      double ti = si;
+      double tj = si+di+distij;
+      if(tj<sj)
+        tj = sj;
+      //criterion
+      double time_ij = (ti+di-si)+(tj+dj-sj);
 
-      double time_ij = si+di+distij - sj;
-      double time_ji = sj+dj+distji - si;
+      //when j precedes i
+      tj = sj;
+      ti = sj+dj+distji;
+      if(ti<si)
+        ti = si;
+      double time_ji = (ti+di-si)+(tj+dj-sj);
+
+      //old version 
+      //double time_ij = si+di+distij - sj;
+      //double time_ji = sj+dj+distji - si;
+
+      double ij = di+dj+distij;
+      double ji = di+dj+distji;
+
+      double overlap1 = ej-si;
+      double overlap2 = ei-sj;
 
       if (time_ij <0)
         time_ij = 0;
       if (time_ji <0)
         time_ji = 0;
-       
-      //the combination of tasks is possible
-      opairs[0] = a;//tasksToS->at(i)->getID();
-      opairs[1] = b;//tasksToS->at(j)->getID();
-      opairs[2] = -1; // this will be set in preVar method
-      opairs[3] = -1;
+           
 
 
       /*
@@ -200,10 +235,16 @@ int Pairs::setPairs_new(double ** dist_a)
       and we need to add constrain to ensure, that their execution will not overlap*/
       if(ei>sj) 
       {        
+        //the combination of tasks is possible
+        opairs[0] = a;//tasksToS->at(i)->getID();
+        opairs[1] = b;//tasksToS->at(j)->getID();
+        opairs[2] = -1; // this will be set in preVar method
+
+      
         //i overlaps j
         if((si<sj)&&(ei<ej))
         {
-          opairs[3] = 1;          
+          opairs[3] = checkFeasibility(overlap1,ij,1);          
           set = true;
         }
         
@@ -212,7 +253,7 @@ int Pairs::setPairs_new(double ** dist_a)
         {
           if(ei<ej) //i starts j
           {
-            opairs[3] = 1; 
+            opairs[3] = checkFeasibility(overlap1,ij,1); 
             set = true;
           }
           
@@ -223,10 +264,8 @@ int Pairs::setPairs_new(double ** dist_a)
             it makes no sense to chose ordering, 
             however, dist(i,j) or dist(j,i) can be different and they might change the ordering. 
             Thus, we decide here which is the best ordering */
-            opairs[3]=decidedInterval(i,j,distij, distji);
-            if(opairs[3] == 2)
-              opairs[3] = chooseInt(time_ij, time_ji);
-        
+
+            opairs[3]=decidedInterval(overlap1, overlap2, ij, ji);   
             set = true;
           }
         }
@@ -234,57 +273,102 @@ int Pairs::setPairs_new(double ** dist_a)
         else if((si<sj)&&(ei>ej))
         {
            //both options (i precedes j, j precedes i) are generally possible
-           opairs[3]=decidedInterval(i,j,distij, distji);
-           //this is really pruning
-            if(opairs[3] == 2)
-              opairs[3] = chooseInt(time_ij, time_ji);
+           opairs[3]=decidedInterval(overlap1, overlap2, ij, ji); 
            set = true;
         }
         //i finish j
         else if((ei == ej)&&(si<sj))
         {
-          opairs[3]=1; 
+          opairs[3]=checkFeasibility(overlap1,ij,1); 
           set = true;
         }
       }
+
       if(ej>si)
       {
+        //the combination of tasks is possible
+        opairs[0] = a;//tasksToS->at(i)->getID();
+        opairs[1] = b;//tasksToS->at(j)->getID();
+        opairs[2] = -1; // this will be set in preVar method
+
         //j overlaps i
         if((sj<si)&&(ej<ei))
         {
-          opairs[3] = 0; 
+          opairs[3] = checkFeasibility(overlap2,ji,0); 
           set = true;
         }
         
-        else if((si==sj)&&(ej < ei)) //i imeets j
+        else if((si==sj)&&(ej < ei)) //j starts i
         {
-          opairs[3]= 0; 
+          opairs[3]= checkFeasibility(overlap2,ji,0); 
           set = true;
         }
        //i during j
         else if((sj<si)&&(ej>ei))
         {
-          opairs[3]= decidedInterval(i,j,distij, distji);
-          //this is really pruning
-          if(opairs[3] == 2)
-            opairs[3] = chooseInt(time_ij, time_ji);
+          opairs[3]= decidedInterval(overlap1, overlap2, ij, ji); 
           set = true;
         }
         else if((ei == ej)&&(sj<si))
         {
-          opairs[3]= 0;
+          opairs[3]= checkFeasibility(overlap2,ji,0);
           set = true;
         }
       }
        if(set)
        {
-         it = pairs.begin() + numPairs;
-         pairs.insert(it,opairs);
-         numPairs++;
-  
+         if(opairs[3]==-1) //there is a flaw in input data
+         {
+           return -1;
+         }
+         else 
+         {
+           if(track[a][b] == 2) //any combination
+           {
+             if(opairs[3]==2) //equal or during and we havent got yet constraint
+             {
+               opairs[3] = chooseInt(time_ij, time_ji); //chose one
+             }
+             track[a][b] = opairs[3];
+             it = pairs.begin() + numPairs;
+             pairs.insert(it,opairs);
+             numPairs++;
+           }
+           else //we have allready constraint
+           {
+             if(opairs[3] == 2) //order doesnt matter, choose the set constraint
+             {
+               opairs[3] = track[a][b];
+             }
+             if(track[a][b] == opairs[3]) //constraint are same
+             {
+               it = pairs.begin() + numPairs;
+               pairs.insert(it,opairs);
+               numPairs++;
+             }
+             else //flaw in my pair construction
+             {
+               return -2;
+             }
+           } 
+         }
        }
 
+    }//end of b loop
+    //we have a row of track array, from that, we can set up how the next row should look like
+    int act_f = track[a][a+1];
+    for(int b=a+2;b<numTasks;b++)
+    {
+      if(act_f == track[a][b])
+      {
+        track[a+1][b] = 2; // any combination
+      }
+      else
+      {
+        track[a+1][b] = track[a][b];
+      }
     }
   }
+
   return numPairs;
 }

@@ -34,20 +34,27 @@ Task * createSchedulerTask(const strands_executive_msgs::Task & _task, const ros
 
   auto startAfter = _earliestStart > _task.start_after ? _earliestStart : _task.start_after;
 
-  // ROS_INFO_STREAM("" << _earliestStart);
-  // ROS_INFO_STREAM("" << _task.start_after);
-  // ROS_INFO_STREAM("" << startAfter);
+  //ROS_INFO_STREAM("" << _earliestStart);
+  //ROS_INFO_STREAM("" <<  startAfter);
+  //ROS_INFO_STREAM("" << _task.start_after);
+  //ROS_INFO_STREAM("" << _task.end_before);
   
+  //ensure, that task have valid time window
+  if(startAfter.toSec() <= (_task.end_before.toSec() - _task.max_duration.toSec()))
+  {
 
-	Task* t = new Task(_task.task_id,
+    Task* t = new Task(_task.task_id,
 						startAfter.toSec(),
 						_task.end_before.toSec(),
 						_task.max_duration.toSec(),
 						_task.start_node_id,
 						_task.end_node_id, 
             _demand);
-
-	return t;
+    return t;
+  }
+  else //task is not valid
+    return NULL;
+  
 }
 
 // bool compareTasks (const Task * i, const Task * j) { 
@@ -71,10 +78,19 @@ double ** createDurationArray(const strands_executive_msgs::DurationMatrix & dm,
   return array;
 }
 
+void clean_matrix(double ** duration_array, int size)
+{
+  for (int i = 0; i < size; ++i)
+  {
+    delete duration_array[i];
+  }
+  delete duration_array;
+}
+
 bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
          			strands_executive_msgs::GetSchedule::Response &res) {
   
-  ROS_INFO_STREAM("Got a request for a schedule " << req.tasks.size() << " tasks ");
+  ROS_INFO_STREAM("SCHEDULER: Got a request for a schedule " << req.tasks.size() << " tasks ");
 
   static ros::NodeHandle nh;
 
@@ -85,14 +101,27 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
 
   // for(strands_executive_msgs::Task task : req.tasks) {
   for(auto & task : req.tasks) {
-    // ROS_INFO_STREAM(task.task_id << " start " << task.start_after << ", end " << task.end_before
+    //ROS_INFO_STREAM(task.task_id << " start " << task.start_after << ", end " << task.end_before
     //     << ", duration " << task.max_duration);    
 
     bool first = task.task_id == req.first_task ? true : false;
 
-  	tasks.push_back(createSchedulerTask(task, req.earliest_start, first));
+    Task * sch_task = createSchedulerTask(task, req.earliest_start, first);
+    
+    if (sch_task != NULL)   
+      tasks.push_back(sch_task);
+    else
+    {
+      ROS_INFO("SCHEDULER: some task have invalid startime and deadline, probably it is invalid because of currently executed tasks");
+      for(auto & tp : tasks) {
+        delete tp;
+      } 
+      return true;
+    }
+
+        
     if(first) {
-      ROS_INFO_STREAM(task.task_id << " is first");
+      ROS_INFO_STREAM("SCHEDULER:"<< task.task_id << " is first");
     }
   }
 
@@ -120,49 +149,62 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
   double ** duration_array = createDurationArray(req.durations, max_duration);
   Scheduler scheduler(&tasks, duration_array, max_duration);
 
-   ROS_INFO_STREAM("Going to solve");    
- 
-
-  if(scheduler.solve(scheduler_version, output_file, timeout)) {
-
-  
-
-  	std::sort(tasks.begin(), tasks.end(), compareTasks);
+  ROS_INFO_STREAM("SCHEDULER: Going to solve");   
 
 
-   // clean up duration matrix... yuck! Lenka, smart pointers or, ideally, boost matrix
-    for (int i = 0; i < tasks.size(); ++i)
-    {
-      delete duration_array[i];
-    }
-    delete duration_array;
+   int sch_result = scheduler.solve(scheduler_version, output_file, timeout);
+   if(sch_result == 1) 
+   {
+     ROS_INFO("SCHEDULER: found a solution");
+     std::sort(tasks.begin(), tasks.end(), compareTasks);
 
+     // clean up duration matrix... yuck! Lenka, smart pointers or, ideally, boost matrix
+     clean_matrix(duration_array, tasks.size());
 
-  	for(auto & tp : tasks) {
-  		res.task_order.push_back(tp->getID());
-  		res.execution_times.push_back(ros::Time(tp->getExecTime()));
-  		delete tp;
-  	} 
+     for(auto & tp : tasks) 
+     {
+       res.task_order.push_back(tp->getID());
+       res.execution_times.push_back(ros::Time(tp->getExecTime()));
+       delete tp;
+     } 
 
+   }
+  else if(sch_result==0) {
+    ROS_INFO("SCHEDULER: didnt find a solution even though everything was fine");
+
+    clean_matrix(duration_array, tasks.size());
+
+    // manage memory explicitly until Lenka changes to smart pointers
+    for(auto & tp : tasks) {
+      delete tp;
+    } 
   }
-  else {
+  else if(sch_result == -1)
+  {
+    ROS_INFO("SCHEDULER: some scip error occured\n"); 
+    clean_matrix(duration_array, tasks.size());
+    for(auto & tp : tasks) {
+      delete tp;
+    } 
+  }
+  else if(sch_result == -2)
+  {
+    ROS_INFO("SCHEDULER: The input problem had a flaw, scheduler didnt attempt\n"); 
+    clean_matrix(duration_array, tasks.size());
+    for(auto & tp : tasks) {
+      delete tp;
+    } 
+  }
+  else if(sch_result == -3)
+  {
+    ROS_WARN("SCHEDULER: created a flaw in pair assigning, scheduler didnt attempt\n"); 
+    clean_matrix(duration_array, tasks.size());
+    for(auto & tp : tasks) {
+      delete tp;
+    } 
+  }
 
   
-
-   // clean up duration matrix... yuck! Lenka, smart pointers or, ideally, boost matrix
-    for (int i = 0; i < tasks.size(); ++i)
-    {
-      delete duration_array[i];
-    }
-    delete duration_array;
-
-	  // manage memory explicitly until Lenka changes to smart pointers
-	  for(auto & tp : tasks) {
-	  	delete tp;
-	  } 
-	}
-
-
   return true;
 }
 
@@ -170,7 +212,7 @@ bool getSchedule(strands_executive_msgs::GetSchedule::Request  &req,
 
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "schedule_server");
+  ros::init(argc, argv, "schedule_server");
 
   if(ros::param::has("~save_problems")) {
     ros::param::get("~save_problems", save_problems);
@@ -178,24 +220,24 @@ int main(int argc, char **argv)
 
   if(ros::param::has("~scheduler_version")) {
     ros::param::get("~scheduler_version", scheduler_version);
-    ROS_INFO_STREAM("Running scheduler version " << scheduler_version);
+    ROS_INFO_STREAM("SCHEDULER: Running scheduler version " << scheduler_version);
   } 
 
   if(ros::param::has("~output_file")) {
     ros::param::get("~output_file", output_file);
-    ROS_INFO_STREAM("Saving experimental output to " << output_file);
+    ROS_INFO_STREAM("SCHEDULER: Saving experimental output to " << output_file);
   } 
 
   if(ros::param::has("~timeout")) {
     ros::param::get("~timeout", timeout);
-    ROS_INFO_STREAM("Using timeout " << timeout);
+    ROS_INFO_STREAM("SCHEDULER: Using timeout " << timeout);
   } 
 
   if(save_problems) {
-    ROS_INFO("Writing scheduling problems to mongodb_store");
+    ROS_INFO("SCHEDULER: Writing scheduling problems to mongodb_store");
   }
   else{
-    ROS_INFO("Not writing scheduling problems to mongodb_store");
+    ROS_INFO("SCHEDULER: Not writing scheduling problems to mongodb_store");
   }
 
   	ros::NodeHandle nh;

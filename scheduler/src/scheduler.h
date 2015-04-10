@@ -38,12 +38,8 @@ class Scheduler
 
   public:
   Scheduler(std::vector<Task *>* tasks, double ** duration_matrix, double max_duration);
-  
-  double readDist();
-  int setPreVar(ScipUser *);
-  int findTaskNow();
-  std::vector<int> findConditions();
-  bool solve(int, std::string, const int & timeout = 0);
+  ~Scheduler();
+  int solve(int, std::string, const int & timeout = 0);
   
   
 };

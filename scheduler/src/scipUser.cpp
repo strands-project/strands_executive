@@ -82,7 +82,7 @@ SCIP_Retcode ScipUser::tVar(int num_tasks, vector<SCIP_VAR *> * t_var)
                      var_name,               // name
                      0.0,                    // lower bound
                      SCIP_DEFAULT_INFINITY,                    // upper bound
-                     1.0,         // objective reflects priority, it multiplies time of the variable to affect global optimum
+                     1,         // objective reflects priority, it multiplies time of the variable to affect global optimum
                      SCIP_VARTYPE_CONTINUOUS,   // variable type
                      true,                   // initial
                      false,                  // forget the rest ...
@@ -150,7 +150,7 @@ SCIP_Retcode ScipUser::setOneTcons(int i, vector<SCIP_VAR *> * t_var, vector<SCI
 		vars0,//&vars,
 		vals0,
 		s,//  	lhs,
-		SCIP_DEFAULT_INFINITY,//  	rhs,
+		x,//SCIP_DEFAULT_INFINITY,//  	rhs,
 		true,   // 	initial,
 		true,    //  	separate,
 		true,  //  	enforce,
@@ -164,7 +164,7 @@ SCIP_Retcode ScipUser::setOneTcons(int i, vector<SCIP_VAR *> * t_var, vector<SCI
   ));
   
 
-  SCIP_CONS* con2 = (SCIP_CONS*)NULL;
+  /*SCIP_CONS* con2 = (SCIP_CONS*)NULL;
   SCIPsnprintf(con_name, 255, "e_%d", i);
 
   SCIP_CALL(SCIPcreateConsLinear (scip,
@@ -185,10 +185,10 @@ SCIP_Retcode ScipUser::setOneTcons(int i, vector<SCIP_VAR *> * t_var, vector<SCI
 		false, //  	dynamic,
 		false,//  	removable,
 		false//  	stickingatnode
-  ));
+  ));*/
 
   //create a conjunction
-  SCIP_CONS* conj;
+  /*SCIP_CONS* conj;
   SCIPsnprintf(con_name, 255, "junse_%d", i);
   SCIP_CONS* arr_jun[2];
   arr_jun[0] = con;
@@ -203,21 +203,25 @@ SCIP_Retcode ScipUser::setOneTcons(int i, vector<SCIP_VAR *> * t_var, vector<SCI
                 false,
                 false,
                 false
-  ));
+  ));*/
 
-  SCIP_CALL( SCIPaddCons(scip, conj) );
-  SCIP_CALL( SCIPreleaseCons(scip, &con));
-  SCIP_CALL( SCIPreleaseCons(scip, &con2));
+   //old
+  //SCIP_CALL( SCIPaddCons(scip, conj) );
+  SCIP_CALL( SCIPaddCons(scip, con) );
+  //SCIP_CALL( SCIPreleaseCons(scip, &con));
+  //SCIP_CALL( SCIPreleaseCons(scip, &con2));
 
   //SCIP_CALL(SCIPprintCons(scip,	conj, NULL));
   //cout << "\n"; 	
-  t_con->at(i) = conj;	
+  //old
+  //t_con->at(i) = conj;	
 
+  t_con->at(i) = con;
   
-  delete con;
-  con = NULL;
-  delete con2;
-  con2 = NULL;
+  //delete con;
+  //con = NULL;
+  //delete con2;
+  //con2 = NULL;
 
 
   
@@ -238,6 +242,7 @@ SCIP_Retcode ScipUser::setTcons(vector<Task*> * tasksToS, vector<SCIP_VAR *> * t
     SCIP_Real d = tasksToS->at(i)->getDuration(); 
     SCIP_Real s = tasksToS->at(i)->getStart();
     SCIP_Real e = tasksToS->at(i)->getEnd();
+
     SCIP_CALL(setOneTcons(i, t_var, t_con, s, e-d));   
   }
   return SCIP_OKAY;
@@ -647,6 +652,8 @@ SCIP_Retcode ScipUser::scipSolve(vector<Task*> * tasksToS, SCIP_VAR * vars[], bo
     results << SCIPgetSolOrigObj(scip,sol) << " " << elapsed_seconds.count() << " " << num_tasks;
   }
 
+  //cout << "criterion:" <<  SCIPgetSolOrigObj(scip,sol);
+
   if(sol == NULL)
   {
     *worked = false;
@@ -665,16 +672,20 @@ SCIP_Retcode ScipUser::scipSolve(vector<Task*> * tasksToS, SCIP_VAR * vars[], bo
     if(!filename.empty())
     {
       results << " " << 1 << "\n";
+      schedule_file.open(filename+"schedule.txt",std::ios_base::app);
     }
     SCIP_CALL(SCIPgetSolVals(scip,sol, num_tasks, vars, vals)); 
-    schedule_file.open(filename+"schedule.txt",std::ios_base::app);
+    
     for(int i=0; i < num_tasks; i++)
     {
       tasksToS->at(i)->setExecTime(vals[i]);
-      schedule_file << vals[i] << " ";
+      if(!filename.empty())
+        schedule_file << vals[i] << " ";
     }
-    schedule_file <<"\n";
-    schedule_file.close();
+    if(!filename.empty()){
+      schedule_file <<"\n";
+      schedule_file.close();
+    }
   }	
   results.close();
   return SCIP_OKAY;
