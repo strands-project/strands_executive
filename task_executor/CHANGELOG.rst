@@ -2,6 +2,39 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge branch 'hydro-release' of https://github.com/mudrole1/strands_executive into hydro-release
+  Conflicts:
+  task_executor/scripts/scheduled_task_executor.py
+* Fixed some bugs in priorities handling, submitting testing file
+* Added functionality of priorities and withdrawing tasks
+* fixed bug in pairs causing scheduler to fail. Also fix bug with -1 constraint, which was causing that schedule was found for non existing solutions
+  extended scheduled_task_executor to throw away tasks with  priorities
+* try_schedule now tries to thow away some tasks in order to try to schedule smaller batch
+* Removed fifo tester from make file.
+  The fifo stuff is not actually used in the full system. Given that the scheduler test is in there now we are already testing all the things that this test.
+* Fixed some bugs in priorities handling, submitting testing file
+* Extended wait duration to see if that accounts for `#155 <https://github.com/strands-project/strands_executive/issues/155>`_
+* Correcting order of values returned from demand task service call.
+  Once the task_id number grew larger this was no longer interpreted (incorrectly) as a boolean, causing `#163 <https://github.com/strands-project/strands_executive/issues/163>`_.
+  This fixes `#163 <https://github.com/strands-project/strands_executive/issues/163>`_.
+* Removed deprecated code.
+* Added locking in log methods to prevent concurrent calls to message store service. This should fix `#160 <https://github.com/strands-project/strands_executive/issues/160>`_
+* removing frenap from dependencies
+* removing frenap from launch file
+* Added locking arond mdp expected time call so that code which calls it directly does not have concurrency issues with the other expected time call.
+* Not using blank start_after for epoch.
+  This should address `#157 <https://github.com/strands-project/strands_executive/issues/157>`_
+* Added functionality of priorities and withdrawing tasks
+* fixed bug in pairs causing scheduler to fail. Also fix bug with -1 constraint, which was causing that schedule was found for non existing solutions
+  extended scheduled_task_executor to throw away tasks with  priorities
+* Decreasing fudge factor now actual data is being used.
+* Using full vector from mdp travel service.
+  This closes `#152 <https://github.com/strands-project/strands_executive/issues/152>`_
+* try_schedule now tries to thow away some tasks in order to try to schedule smaller batch
+* Contributors: Bruno Lacerda, Lenka, Nick Hawes
+
 0.0.19 (2015-03-31)
 -------------------
 * Added rostest for task_executor with scheduler

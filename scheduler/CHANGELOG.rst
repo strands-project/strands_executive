@@ -3,6 +3,40 @@ Changelog for package scheduler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* remove text "TODO" for solved lines
+* Uncommented priorities in example code
+* ScipUser - fixed bug with creating tcons
+  Scheduler node - test if times s, e are valid
+* added warning when pairs creation fail
+* Extension of node with diagnostic comments
+* changed criterion to  decide task, now same as in ICRA paper
+* fixed bug with writtin to a file
+* supporting code if we need to propagate priorities to scheduler
+* clean-up verson of scheduler, as on-demand  task are not propagate to scheduler, deteled code which was not needed
+* Pairs return now -1 when detecting flaw in input data, -2 when creating flaw themselves
+* fixed bug in pairs causing scheduler to fail. Also fix bug with -1 constraint, which was causing that schedule was found for non existing solutions
+  extended scheduled_task_executor to throw away tasks with  priorities
+* Delete readme.md
+* Attempt to have readme files in subfolders
+* Uncommented priorities in example code
+* ScipUser - fixed bug with creating tcons
+  Scheduler node - test if times s, e are valid
+* added warning when pairs creation fail
+* Extension of node with diagnostic comments
+* changed criterion to  decide task, now same as in ICRA paper
+* fixed bug with writtin to a file
+* supporting code if we need to propagate priorities to scheduler
+* clean-up verson of scheduler, as on-demand  task are not propagate to scheduler, deteled code which was not needed
+* Pairs return now -1 when detecting flaw in input data, -2 when creating flaw themselves
+* fixed bug in pairs causing scheduler to fail. Also fix bug with -1 constraint, which was causing that schedule was found for non existing solutions
+  extended scheduled_task_executor to throw away tasks with  priorities
+* deleted readme
+* Delete readme.md
+* Attempt to have readme files in subfolders
+* Contributors: Lenka, Lenka Mudrova
+
 0.0.19 (2015-03-31)
 -------------------
 

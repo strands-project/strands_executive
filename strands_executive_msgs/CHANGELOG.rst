@@ -3,6 +3,14 @@ Changelog for package strands_executive_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* this abstract_task_server should have no change, I just messed up my git
+* Task message has now priorities field
+* this abstract_task_server should have no change, I just messed up my git
+* Task message has now priorities field
+* Contributors: Lenka
+
 0.0.19 (2015-03-31)
 -------------------
 * added documentation and made it a *real* abstract class

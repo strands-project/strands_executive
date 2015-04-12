@@ -2,6 +2,12 @@
 Changelog for package gcal_routine
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* added documentation in README.md
+* added priorities to gcal routine
+* Contributors: Marc Hanheide
+
 0.0.19 (2015-03-31)
 -------------------
 * now uses the top launch file to make the test work...

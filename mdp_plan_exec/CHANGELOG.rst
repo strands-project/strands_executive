@@ -2,6 +2,16 @@
 Changelog for package mdp_plan_exec
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* clean unneeded prints
+* added extra print for the string created by travel times estimation
+* kick typo fix
+* added prints to figure out bottleneck
+* filling mdp with edge predictions from topological nav
+* getting node to die cleanly
+* Contributors: Bruno Lacerda
+
 0.0.19 (2015-03-31)
 -------------------
 * Integrated mdp travel time service.
