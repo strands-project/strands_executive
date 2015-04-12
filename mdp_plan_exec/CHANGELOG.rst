@@ -2,8 +2,8 @@
 Changelog for package mdp_plan_exec
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.20 (2015-04-12)
+-------------------
 * clean unneeded prints
 * added extra print for the string created by travel times estimation
 * kick typo fix

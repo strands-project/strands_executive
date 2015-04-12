@@ -2,8 +2,8 @@
 Changelog for package gcal_routine
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.20 (2015-04-12)
+-------------------
 * added documentation in README.md
 * added priorities to gcal routine
 * Contributors: Marc Hanheide

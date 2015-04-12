@@ -2,8 +2,8 @@
 Changelog for package wait_action
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.20 (2015-04-12)
+-------------------
 * possible to overwrite name of node
 * made wait_action `interruptible` configurable
 * fixes `#151 <https://github.com/strands-project/strands_executive/issues/151>`_

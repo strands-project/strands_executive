@@ -2,8 +2,8 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.20 (2015-04-12)
+-------------------
 * Merge branch 'hydro-release' of https://github.com/mudrole1/strands_executive into hydro-release
   Conflicts:
   task_executor/scripts/scheduled_task_executor.py

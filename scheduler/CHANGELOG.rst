@@ -3,8 +3,8 @@ Changelog for package scheduler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Forthcoming
------------
+0.0.20 (2015-04-12)
+-------------------
 * remove text "TODO" for solved lines
 * Uncommented priorities in example code
 * ScipUser - fixed bug with creating tcons
