@@ -77,6 +77,9 @@ class MdpPolicyExecutor(object):
     def generate_prism_specification(self, goal):
         special_waypoints=self.special_waypoints_srv()
         if goal.task_type==ExecutePolicyGoal.GOTO_WAYPOINT:
+            if not self.top_map_mdp.target_in_topological_map(goal.target_id):
+                rospy.logerr("Execute policy target  " + goal.target_id  + "  is not a node in the topological map. Aborting")
+                return None
             if goal.target_id in special_waypoints.forbidden_waypoints:
                 rospy.logwarn("The goal is a forbidden waypoint. Aborting")
                 return None

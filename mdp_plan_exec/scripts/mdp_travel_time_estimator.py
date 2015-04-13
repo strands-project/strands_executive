@@ -27,9 +27,12 @@ class MdpTravelTimeEstimator(object):
         rospy.loginfo("MDP travel times estimator initialised.")
 
     def travel_times_to_waypoint_cb(self,req):
+        if not self.top_map_mdp.target_in_topological_map(req.target_waypoint):
+            rospy.logerr("Get travel times target  " + req.target_waypoint  + "  is not a node in the topological map. Returning empty response")
+            return GetExpectedTravelTimesToWaypointResponse()
         if req.epoch != self.last_epoch:
             self.last_epoch=req.epoch
-            self.top_map_mdp.set_mdp_action_durations(self.directory+self.file_name, req.epoch)            
+            self.top_map_mdp.set_mdp_action_durations(self.directory+self.file_name, req.epoch)           
         specification='R{"time"}min=? [ ( F "' + req.target_waypoint + '") ]'
         rospy.loginfo("The specification is " + specification)
         state_vector=map(rospy.Duration, self.prism_estimator.get_state_vector(specification))
