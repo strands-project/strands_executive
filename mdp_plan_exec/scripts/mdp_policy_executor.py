@@ -178,6 +178,9 @@ class MdpPolicyExecutor(object):
                     if prob_post_cond[1]["waypoint"]==waypoint_val:
                         self.current_prod_state=dict(prob_post_cond[1])
                         return
+        if self.current_prod_state["dra_state1"] == self.product_mdp.props_def["dra_acc_state1"].conds["dra_state1"]: 
+            rospy.loginfo("Skipping MDP state update as target state has already been visited")
+            return
         self.current_prod_state=None
         rospy.logerr("Error getting MDP next state. Aborting.")
         self.top_nav_policy_exec.cancel_all_goals()
