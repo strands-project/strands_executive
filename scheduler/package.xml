@@ -5,7 +5,7 @@
   <description>A task scheduler implemented using mixed integer programming.</description>
 
   <maintainer email="n.a.hawes@cs.bham.ac.uk">Nick Hawes</maintainer>
-  <maintainer email="lenka.mudrova@gmail.com">Lenka Mudrova</maintainer>
+  <maintainer email="lxm210@cs.bham.ac.uk">Lenka Mudrova</maintainer>
 
   <license>MIT</license>
 
