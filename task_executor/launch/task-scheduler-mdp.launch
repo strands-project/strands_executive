@@ -19,6 +19,6 @@
 
   
   <!-- Utility node used for generating wait behaviours -->
-  <node pkg="wait_action" type="wait_node.py" name="wait_node"  output="screen"/>    
+  <node pkg="wait_action" type="wait_node.py" name="wait_action"  output="screen"/>    
 
 </launch>
