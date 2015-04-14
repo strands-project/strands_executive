@@ -77,6 +77,9 @@ class MdpPolicyExecutor(object):
     def generate_prism_specification(self, goal):
         special_waypoints=self.special_waypoints_srv()
         if goal.task_type==ExecutePolicyGoal.GOTO_WAYPOINT:
+            if not self.top_map_mdp.target_in_topological_map(goal.target_id):
+                rospy.logerr("Execute policy target  " + goal.target_id  + "  is not a node in the topological map. Aborting")
+                return None
             if goal.target_id in special_waypoints.forbidden_waypoints:
                 rospy.logwarn("The goal is a forbidden waypoint. Aborting")
                 return None
@@ -178,6 +181,9 @@ class MdpPolicyExecutor(object):
                     if prob_post_cond[1]["waypoint"]==waypoint_val:
                         self.current_prod_state=dict(prob_post_cond[1])
                         return
+        if self.current_prod_state["dra_state1"] == self.product_mdp.props_def["dra_acc_state1"].conds["dra_state1"]: 
+            rospy.loginfo("Skipping MDP state update as target state has already been visited")
+            return
         self.current_prod_state=None
         rospy.logerr("Error getting MDP next state. Aborting.")
         self.top_nav_policy_exec.cancel_all_goals()

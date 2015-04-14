@@ -103,4 +103,7 @@ class TopMapMdp(Mdp):
 
     def set_initial_state_from_waypoint(self,current_waypoint):
         self.initial_state=self.props_def[current_waypoint].conds
+        
+    def target_in_topological_map(self, waypoint):
+        return waypoint in [node.name for node in self.top_map.nodes]
 
