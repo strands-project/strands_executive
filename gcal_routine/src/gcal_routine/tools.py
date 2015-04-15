@@ -140,7 +140,22 @@ class GCal:
             if 'description' in gcal_event:
                 t = factory.call(gcal_event['description']).task
             else:
-                t = factory.call('').task
+                start_after = rospy.Time.from_sec(mktime(start_utc.timetuple())) \
+                    - self.time_offset
+                end_before = rospy.Time.from_sec(mktime(end_utc.timetuple())) \
+                    - self.time_offset
+                    
+                sa = "start_after: {secs: %d, nsecs: %d}" % \
+                         (start_after.secs, start_after.nsecs)
+                eb = "end_before: {secs: %d, nsecs: %d}" % \
+                         (end_before.secs, end_before.nsecs)
+                sn = "start_node_id: '%s'" % gcal_event['location']
+                en = "end_node_id: '%s'" % gcal_event['location']
+                
+                yaml = "{%s, %s, %s, %s}" % (sa, eb, sn, en) 
+                rospy.loginfo("calling with pre-populated yaml: %s" % yaml)
+                t = factory.call(yaml).task
+                rospy.loginfo("got the task back: %s" % str(t))
         except Exception as e:
             rospy.logwarn("Couldn't instantiate task from factory %s."
                           "error: %s."
@@ -148,7 +163,7 @@ class GCal:
                           (factory_name, str(e)))
             t = Task()
             t.action = gcal_event['summary']
-        print t
+        
         t.start_after = rospy.Time.from_sec(mktime(start_utc.timetuple())) \
             - self.time_offset
         t.end_before = rospy.Time.from_sec(mktime(end_utc.timetuple())) \
