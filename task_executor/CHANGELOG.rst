@@ -2,8 +2,8 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.21 (2015-04-15)
+-------------------
 * just change launch files for new name of wait_action, also changed default value to be interruptible
 * Contributors: Lenka
 

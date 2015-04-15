@@ -3,8 +3,8 @@ Changelog for package scheduler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Forthcoming
------------
+0.0.21 (2015-04-15)
+-------------------
 * change of my email in the scheduler
 * Contributors: Lenka
 
