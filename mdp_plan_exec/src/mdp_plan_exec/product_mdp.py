@@ -105,7 +105,7 @@ class ProductMdp(Mdp):
             action_number=int(line[1])
             to_state=int(line[2])
             to_state_def=self.product_state_defs[to_state]
-            probability=float(line[3])
+            probability=float(line[3].replace(',','.'))
             action_name=line[4]
             if action_name=='':
                 continue
