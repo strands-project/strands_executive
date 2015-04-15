@@ -2,6 +2,12 @@
 Changelog for package mdp_plan_exec
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* check if target waypoint exists before getting expected travel times or executing policies
+* ignore waypoints visited after influence area of target waypoint has been reached
+* Contributors: Bruno Lacerda
+
 0.0.20 (2015-04-12)
 -------------------
 * clean unneeded prints

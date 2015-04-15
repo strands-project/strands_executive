@@ -2,6 +2,11 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* just change launch files for new name of wait_action, also changed default value to be interruptible
+* Contributors: Lenka
+
 0.0.20 (2015-04-12)
 -------------------
 * Merge branch 'hydro-release' of https://github.com/mudrole1/strands_executive into hydro-release

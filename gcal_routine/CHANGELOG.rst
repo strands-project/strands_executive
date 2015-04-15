@@ -2,6 +2,11 @@
 Changelog for package gcal_routine
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* calling the factory method with pre-populated YAML to allows task to know these values already
+* Contributors: Marc Hanheide (at AAF control PC)
+
 0.0.20 (2015-04-12)
 -------------------
 * added documentation in README.md
