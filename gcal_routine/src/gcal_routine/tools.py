@@ -4,9 +4,9 @@ PKG = 'gcal_routine'
 
 from strands_executive_msgs.msg import Task
 import rospy
-from time import mktime
 import urllib
 import json
+from calendar import timegm
 from dateutil import parser
 from dateutil import tz
 from datetime import datetime
@@ -17,7 +17,7 @@ from threading import Thread
 
 
 def rostime_str(rt):
-    return str(datetime.fromtimestamp(rt.secs))
+    return str(datetime.fromtimestamp(rt.secs)) + '  ' + str(rt.secs)
 
 
 class GCal:
@@ -140,9 +140,9 @@ class GCal:
             if 'description' in gcal_event:
                 t = factory.call(gcal_event['description']).task
             else:
-                start_after = rospy.Time.from_sec(mktime(start_utc.timetuple())) \
+                start_after = rospy.Time.from_sec(timegm(start_utc.timetuple())) \
                     - self.time_offset
-                end_before = rospy.Time.from_sec(mktime(end_utc.timetuple())) \
+                end_before = rospy.Time.from_sec(timegm(end_utc.timetuple())) \
                     - self.time_offset
                     
                 sa = "start_after: {secs: %d, nsecs: %d}" % \
@@ -164,9 +164,9 @@ class GCal:
             t = Task()
             t.action = gcal_event['summary']
         
-        t.start_after = rospy.Time.from_sec(mktime(start_utc.timetuple())) \
+        t.start_after = rospy.Time.from_sec(timegm(start_utc.timetuple())) \
             - self.time_offset
-        t.end_before = rospy.Time.from_sec(mktime(end_utc.timetuple())) \
+        t.end_before = rospy.Time.from_sec(timegm(end_utc.timetuple())) \
             - self.time_offset
         if 'location' in gcal_event:
             t.start_node_id = gcal_event['location']
