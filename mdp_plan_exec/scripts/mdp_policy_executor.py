@@ -197,14 +197,8 @@ class MdpPolicyExecutor(object):
 
 if __name__ == '__main__':
     rospy.init_node('mdp_policy_executor')
-    filtered_argv=rospy.myargv(argv=sys.argv)    
-    if len(filtered_argv)<2:
-        rospy.logerr("No topological map provided. usage: rosrun mdp_plan_exec mdp_policy_executor <topological_map_name>")
-        sys.exit(2)
-    elif len(filtered_argv)>2:
-        rospy.logwarn("Too many arguments. Assuming topological map is the first one. usage: rosrun mdp_plan_exec mdp_policy_executor <topological_map_name>")
-        
-    mdp_executor =  MdpPolicyExecutor(filtered_argv[1])
+    top_map_name=rospy.get_param("/topological_map_name")
+    mdp_executor =  MdpPolicyExecutor(top_map_name)
     mdp_executor.main()
     
     

@@ -1,7 +1,5 @@
 <launch>
-    <arg name="topological_map"/> 
-
     <node pkg="mdp_plan_exec" type="special_waypoints_manager.py" name="special_waypoints_manager"  output="screen"/>
-    <node pkg="mdp_plan_exec" type="mdp_travel_time_estimator.py" name="mdp_travel_time_estimator"  output="screen" args="$(arg topological_map)"/>
-    <node pkg="mdp_plan_exec" type="mdp_policy_executor.py" name="mdp_policy_executor"  output="screen" args="$(arg topological_map)"/>
+    <node pkg="mdp_plan_exec" type="mdp_travel_time_estimator.py" name="mdp_travel_time_estimator"  output="screen"/>
+    <node pkg="mdp_plan_exec" type="mdp_policy_executor.py" name="mdp_policy_executor"  output="screen"/>
 </launch>
