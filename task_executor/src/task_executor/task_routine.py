@@ -173,7 +173,6 @@ class DailyRoutine(object):
             raise Exception('Provided daily end %s is greater than overall daily end %s for tasks %s' % (daily_end, overall_end, tasks))
 
 
-
         self.routine_tasks += [(tasks, (daily_start, daily_duration))] * times
 
     def get_routine_tasks(self):
@@ -188,8 +187,9 @@ class DailyRoutineRunner(object):
             daily_start (datetime.time): The time of day when all tasks can start, local time.
             daily_end (datetime.time): The time of day when all tasks should end start, local time.
             pre_start_window (datetime.timedelta): The duration before a task's start that it should be passed to the scheduler. Defaults to 1 hour.
+            daily_tasks_fn: A function that can return tasks that are added to the routine for the current day
     """
-    def __init__(self, daily_start, daily_end, add_tasks_srv, pre_start_window=timedelta(hours=0.25), day_start_cb=None, day_end_cb=None, tasks_allowed_fn=None):
+    def __init__(self, daily_start, daily_end, add_tasks_srv, pre_start_window=timedelta(hours=0.25), day_start_cb=None, day_end_cb=None, tasks_allowed_fn=None, daily_tasks_fn=None):
         super(DailyRoutineRunner, self).__init__()
        
 
@@ -235,6 +235,8 @@ class DailyRoutineRunner(object):
             self.tasks_allowed = self._tasks_allowed_fn
         else:
             self.tasks_allowed = tasks_allowed_fn
+
+        self.daily_tasks_fn = daily_tasks_fn
 
         self.days_off = []
         self.dates_off = []
@@ -347,6 +349,12 @@ class DailyRoutineRunner(object):
         """
 
         todays_tasks = self._instantiate_tasks_for_today(self.routine_tasks)
+        if self.daily_tasks_fn is not None:
+            extra_daily_tasks = self.daily_tasks_fn()
+            # print 'got some extra daily tasks'
+            # print extra_daily_tasks
+            todays_tasks += extra_daily_tasks
+
         self._create_routine(todays_tasks)
 
 
