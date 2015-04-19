@@ -89,6 +89,10 @@ def task_event_string(te):
         return 'TASK_SUCCEEDED'
     elif te == TaskEvent.TASK_PREEMPTED:
         return 'TASK_PREEMPTED'    
+    elif te == TaskEvent.ROUTINE_STARTED:
+        return 'ROUTINE_STARTED'    
+    elif te == TaskEvent.ROUTINE_STOPPED:
+        return 'ROUTINE_STOPPED'    
 
 
 
@@ -124,6 +128,8 @@ def summarise(results):
         else:
             print row
 
+def event_time(task_event):
+    return datetime.utcfromtimestamp(task_event.time.to_sec()).strftime('%d/%m/%y %H:%M:%S')
 
 def mkdatetime(date_string):
     return datetime.strptime(date_string, '%d/%m/%y %H:%M')
