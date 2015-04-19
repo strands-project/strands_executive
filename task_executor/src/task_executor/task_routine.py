@@ -366,10 +366,15 @@ class DailyRoutineRunner(object):
 
         todays_tasks = self._instantiate_tasks_for_today(self.routine_tasks)
         if self.daily_tasks_fn is not None:
+            # get the extra tasks
             extra_daily_tasks = self.daily_tasks_fn()
-            # print 'got some extra daily tasks'
-            # print extra_daily_tasks
-            todays_tasks += extra_daily_tasks
+
+            # filter the extra tasks just to make sure they're sane
+            now = rospy.get_rostime()
+            for task in extra_daily_tasks:    
+                # check we're not too late
+                if now + task.max_duration < task.end_before:
+                    todays_tasks.append(task)
 
         self._create_routine(todays_tasks)
 
