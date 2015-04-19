@@ -26,6 +26,8 @@ def time_to_secs(time):
 	
 
 
+
+
 def time_greater_than(t1, t2):
     """ Seems to be a bug in datetime when comparing localtz dates, so do this instead. """
     if t1.hour > t2.hour:

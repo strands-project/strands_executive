@@ -13,13 +13,13 @@ import argparse
 
 if __name__ == '__main__':
 
-    rospy.init_node("example_message_store_client")
+    rospy.init_node("summarise_tasks")
 
 
     msg_store = MessageStoreProxy(collection='task_events')
 
     parser = argparse.ArgumentParser(description='Prints a summary of tasks executed within the queried time window.')
-    parser.add_argument('start', metavar='S', type=task_query.mkdatetime, nargs='?', default=task_routine.start_of_the_day(),
+    parser.add_argument('start', metavar='S', type=task_query.mkdatetime, nargs='?', default=datetime.utcfromtimestamp(0),
                    help='start datetime of query, defaults to the midnight just passed. Formatted "d/m/y H:M" e.g. "06/07/14 06:38"')
     parser.add_argument('end', metavar='E', type=task_query.mkdatetime, nargs='?',
                    help='end datetime of query, defaults to no end. Formatted "d/m/y H:M" e.g. "06/07/14 06:38"')

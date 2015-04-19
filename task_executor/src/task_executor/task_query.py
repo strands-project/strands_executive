@@ -95,10 +95,14 @@ def task_event_string(te):
         return 'ROUTINE_STOPPED'    
 
 
+def format_event(task_event):
+    """ Prints a single event """
+    return 'task %s\t%s\t%s\t%s\t%s' % (task_event.task.task_id, task_event.task.action, task_event.task.start_node_id, task_event_string(task_event.event), datetime.utcfromtimestamp(task_event.time.to_sec()).strftime('%d/%m/%y %H:%M:%S'))
+
 
 def print_event(task_event):
     """ Prints a single event """
-    print 'task %s\t%s\t%s\t%s\t%s' % (task_event.task.task_id, task_event.task.action, task_event.task.start_node_id, task_event_string(task_event.event), datetime.utcfromtimestamp(task_event.time.to_sec()).strftime('%d/%m/%y %H:%M:%S'))
+    print format_event(task_event)
 
 def summarise(results):
 
