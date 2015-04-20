@@ -50,9 +50,6 @@ class MdpPolicyExecutor(object):
         self.current_prod_state=None
         self.product_mdp=None
         
-        self.mdp_nav_as=SimpleActionServer('mdp_plan_exec/execute_policy', ExecutePolicyAction, execute_cb = self.execute_policy_cb, auto_start = False)
-        self.mdp_nav_as.register_preempt_callback(self.preempt_policy_execution_cb)
-        self.mdp_nav_as.start()
         
         #self.learning_travel_times=False
         #self.learn_travel_times_action=SimpleActionServer('mdp_plan_exec/learn_travel_times', LearnTravelTimesAction, execute_cb = self.execute_learn_travel_times_cb, auto_start = False)
@@ -65,6 +62,10 @@ class MdpPolicyExecutor(object):
         self.closest_waypoint_sub=rospy.Subscriber("/closest_node", String, self.closest_waypoint_cb)
         
         self.policy_mode_pub=rospy.Publisher("/mdp_plan_exec/current_policy_mode", NavRoute,queue_size=1)
+        
+        self.mdp_nav_as=SimpleActionServer('mdp_plan_exec/execute_policy', ExecutePolicyAction, execute_cb = self.execute_policy_cb, auto_start = False)
+        self.mdp_nav_as.register_preempt_callback(self.preempt_policy_execution_cb)
+        self.mdp_nav_as.start()
         
         rospy.loginfo("MDP policy executor initialised.")
 
@@ -196,14 +197,8 @@ class MdpPolicyExecutor(object):
 
 if __name__ == '__main__':
     rospy.init_node('mdp_policy_executor')
-    filtered_argv=rospy.myargv(argv=sys.argv)    
-    if len(filtered_argv)<2:
-        rospy.logerr("No topological map provided. usage: rosrun mdp_plan_exec mdp_policy_executor <topological_map_name>")
-        sys.exit(2)
-    elif len(filtered_argv)>2:
-        rospy.logwarn("Too many arguments. Assuming topological map is the first one. usage: rosrun mdp_plan_exec mdp_policy_executor <topological_map_name>")
-        
-    mdp_executor =  MdpPolicyExecutor(filtered_argv[1])
+    top_map_name=rospy.get_param("/topological_map_name")
+    mdp_executor =  MdpPolicyExecutor(top_map_name)
     mdp_executor.main()
     
     
