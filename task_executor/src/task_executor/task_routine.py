@@ -2,7 +2,8 @@ import rospy
 from datetime import datetime, timedelta, date
 from dateutil.tz import tzlocal, tzutc
 from copy import copy
-
+from mongodb_store.message_store import MessageStoreProxy
+from strands_executive_msgs.msg import Task, TaskEvent
 from threading import Thread
 
 _epoch = datetime.utcfromtimestamp(0).replace(tzinfo=tzutc())
@@ -23,6 +24,8 @@ def time_to_secs(time):
     """
     return (time.hour * 60 * 60) + (time.minute * 60) + (time.second) + (time.microsecond/1000.0)
 	
+
+
 
 
 def time_greater_than(t1, t2):
@@ -173,7 +176,6 @@ class DailyRoutine(object):
             raise Exception('Provided daily end %s is greater than overall daily end %s for tasks %s' % (daily_end, overall_end, tasks))
 
 
-
         self.routine_tasks += [(tasks, (daily_start, daily_duration))] * times
 
     def get_routine_tasks(self):
@@ -188,8 +190,9 @@ class DailyRoutineRunner(object):
             daily_start (datetime.time): The time of day when all tasks can start, local time.
             daily_end (datetime.time): The time of day when all tasks should end start, local time.
             pre_start_window (datetime.timedelta): The duration before a task's start that it should be passed to the scheduler. Defaults to 1 hour.
+            daily_tasks_fn: A function that can return tasks that are added to the routine for the current day
     """
-    def __init__(self, daily_start, daily_end, add_tasks_srv, pre_start_window=timedelta(hours=0.25), day_start_cb=None, day_end_cb=None, tasks_allowed_fn=None):
+    def __init__(self, daily_start, daily_end, add_tasks_srv, pre_start_window=timedelta(hours=0.25), day_start_cb=None, day_end_cb=None, tasks_allowed_fn=None, daily_tasks_fn=None):
         super(DailyRoutineRunner, self).__init__()
        
 
@@ -236,6 +239,8 @@ class DailyRoutineRunner(object):
         else:
             self.tasks_allowed = tasks_allowed_fn
 
+        self.daily_tasks_fn = daily_tasks_fn
+
         self.days_off = []
         self.dates_off = []
 
@@ -250,7 +255,19 @@ class DailyRoutineRunner(object):
 
         self.day_start_cb = day_start_cb
         self.day_end_cb = day_end_cb
+
+        self._logging_msg_store = MessageStoreProxy(collection='task_events') 
+
+        te = TaskEvent(task=None, event=TaskEvent.ROUTINE_STARTED, time=rospy.get_rostime(), description='Routine started')
+        self._logging_msg_store.insert(te)
+        rospy.on_shutdown(self._log_end)
+
         Thread(target=self._start_and_end_day).start()
+
+    def _log_end(self):
+        te = TaskEvent(task=None, event=TaskEvent.ROUTINE_STOPPED, time=rospy.get_rostime(), description='Routine stopped')
+        self._logging_msg_store.insert(te)
+
 
     def add_day_off(self, day_name):
         """ Add a day of the week, e.g. Saturday, on which the routing should not be run """
@@ -312,6 +329,7 @@ class DailyRoutineRunner(object):
             self.current_routine_end += timedelta(days=1)
 
 
+
     """
         Adds a task to the daily routine.
         Args:
@@ -347,6 +365,17 @@ class DailyRoutineRunner(object):
         """
 
         todays_tasks = self._instantiate_tasks_for_today(self.routine_tasks)
+        if self.daily_tasks_fn is not None:
+            # get the extra tasks
+            extra_daily_tasks = self.daily_tasks_fn()
+
+            # filter the extra tasks just to make sure they're sane
+            now = rospy.get_rostime()
+            for task in extra_daily_tasks:    
+                # check we're not too late
+                if now + task.max_duration < task.end_before:
+                    todays_tasks.append(task)
+
         self._create_routine(todays_tasks)
 
 
