@@ -2,6 +2,14 @@
 Changelog for package mdp_plan_exec
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* mdp now uses ``topological_map_name `` parameter instead of getting it as an argument
+* check for white spaces in node names and edge ids, and raise exception if found
+* only advertise services and actions once everything else is initialised
+* replace ',' by '.' before trying to convert string to float. fix issue for locales where , is used as the decimal
+* Contributors: Bruno Lacerda
+
 0.0.21 (2015-04-15)
 -------------------
 * check if target waypoint exists before getting expected travel times or executing policies

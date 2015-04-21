@@ -3,6 +3,11 @@ Changelog for package strands_executive_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* Added extra constants for routine start/stop/
+* Contributors: Nick Hawes
+
 0.0.21 (2015-04-15)
 -------------------
 

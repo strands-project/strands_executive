@@ -2,6 +2,35 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Added a verbose option to the schedule printer.
+  If you do `rosparam set schedule_verbose true` you can now see the tasks which are scheduled. Use `rosparam set schedule_limit 10` etc. to limit the number of tasks printed.
+* filtering extra daily tasks to remove impossible ones
+* Utility functions for preceding commits.
+* Added parameter `relaxed_nav` to prevent execution killing navigation if it tasks too long.
+  `rosparam set relaxed_nav true` if you want your navigation actions to have a very long timeout. Set it back to false the timeouts will come from the predicted times.  This will only take effect on the next task.
+* Added node that prints out task executive event.
+  E.g.
+  `rosrun task_executor task_status.py`
+  shows
+  ```
+  task 2          WayPoint11      NAVIGATION_FAILED       19/04/15 18:55:04
+  task 2          WayPoint11      TASK_FAILED     19/04/15 18:55:04
+  task 3          WayPoint10      ADDED   19/04/15 18:55:17
+  task 3          WayPoint10      TASK_STARTED    19/04/15 18:55:17
+  task 3          WayPoint10      NAVIGATION_STARTED      19/04/15 18:55:17
+  ```
+* Script now prints out the routines and runtime.
+* Added logging of routine start and stop. This is for better overall system analysis.
+* Added ability to add tasks to the routine for just the day.
+* Dealing with case where task added for scheduling has no start node.
+  Tested in simulation and works here.
+* mdp now uses ``topological_map_name `` parameter instead of getting it as an argument
+* Dealing with case where task added for scheduling has no start node.
+  Tested in simulation and works here.
+* Contributors: Bruno Lacerda, Nick Hawes
+
 0.0.21 (2015-04-15)
 -------------------
 * just change launch files for new name of wait_action, also changed default value to be interruptible

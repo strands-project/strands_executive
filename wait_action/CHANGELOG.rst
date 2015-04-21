@@ -2,6 +2,9 @@
 Changelog for package wait_action
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.0.21 (2015-04-15)
 -------------------
 * determine wait time from scheduled window in factory
