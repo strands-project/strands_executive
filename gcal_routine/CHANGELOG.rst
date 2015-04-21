@@ -2,8 +2,8 @@
 Changelog for package gcal_routine
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.22 (2015-04-21)
+-------------------
 * fixed to use UTC
 * Contributors: Marc Hanheide (at AAF control PC)
 

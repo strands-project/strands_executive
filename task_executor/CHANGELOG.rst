@@ -2,8 +2,8 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.22 (2015-04-21)
+-------------------
 * Added a verbose option to the schedule printer.
   If you do `rosparam set schedule_verbose true` you can now see the tasks which are scheduled. Use `rosparam set schedule_limit 10` etc. to limit the number of tasks printed.
 * filtering extra daily tasks to remove impossible ones

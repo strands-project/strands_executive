@@ -2,8 +2,8 @@
 Changelog for package mdp_plan_exec
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.22 (2015-04-21)
+-------------------
 * mdp now uses ``topological_map_name `` parameter instead of getting it as an argument
 * check for white spaces in node names and edge ids, and raise exception if found
 * only advertise services and actions once everything else is initialised
