@@ -268,12 +268,13 @@ class AbstractTaskExecutor(BaseTaskExecutor):
                     else:
                         raise RuntimeError('Unknown nav service: %s'% self.nav_service)
 
-                    # let nav run for 1.5 times the length it usually takes before terminating
-                    duration_multiplier = 1.5
+                    # let nav run for 2.0 times the length it usually takes before terminating
+                    duration_multiplier = 2.0
                     if rospy.get_param('relaxed_nav', False):
                         duration_multiplier = 50
 
-                    monitor_duration = self.expected_navigation_duration_now(task.start_node_id) * duration_multiplier
+                    # all navigation actions should get at least 30 seconds
+                    monitor_duration = max(self.expected_navigation_duration_now(task.start_node_id) * duration_multiplier, rospy.Duration(30))
 
                     smach.Concurrence.add('MONITORED',
                                                 SimpleActionState(nav_action_name,
@@ -306,7 +307,7 @@ class AbstractTaskExecutor(BaseTaskExecutor):
 
                     with action_concurrence:
                         smach.Concurrence.add('MONITORED', SimpleActionState(task.action, action_clz, goal=goal))
-                        wiggle_room = rospy.Duration(5)
+                        wiggle_room = rospy.Duration(30)
 
                         # this prevents the task being interupted if it runs out of time but should still run
                         def task_can_be_interrupted():
