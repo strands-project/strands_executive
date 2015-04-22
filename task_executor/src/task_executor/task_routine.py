@@ -342,7 +342,6 @@ class DailyRoutineRunner(object):
 
         for task_tuple in routines:
             
-
             daily_start = task_tuple[1][0]            
             daily_duration = task_tuple[1][1]
 
@@ -356,7 +355,7 @@ class DailyRoutineRunner(object):
         # see if we can still schedule any of these today
         todays_tasks = self._instantiate_tasks_for_today(new_routine)
         # the false means an exception is not thrown for any out of window tasks
-        self._create_routine(todays_tasks, False)
+        self._create_routine(todays_tasks)
 
         
     def _new_day(self):
@@ -371,6 +370,7 @@ class DailyRoutineRunner(object):
 
             # filter the extra tasks just to make sure they're sane
             now = rospy.get_rostime()
+
             for task in extra_daily_tasks:    
                 # check we're not too late
                 if now + task.max_duration < task.end_before:
@@ -384,9 +384,9 @@ class DailyRoutineRunner(object):
         todays_tasks = [self._instantiate_for_day(self.current_routine_start, *task_tuple) for task_tuple in routine_tasks]
         return todays_tasks
 
-    def _create_routine(self, tasks, throw=True):
+    def _create_routine(self, tasks):
 
-        schedule_now, schedule_later = self._queue_for_scheduling(tasks, throw)
+        schedule_now, schedule_later = self._queue_for_scheduling(tasks)
 
         rospy.loginfo('Scheduling %s tasks now and %s later' % (len(schedule_now), len(schedule_later)))
 
@@ -394,7 +394,7 @@ class DailyRoutineRunner(object):
         self._schedule_tasks(schedule_now)
 
 
-    def _queue_for_scheduling(self, tasks, throw=True):
+    def _queue_for_scheduling(self, tasks):
         now = rospy.get_rostime()
 
         schedule_now = []
@@ -408,14 +408,11 @@ class DailyRoutineRunner(object):
             # print (now).secs
             # print (now + task.max_duration).secs
 
+            start_time = now if now > task.start_after else task.start_after
 
             # check we're not too late
-            if now + task.max_duration > task.end_before:
-                # 
-                if throw:
-                    raise RoutineException('%s is too late to schedule task %s' % (now.secs, task))
-                else:
-                    rospy.logdebug('Ignoring task for today')
+            if start_time + task.max_duration > task.end_before:
+                rospy.logwarn('At %s it is not possible to schedule task %s. Ignoring task for today' % (datetime.fromtimestamp(now.secs), task))
             else:
                 # if we're in the the window when this should be scheduled
                 if now > (task.start_after - self.pre_schedule_delay):
