@@ -460,7 +460,8 @@ class DailyRoutineRunner(object):
 
         delay = min_start_date - now
 
-        assert delay.secs > 0
+        if delay.secs <0:
+            rospy.logerr("The delay is less than zero: " + str(delay.secs))
 
 
         # print 'delaying %s' % delay.secs
