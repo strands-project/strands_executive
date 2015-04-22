@@ -616,8 +616,8 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
             if(self.execution_schedule.wait_for_execution_change(wait_time)):
                 if self.running:
                     next_task = self.execution_schedule.get_current_task()
-                    rospy.loginfo('Next task to execute: %s' % next_task.task_id)
                     if next_task is not None:
+                        rospy.loginfo('Next task to execute: %s' % next_task.task_id)
                         self.execute_task(next_task)                
                     else:
                         rospy.logwarn('Next task was None')
