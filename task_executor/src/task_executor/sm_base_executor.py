@@ -244,9 +244,11 @@ class AbstractTaskExecutor(BaseTaskExecutor):
 
                 # create a concurrence which monitors execution time
                 nav_concurrence = smach.Concurrence(outcomes=['succeeded', 'preempted', 'aborted'],
-                                        default_outcome='aborted',
+                                        default_outcome='preempted',
                                         outcome_cb=self.outcome_cb,
-                                        child_termination_cb=concurrence_child_term_cb)
+                                        child_termination_cb=concurrence_child_term_cb,
+                                        # give states 30 seconds to service a request to shut down
+                                        termination_timeout = 30)
                 # register callback for logging
                 nav_concurrence.register_start_cb(self.nav_start_cb)
                 nav_concurrence.register_termination_cb(self.nav_termination_cb)
@@ -296,9 +298,11 @@ class AbstractTaskExecutor(BaseTaskExecutor):
 
                     # create a concurrence which monitors execution time along with doing the execution
                     action_concurrence = smach.Concurrence(outcomes=['succeeded', 'preempted', 'aborted'],
-                                            default_outcome='aborted',
+                                            default_outcome='preempted',
                                             outcome_cb=self.outcome_cb,
-                                            child_termination_cb=concurrence_child_term_cb)
+                                            child_termination_cb=concurrence_child_term_cb,
+                                            # give states 30 seconds to service a request to shut down
+                                            termination_timeout = 30)
 
                     # register callback for logging
                     action_concurrence.register_start_cb(self.action_start_cb)
@@ -350,7 +354,7 @@ class AbstractTaskExecutor(BaseTaskExecutor):
         return successfully_joined
 
     def cancel_active_task(self):
-        preempt_timeout_secs = 30
+        preempt_timeout_secs = 60
         if self.task_sm is not None:
             rospy.loginfo('Requesting preempt on state machine in state %s' % self.task_sm.get_active_states())
             self.task_sm.request_preempt()
