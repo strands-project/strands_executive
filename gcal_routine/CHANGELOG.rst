@@ -2,6 +2,11 @@
 Changelog for package gcal_routine
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* added time window in GCal API query, fixes `#194 <https://github.com/strands-project/strands_executive/issues/194>`_
+* Contributors: Marc Hanheide
+
 0.0.22 (2015-04-21)
 -------------------
 * fixed to use UTC

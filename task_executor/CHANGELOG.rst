@@ -2,6 +2,20 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* This commit allows execution to recover from non-terminating or slow-to-terminate execution processes (either tasks or navigation).
+* Filtering out unexecutable tasks from the routine.
+  This has become necessary since the abilty to add daily tasks allows the addition of arbitrary tasks which are no longer bounded sensibly in time by the routine windows.
+* Added end time to printout.
+* Increased navigation timeout multiplier
+  Also added a minimum timeout for all navigation and increased wiggle room on task execution duration.
+* remove killer assert
+* Moved print statement to after the None check.
+  This prevents the error when printint on a None task.
+* Fixed task event printer to use default timezone not utc.
+* Contributors: Bruno Lacerda, Nick Hawes
+
 0.0.22 (2015-04-21)
 -------------------
 * Added a verbose option to the schedule printer.
