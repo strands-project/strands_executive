@@ -2,8 +2,8 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.23 (2015-04-27)
+-------------------
 * This commit allows execution to recover from non-terminating or slow-to-terminate execution processes (either tasks or navigation).
 * Filtering out unexecutable tasks from the routine.
   This has become necessary since the abilty to add daily tasks allows the addition of arbitrary tasks which are no longer bounded sensibly in time by the routine windows.
