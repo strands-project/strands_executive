@@ -37,7 +37,7 @@ def callback(data):
         
         rospy.loginfo("A further %s tasks queued for execution", len(data.execution_queue) - 1)
 
-        if rospy.get_param('schedule_verbose', False):
+        if rospy.get_param('schedule_verbose', True):
             for i in range(1, min(rospy.get_param('schedule_limit', 10), len(data.execution_queue))):
                 rospy.loginfo('%s: %s at %s' % (i, pretty(data.execution_queue[i]), start_time(data.execution_queue[i])))   
 
