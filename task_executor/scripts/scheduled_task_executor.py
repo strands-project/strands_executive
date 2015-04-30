@@ -38,7 +38,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         self.unscheduled_tasks = Queue()
        
         # data structure that manages tasks
-        self.execution_schedule = ExecutionSchedule()
+        self.execution_schedule = ExecutionSchedule(travel_duration_fn=self.expected_navigation_duration_now)
 
        
         self.running = False

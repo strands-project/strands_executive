@@ -77,7 +77,7 @@ class TestTaskTimings(object):
         travel_time = time_srv(current_node, task.start_node_id).travel_time
         task.max_duration = rospy.Duration(travel_time.to_sec()/4)
         task.start_after = now + delay + travel_time
-        task.end_before = task.start_after + task.max_duration
+        task.end_before = task.start_after + rospy.Duration(travel_time.to_sec()/2)
 
         # add the task argument which is a reference to a copy of itself in the db
         object_id = msg_store.insert(task)

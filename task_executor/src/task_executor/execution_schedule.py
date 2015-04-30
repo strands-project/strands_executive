@@ -3,6 +3,8 @@ from threading import Event
 from copy import deepcopy
 from Queue import Queue, Empty
 from collections import deque
+from task_executor.utils import rostime_to_python, rosduration_to_python
+
 
 import rospy
 
@@ -17,12 +19,16 @@ import rospy
 
 class ExecutionSchedule(object):
 
-    def __init__(self):
+    def __init__(self, travel_duration_fn):
+        """
+        travel_duration_fn: a function which takes a string and returns the expected travel duration to it as a rospy.Duration assuming the travel will happen immediately
+        """
     	self.current_task = None
     	self.execution_change = Event()
     	self.execution_queue = deque()
     	self.tasks = []        
         self.execution_delay_timer = None
+        self._travel_duration_fn = travel_duration_fn
 
     def add_new_tasks(self, tasks):
     	""" Add new tasks to be scheduled. """
@@ -85,16 +91,21 @@ class ExecutionSchedule(object):
         if len(self.execution_queue) > 0:
             now = rospy.get_rostime()
             next_task = self.execution_queue[0]
+            # get travel time to next task. 
+            travel_time_to_next_task = self._travel_duration_fn(next_task.start_node_id)
 
-            rospy.loginfo('start window: %s.%s' % (next_task.start_after.secs, next_task.start_after.nsecs))
-            rospy.loginfo('         now: %s.%s' % (now.secs, now.nsecs))
+            rospy.loginfo('start window: %s' % rostime_to_python(next_task.start_after).time())
+            rospy.loginfo('         now: %s' % rostime_to_python(now).time())
+            rospy.loginfo(' travel time:  %s' % rosduration_to_python(travel_time_to_next_task))
             
-            # if the start window is open
-            if next_task.start_after <= now:
+            # the task can be executed if we can travel to the task in time for the
+            # the start window to open
+            if now >= (next_task.start_after - travel_time_to_next_task):
                 rospy.loginfo('start window is open')
                 self.execute_next_task()
             else:     
-                exe_delay = next_task.start_after - now
+                # delay is the difference between now and the time to start navigating
+                exe_delay = (next_task.start_after - travel_time_to_next_task) - now
                 rospy.loginfo('need to delay %s.%s for execution' % (exe_delay.secs, exe_delay.nsecs))
                 self.current_task = None
                 self.execution_delay_timer = rospy.Timer(exe_delay, self.execution_delay_cb, oneshot=True)

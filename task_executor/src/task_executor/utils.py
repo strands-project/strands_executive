@@ -1,7 +1,7 @@
 import rospy
 import actionlib 
 from task_executor.msg import *
-from datetime import datetime
+from datetime import datetime, timedelta
 from std_msgs.msg import String
 
 class TestTaskAction(object):
@@ -91,5 +91,7 @@ class CheckTaskActionServer(object):
 def rostime_to_python(rtime):
     return datetime.fromtimestamp(rtime.to_sec())        
 
+def rosduration_to_python(rdur):
+    return timedelta(seconds=rdur.to_sec())        
 
 
