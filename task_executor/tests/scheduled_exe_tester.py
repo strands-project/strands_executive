@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 PKG = 'task_executor'
-NAME = 'fifo_tester'
+NAME = 'scheduled_exe_tester'
 
 import rospy
 import unittest
