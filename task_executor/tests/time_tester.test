@@ -1,0 +1,15 @@
+<launch>
+  
+  <include file="$(find mongodb_store)/launch/mongodb_store.launch">
+  	<arg name="test_mode" default="true" />
+  </include>
+
+  <include file="$(find topological_utils)/launch/dummy_topological_navigation.launch" >
+  	<arg name="simulate_time" default="true" />
+  </include>
+
+  <include file="$(find task_executor)/launch/task-scheduler-top.launch" />
+  
+  <test test-name="time_tester" pkg="task_executor" type="time_tester.py" time-limit="40" />
+
+</launch>

@@ -36,21 +36,25 @@ def get_services():
     return add_tasks_srv, set_execution_status
 
 
-class TestTaskTimings(object):
-    """ 
-    Creates the action servers the example tasks require.
-    """
-    def __init__(self):
+# class TestTaskTimings(object):
+class TestTaskTimings(unittest.TestCase):
+
+    def __init__(self, *args): 
+        super(TestTaskTimings, self).__init__(*args)    
+        rospy.init_node(NAME)        
         self.current_node = None
 
         rospy.Subscriber('/current_node', String, self.update_topological_location, queue_size=2)
         while self.current_node is None and not rospy.is_shutdown():
             rospy.sleep(0.5)
 
+
     def update_topological_location(self, node_name):
         self.current_node = node_name.data
         
-    def execute(self):
+    def test_single_task_timing(self):
+
+        rospy.logwarn('test_single_task_timing')
 
         msg_store = MessageStoreProxy() 
 
@@ -58,17 +62,20 @@ class TestTaskTimings(object):
         time_srv_name = 'topological_navigation/travel_time_estimator'
         rospy.wait_for_service(time_srv_name, timeout=10)
         time_srv = rospy.ServiceProxy(time_srv_name, EstimateTravelTime)
-        # print(time_srv("ChargingPoint", "v_1"))
-        # print(time_srv("ChargingPoint", "v_2"))
 
-        task_checker = CheckTaskActionServer()
+        checks = []
+
+        def checked(bool):
+            checks.append(bool)
+
+        task_checker = CheckTaskActionServer(result_fn = checked)
         task_checker.start()
 
         now = rospy.get_rostime()
         delay = rospy.Duration(5)
 
         current_node = self.current_node
-
+        
 
         task = Task()
         task.action = 'check_task'
@@ -86,22 +93,31 @@ class TestTaskTimings(object):
         client = actionlib.SimpleActionClient('check_task', TaskTestAction)
         client.wait_for_server()
 
+
         # get services to call into execution framework
         add_tasks, set_execution_status = get_services()
+
 
 
         add_tasks([task])
         set_execution_status(True)
 
+        while len(checks) < 1 and not rospy.is_shutdown():
+            rospy.sleep(0.1)
+
+        for result in checks:
+            self.assertTrue(result)
 
 
+# if __name__ == '__main__':
+#     # rostest.rosrun(PKG, NAME, TestEntry, sys.argv)
+#     rospy.init_node(NAME)
+#     executor = TestTaskTimings()        
+#     executor.execute()
+
+#     rospy.spin()
 
 if __name__ == '__main__':
-    # rostest.rosrun(PKG, NAME, TestEntry, sys.argv)
-    rospy.init_node(NAME)
-    executor = TestTaskTimings()        
-    executor.execute()
-
-    rospy.spin()
+    rostest.rosrun(PKG, NAME, TestTaskTimings, sys.argv)
 
 
