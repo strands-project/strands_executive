@@ -42,5 +42,5 @@ if __name__ == '__main__':
     set_execution_status(True)
 
     # now let's stop execution while it's going on
-    rospy.sleep(int(sys.argv[2])/2)
-    set_execution_status(False)
+    # rospy.sleep(int(sys.argv[2])/2)
+    # set_execution_status(False)

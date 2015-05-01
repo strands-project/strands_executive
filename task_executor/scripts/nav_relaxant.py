@@ -52,34 +52,34 @@ class NavRelaxant(object):
     def start(self):
         Thread(target=self.run).start()
 
-    def generate_edge_task(self, start, end, edge_id, window_size):
-        rospy.loginfo('Generating edge task %s to %s via %s' % (start, end, edge_id))
+    # def generate_edge_task(self, start, end, edge_id, window_size):
+    #     rospy.loginfo('Generating edge task %s to %s via %s' % (start, end, edge_id))
 
-        # get task services
-        add_task_srv_name = '/task_executor/add_tasks'
-        rospy.loginfo("Waiting for task_executor service...")
-        rospy.wait_for_service(add_task_srv_name)
-        rospy.loginfo("Done")        
-        add_tasks_srv = rospy.ServiceProxy(add_task_srv_name, AddTasks)
+    #     # get task services
+    #     add_task_srv_name = '/task_executor/add_tasks'
+    #     rospy.loginfo("Waiting for task_executor service...")
+    #     rospy.wait_for_service(add_task_srv_name)
+    #     rospy.loginfo("Done")        
+    #     add_tasks_srv = rospy.ServiceProxy(add_task_srv_name, AddTasks)
         
-        # create a task to use the edge in question
-        task = Task()
-        task.action = '/topological_navigation/execute_policy_mode'
-        task.max_duration = rospy.Duration(300)
-        task.start_after = rospy.get_rostime()
-        task.end_before = task.start_after + rospy.Duration(window_size)
-        task.start_node_id = start
-        task.end_node_id = end
+    #     # create a task to use the edge in question
+    #     task = Task()
+    #     task.action = '/topological_navigation/execute_policy_mode'
+    #     task.max_duration = rospy.Duration(300)
+    #     task.start_after = rospy.get_rostime()
+    #     task.end_before = task.start_after + rospy.Duration(window_size)
+    #     task.start_node_id = start
+    #     task.end_node_id = end
 
-        route = NavRoute()
-        route.source = [start]
-        route.edge_id = [edge_id]
+    #     route = NavRoute()
+    #     route.source = [start]
+    #     route.edge_id = [edge_id]
 
-        msg_store = MessageStoreProxy()
-        task_utils.add_object_id_argument(task, msg_store.insert(route), NavRoute)
+    #     msg_store = MessageStoreProxy()
+    #     task_utils.add_object_id_argument(task, msg_store.insert(route), NavRoute)
 
-        # add the task
-        add_tasks_srv([task])
+    #     # add the task
+    #     add_tasks_srv([task])
 
 
     def run(self):
@@ -102,8 +102,8 @@ class NavRelaxant(object):
                         rospy.set_param('relaxed_nav', relax_should_be)
                         rospy.loginfo('Transitioning relaxed_nav parameter to: %s' % relax_should_be)       
                     
-                    if relax_should_be and rospy.get_param('explore_edges', True):
-                        self.generate_edge_task(*edge_tuple, window_size=repeat_window_secs)
+                    # if relax_should_be and rospy.get_param('explore_edges', True):
+                    #     self.generate_edge_task(*edge_tuple, window_size=repeat_window_secs)
 
             except Exception, e:
                 rospy.logwarn('while checking relaxation state: %s' % e)
@@ -113,6 +113,6 @@ class NavRelaxant(object):
 
 if __name__ == '__main__':
     rospy.init_node('nav_relaxant')
-    relaxant = NavRelaxant(count_threshold=rospy.get_param('~count_threshold', 10))
+    relaxant = NavRelaxant(count_threshold=rospy.get_param('~count_threshold', 5))
     relaxant.run()
     rospy.spin()
