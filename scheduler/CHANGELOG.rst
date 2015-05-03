@@ -3,6 +3,17 @@ Changelog for package scheduler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+0.0.23 (2015-04-27)
+-------------------
+
+0.0.22 (2015-04-21)
+-------------------
+
+0.0.21 (2015-04-15)
+-------------------
+* change of my email in the scheduler
+* Contributors: Lenka
+
 0.0.20 (2015-04-12)
 -------------------
 * remove text "TODO" for solved lines

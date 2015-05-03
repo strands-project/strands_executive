@@ -2,6 +2,21 @@
 Changelog for package gcal_routine
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.23 (2015-04-27)
+-------------------
+* added time window in GCal API query, fixes `#194 <https://github.com/strands-project/strands_executive/issues/194>`_
+* Contributors: Marc Hanheide
+
+0.0.22 (2015-04-21)
+-------------------
+* fixed to use UTC
+* Contributors: Marc Hanheide (at AAF control PC)
+
+0.0.21 (2015-04-15)
+-------------------
+* calling the factory method with pre-populated YAML to allows task to know these values already
+* Contributors: Marc Hanheide (at AAF control PC)
+
 0.0.20 (2015-04-12)
 -------------------
 * added documentation in README.md

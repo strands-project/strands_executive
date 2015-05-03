@@ -1,6 +1,8 @@
 import rospy
 import actionlib 
 from task_executor.msg import *
+from datetime import datetime
+
 
 class TestTaskAction(object):
     """ 
@@ -26,3 +28,7 @@ class TestTaskAction(object):
 
     def start(self):
         self.task_server.start()
+
+
+def rostime_to_python(rtime):
+    return datetime.utcfromtimestamp(rtime.to_sec())        

@@ -2,6 +2,54 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.23 (2015-04-27)
+-------------------
+* This commit allows execution to recover from non-terminating or slow-to-terminate execution processes (either tasks or navigation).
+* Filtering out unexecutable tasks from the routine.
+  This has become necessary since the abilty to add daily tasks allows the addition of arbitrary tasks which are no longer bounded sensibly in time by the routine windows.
+* Added end time to printout.
+* Increased navigation timeout multiplier
+  Also added a minimum timeout for all navigation and increased wiggle room on task execution duration.
+* remove killer assert
+* Moved print statement to after the None check.
+  This prevents the error when printint on a None task.
+* Fixed task event printer to use default timezone not utc.
+* Contributors: Bruno Lacerda, Nick Hawes
+
+0.0.22 (2015-04-21)
+-------------------
+* Added a verbose option to the schedule printer.
+  If you do `rosparam set schedule_verbose true` you can now see the tasks which are scheduled. Use `rosparam set schedule_limit 10` etc. to limit the number of tasks printed.
+* filtering extra daily tasks to remove impossible ones
+* Utility functions for preceding commits.
+* Added parameter `relaxed_nav` to prevent execution killing navigation if it tasks too long.
+  `rosparam set relaxed_nav true` if you want your navigation actions to have a very long timeout. Set it back to false the timeouts will come from the predicted times.  This will only take effect on the next task.
+* Added node that prints out task executive event.
+  E.g.
+  `rosrun task_executor task_status.py`
+  shows
+  ```
+  task 2          WayPoint11      NAVIGATION_FAILED       19/04/15 18:55:04
+  task 2          WayPoint11      TASK_FAILED     19/04/15 18:55:04
+  task 3          WayPoint10      ADDED   19/04/15 18:55:17
+  task 3          WayPoint10      TASK_STARTED    19/04/15 18:55:17
+  task 3          WayPoint10      NAVIGATION_STARTED      19/04/15 18:55:17
+  ```
+* Script now prints out the routines and runtime.
+* Added logging of routine start and stop. This is for better overall system analysis.
+* Added ability to add tasks to the routine for just the day.
+* Dealing with case where task added for scheduling has no start node.
+  Tested in simulation and works here.
+* mdp now uses ``topological_map_name `` parameter instead of getting it as an argument
+* Dealing with case where task added for scheduling has no start node.
+  Tested in simulation and works here.
+* Contributors: Bruno Lacerda, Nick Hawes
+
+0.0.21 (2015-04-15)
+-------------------
+* just change launch files for new name of wait_action, also changed default value to be interruptible
+* Contributors: Lenka
+
 0.0.20 (2015-04-12)
 -------------------
 * Merge branch 'hydro-release' of https://github.com/mudrole1/strands_executive into hydro-release

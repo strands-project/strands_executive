@@ -2,6 +2,18 @@
 Changelog for package wait_action
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.23 (2015-04-27)
+-------------------
+
+0.0.22 (2015-04-21)
+-------------------
+
+0.0.21 (2015-04-15)
+-------------------
+* determine wait time from scheduled window in factory
+* just change launch files for new name of wait_action, also changed default value to be interruptible
+* Contributors: Lenka, Marc Hanheide (at AAF control PC)
+
 0.0.20 (2015-04-12)
 -------------------
 * possible to overwrite name of node

@@ -1,29 +1,32 @@
 #!/usr/bin/env python
-PKG = 'gcal_routine'
-
-
 from strands_executive_msgs.msg import Task
 import rospy
-from time import mktime
 import urllib
 import json
+from calendar import timegm
 from dateutil import parser
 from dateutil import tz
 from datetime import datetime
+from datetime import timedelta
 from strands_executive_msgs.srv import CreateTask
 from pprint import pprint
 
 from threading import Thread
 
+PKG = 'gcal_routine'
+
+
+
 
 def rostime_str(rt):
-    return str(datetime.fromtimestamp(rt.secs))
+    return str(datetime.fromtimestamp(rt.secs)) + '  ' + str(rt.secs)
 
 
 class GCal:
 
     def __init__(self, calendar, key, add_cb=None,
-                 remove_cb=None, update_wait=60, file_name=None):
+                 remove_cb=None, update_wait=60, minTimeDelta=None,
+                 maxTimeDelta=None, file_name=None):
         self.tz_utc = tz.gettz('UTC')
         if file_name is not None:
             self.uri = file_name
@@ -37,6 +40,8 @@ class GCal:
         self.update_wait = update_wait
         self.add_cb = add_cb
         self.remove_cb = remove_cb
+        self.minTimeDelta = minTimeDelta
+        self.maxTimeDelta = maxTimeDelta
         self.update_worker = Thread(target=self._update_run)
 
     def start_worker(self):
@@ -75,11 +80,19 @@ class GCal:
                            rostime_str(s.end_before))
 
     def update(self, added, removed):
-        rospy.loginfo('updating from google calendar %s', self.uri)
         self.previous_events = self.events.copy()
         if self.uri.lower().startswith('http'):
             try:
-                response = urllib.urlopen(self.uri)
+                uri = self.uri
+                now = datetime.now()
+                if self.minTimeDelta is not None:
+                    mt = now - timedelta(days=self.minTimeDelta)
+                    uri = "%s&timeMin=%sZ" % (uri, mt.isoformat())
+                if self.maxTimeDelta is not None:
+                    mt = now + timedelta(days=self.maxTimeDelta)
+                    uri = "%s&timeMax=%sZ" % (uri, mt.isoformat())
+                rospy.loginfo('updating from google calendar %s', uri)
+                response = urllib.urlopen(uri)
                 self.gcal = json.loads(response.read())
             except Exception, e:
                 rospy.logerr('failed to get response from %s: %s',
@@ -140,7 +153,21 @@ class GCal:
             if 'description' in gcal_event:
                 t = factory.call(gcal_event['description']).task
             else:
-                t = factory.call('').task
+                start_after = rospy.Time.from_sec(timegm(start_utc.timetuple())) \
+                    - self.time_offset
+                end_before = rospy.Time.from_sec(timegm(end_utc.timetuple())) \
+                    - self.time_offset
+                sa = "start_after: {secs: %d, nsecs: %d}" % \
+                         (start_after.secs, start_after.nsecs)
+                eb = "end_before: {secs: %d, nsecs: %d}" % \
+                         (end_before.secs, end_before.nsecs)
+                sn = "start_node_id: '%s'" % gcal_event['location']
+                en = "end_node_id: '%s'" % gcal_event['location']
+
+                yaml = "{%s, %s, %s, %s}" % (sa, eb, sn, en) 
+                rospy.loginfo("calling with pre-populated yaml: %s" % yaml)
+                t = factory.call(yaml).task
+                rospy.loginfo("got the task back: %s" % str(t))
         except Exception as e:
             rospy.logwarn("Couldn't instantiate task from factory %s."
                           "error: %s."
@@ -148,10 +175,10 @@ class GCal:
                           (factory_name, str(e)))
             t = Task()
             t.action = gcal_event['summary']
-        print t
-        t.start_after = rospy.Time.from_sec(mktime(start_utc.timetuple())) \
+        
+        t.start_after = rospy.Time.from_sec(timegm(start_utc.timetuple())) \
             - self.time_offset
-        t.end_before = rospy.Time.from_sec(mktime(end_utc.timetuple())) \
+        t.end_before = rospy.Time.from_sec(timegm(end_utc.timetuple())) \
             - self.time_offset
         if 'location' in gcal_event:
             t.start_node_id = gcal_event['location']

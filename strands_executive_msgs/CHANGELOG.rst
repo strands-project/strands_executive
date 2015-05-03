@@ -3,6 +3,17 @@ Changelog for package strands_executive_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+0.0.23 (2015-04-27)
+-------------------
+
+0.0.22 (2015-04-21)
+-------------------
+* Added extra constants for routine start/stop/
+* Contributors: Nick Hawes
+
+0.0.21 (2015-04-15)
+-------------------
+
 0.0.20 (2015-04-12)
 -------------------
 * this abstract_task_server should have no change, I just messed up my git

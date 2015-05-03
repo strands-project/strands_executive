@@ -21,15 +21,18 @@ class MdpTravelTimeEstimator(object):
         except OSError as ex:
             print 'error creating PRISM directory:',  ex
         self.file_name=top_map+".mdp"
-        self.travel_times_to_waypoint_service = rospy.Service('/mdp_plan_exec/get_expected_travel_times_to_waypoint', GetExpectedTravelTimesToWaypoint, self.travel_times_to_waypoint_cb)                
         self.prism_estimator=PrismJavaTalker(8085,self.directory, self.file_name)        
         self.last_epoch=-1
+        self.travel_times_to_waypoint_service = rospy.Service('/mdp_plan_exec/get_expected_travel_times_to_waypoint', GetExpectedTravelTimesToWaypoint, self.travel_times_to_waypoint_cb)                
         rospy.loginfo("MDP travel times estimator initialised.")
 
     def travel_times_to_waypoint_cb(self,req):
+        if not self.top_map_mdp.target_in_topological_map(req.target_waypoint):
+            rospy.logerr("Get travel times target  " + req.target_waypoint  + "  is not a node in the topological map. Returning empty response")
+            return GetExpectedTravelTimesToWaypointResponse()
         if req.epoch != self.last_epoch:
             self.last_epoch=req.epoch
-            self.top_map_mdp.set_mdp_action_durations(self.directory+self.file_name, req.epoch)            
+            self.top_map_mdp.set_mdp_action_durations(self.directory+self.file_name, req.epoch)           
         specification='R{"time"}min=? [ ( F "' + req.target_waypoint + '") ]'
         rospy.loginfo("The specification is " + specification)
         state_vector=map(rospy.Duration, self.prism_estimator.get_state_vector(specification))
@@ -46,14 +49,8 @@ class MdpTravelTimeEstimator(object):
 
 if __name__ == '__main__':
     rospy.init_node('mdp_travel_time_estimator')
-    filtered_argv=rospy.myargv(argv=sys.argv)        
-    if len(filtered_argv)<2:
-        rospy.logerr("No topological map provided. usage: rosrun mdp_plan_exec mdp_travel_time_estimator <topological_map_name>")
-        sys.exit(2)
-    elif len(filtered_argv)>2:
-        rospy.logwarn("Too many arguments. Assuming topological map is the first one. usage: rosrun mdp_plan_exec mdp_travel_time_estimator <topological_map_name>")
-    
-    mdp_estimator =  MdpTravelTimeEstimator(filtered_argv[1])
+    top_map_name=rospy.get_param("/topological_map_name")
+    mdp_estimator =  MdpTravelTimeEstimator(top_map_name)
     mdp_estimator.main()
     
     

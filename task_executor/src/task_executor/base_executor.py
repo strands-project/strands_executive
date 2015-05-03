@@ -127,14 +127,18 @@ class BaseTaskExecutor(object):
         raise RuntimeError('No action associated with topic: %s'% action_name)
 
 
+    def get_topological_node(self):
+        if self.current_node == 'none':
+            return self.closest_node
+        else:
+            return self.current_node
+
     def expected_navigation_duration_now(self, end):
         # if we're going nowhere, return some default
         if end == '':
             return rospy.Duration(10)
-        elif self.current_node == 'none':
-            return self.get_navigation_duration(start=self.closest_node, end=end)
         else:
-            return self.get_navigation_duration(start=self.current_node, end=end)
+            return self.get_navigation_duration(start=self.get_topological_node(), end=end)
 
     def create_expected_time_service(self):
         if self.expected_time_srv is None:

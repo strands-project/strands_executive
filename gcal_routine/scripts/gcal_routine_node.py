@@ -31,20 +31,32 @@ if __name__ == '__main__':
                                update_wait=rospy.get_param(
                                    '~routine_update_wait_sec',
                                    10))
+    if rospy.has_param('~minTimeDelta'):
+        minTimeDelta = rospy.get_param('~minTimeDelta')
+        rospy.loginfo('using minTimeDelta: %d', minTimeDelta)
+    else:
+        minTimeDelta = None
+    if rospy.has_param('~maxTimeDelta'):
+        maxTimeDelta = rospy.get_param('~maxTimeDelta')
+    else:
+        maxTimeDelta = None
+
     if stand_alone_test:
         gcal = GCal(rospy.get_param('~calendar',
                                     'henry.strands%40hanheide.net'),
                     rospy.get_param('~key',
                                     'AIzaSyC1rqV2yecWwV0eLgmoQH7m7PdLNX1p6a0'),
                     update_wait=rospy.get_param('~gcal_poll_wait_sec', 10),
-                    add_cb=runner.add_task, remove_cb=runner.remove_task)
+                    add_cb=runner.add_task, remove_cb=runner.remove_task,
+                    minTimeDelta=minTimeDelta, maxTimeDelta=maxTimeDelta)
     else:
         gcal = GCal(rospy.get_param('~calendar',
                                     'henry.strands%40hanheide.net'),
                     rospy.get_param('~key',
                                     'AIzaSyC1rqV2yecWwV0eLgmoQH7m7PdLNX1p6a0'),
                     update_wait=rospy.get_param('~gcal_poll_wait_sec', 60),
-                    add_cb=runner.add_task, remove_cb=runner.remove_task)
+                    add_cb=runner.add_task, remove_cb=runner.remove_task,
+                    minTimeDelta=minTimeDelta, maxTimeDelta=maxTimeDelta)
     added = []
     removed = []
     gcal.update(added, removed)

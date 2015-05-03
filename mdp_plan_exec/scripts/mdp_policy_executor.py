@@ -50,9 +50,6 @@ class MdpPolicyExecutor(object):
         self.current_prod_state=None
         self.product_mdp=None
         
-        self.mdp_nav_as=SimpleActionServer('mdp_plan_exec/execute_policy', ExecutePolicyAction, execute_cb = self.execute_policy_cb, auto_start = False)
-        self.mdp_nav_as.register_preempt_callback(self.preempt_policy_execution_cb)
-        self.mdp_nav_as.start()
         
         #self.learning_travel_times=False
         #self.learn_travel_times_action=SimpleActionServer('mdp_plan_exec/learn_travel_times', LearnTravelTimesAction, execute_cb = self.execute_learn_travel_times_cb, auto_start = False)
@@ -66,6 +63,10 @@ class MdpPolicyExecutor(object):
         
         self.policy_mode_pub=rospy.Publisher("/mdp_plan_exec/current_policy_mode", NavRoute,queue_size=1)
         
+        self.mdp_nav_as=SimpleActionServer('mdp_plan_exec/execute_policy', ExecutePolicyAction, execute_cb = self.execute_policy_cb, auto_start = False)
+        self.mdp_nav_as.register_preempt_callback(self.preempt_policy_execution_cb)
+        self.mdp_nav_as.start()
+        
         rospy.loginfo("MDP policy executor initialised.")
 
     def current_waypoint_cb(self,msg):
@@ -77,6 +78,9 @@ class MdpPolicyExecutor(object):
     def generate_prism_specification(self, goal):
         special_waypoints=self.special_waypoints_srv()
         if goal.task_type==ExecutePolicyGoal.GOTO_WAYPOINT:
+            if not self.top_map_mdp.target_in_topological_map(goal.target_id):
+                rospy.logerr("Execute policy target  " + goal.target_id  + "  is not a node in the topological map. Aborting")
+                return None
             if goal.target_id in special_waypoints.forbidden_waypoints:
                 rospy.logwarn("The goal is a forbidden waypoint. Aborting")
                 return None
@@ -178,6 +182,9 @@ class MdpPolicyExecutor(object):
                     if prob_post_cond[1]["waypoint"]==waypoint_val:
                         self.current_prod_state=dict(prob_post_cond[1])
                         return
+        if self.current_prod_state["dra_state1"] == self.product_mdp.props_def["dra_acc_state1"].conds["dra_state1"]: 
+            rospy.loginfo("Skipping MDP state update as target state has already been visited")
+            return
         self.current_prod_state=None
         rospy.logerr("Error getting MDP next state. Aborting.")
         self.top_nav_policy_exec.cancel_all_goals()
@@ -190,14 +197,8 @@ class MdpPolicyExecutor(object):
 
 if __name__ == '__main__':
     rospy.init_node('mdp_policy_executor')
-    filtered_argv=rospy.myargv(argv=sys.argv)    
-    if len(filtered_argv)<2:
-        rospy.logerr("No topological map provided. usage: rosrun mdp_plan_exec mdp_policy_executor <topological_map_name>")
-        sys.exit(2)
-    elif len(filtered_argv)>2:
-        rospy.logwarn("Too many arguments. Assuming topological map is the first one. usage: rosrun mdp_plan_exec mdp_policy_executor <topological_map_name>")
-        
-    mdp_executor =  MdpPolicyExecutor(filtered_argv[1])
+    top_map_name=rospy.get_param("/topological_map_name")
+    mdp_executor =  MdpPolicyExecutor(top_map_name)
     mdp_executor.main()
     
     

@@ -31,10 +31,19 @@ class TopMapMdp(Mdp):
         self.get_top_map_srv=rospy.ServiceProxy("/topological_map_publisher/get_topological_map", GetTopologicalMap)
         self.get_edge_estimates=rospy.ServiceProxy("/topological_prediction/predict_edges", PredictEdgeState)        
 
-        self.top_map=self.get_top_map_srv(self.top_map_name).map        
+        self.top_map=self.get_top_map_srv(self.top_map_name).map
+        self.check_spaces_in_top_map()
         self.create_top_map_mdp_structure()
                     
         rospy.loginfo("Topological MDP initialised")
+
+    def check_spaces_in_top_map(self):
+        for node in self.top_map.nodes:
+            if ' ' in node.name:
+                raise SyntaxError("The topological node name '" + node.name + "' has a white space. Remove it")
+            for edge in node.edges:
+                if ' ' in edge.edge_id:
+                    raise SyntaxError("An edge from '" + node.name + "' has an edge_id '" + edge.edge_id + "' with a white space. Remove it")
 
     def create_top_map_mdp_structure(self):
         self.n_state_vars=1
@@ -103,4 +112,7 @@ class TopMapMdp(Mdp):
 
     def set_initial_state_from_waypoint(self,current_waypoint):
         self.initial_state=self.props_def[current_waypoint].conds
+        
+    def target_in_topological_map(self, waypoint):
+        return waypoint in [node.name for node in self.top_map.nodes]
 

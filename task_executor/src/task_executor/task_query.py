@@ -89,12 +89,20 @@ def task_event_string(te):
         return 'TASK_SUCCEEDED'
     elif te == TaskEvent.TASK_PREEMPTED:
         return 'TASK_PREEMPTED'    
+    elif te == TaskEvent.ROUTINE_STARTED:
+        return 'ROUTINE_STARTED'    
+    elif te == TaskEvent.ROUTINE_STOPPED:
+        return 'ROUTINE_STOPPED'    
 
+
+def format_event(task_event):
+    """ Prints a single event """
+    return 'task %s\t\t%s\t%s\t%s\t\t%s' % (task_event.task.task_id, task_event.task.action, task_event.task.start_node_id, task_event_string(task_event.event), datetime.fromtimestamp(task_event.time.to_sec()).strftime('%d/%m/%y %H:%M:%S'))
 
 
 def print_event(task_event):
     """ Prints a single event """
-    print 'task %s\t%s\t%s\t%s\t%s' % (task_event.task.task_id, task_event.task.action, task_event.task.start_node_id, task_event_string(task_event.event), datetime.utcfromtimestamp(task_event.time.to_sec()).strftime('%d/%m/%y %H:%M:%S'))
+    print format_event(task_event)
 
 def summarise(results):
 
@@ -124,6 +132,8 @@ def summarise(results):
         else:
             print row
 
+def event_time(task_event):
+    return datetime.utcfromtimestamp(task_event.time.to_sec()).strftime('%d/%m/%y %H:%M:%S')
 
 def mkdatetime(date_string):
     return datetime.strptime(date_string, '%d/%m/%y %H:%M')

@@ -244,9 +244,11 @@ class AbstractTaskExecutor(BaseTaskExecutor):
 
                 # create a concurrence which monitors execution time
                 nav_concurrence = smach.Concurrence(outcomes=['succeeded', 'preempted', 'aborted'],
-                                        default_outcome='aborted',
+                                        default_outcome='preempted',
                                         outcome_cb=self.outcome_cb,
-                                        child_termination_cb=concurrence_child_term_cb)
+                                        child_termination_cb=concurrence_child_term_cb,
+                                        # give states 30 seconds to service a request to shut down
+                                        termination_timeout = 30)
                 # register callback for logging
                 nav_concurrence.register_start_cb(self.nav_start_cb)
                 nav_concurrence.register_termination_cb(self.nav_termination_cb)
@@ -268,8 +270,13 @@ class AbstractTaskExecutor(BaseTaskExecutor):
                     else:
                         raise RuntimeError('Unknown nav service: %s'% self.nav_service)
 
-                    # let nav run for 1.5 times the length it usually takes before terminating
-                    monitor_duration = self.expected_navigation_duration_now(task.start_node_id) * 1.5
+                    # let nav run for 2.0 times the length it usually takes before terminating
+                    duration_multiplier = 2.0
+                    if rospy.get_param('relaxed_nav', False):
+                        duration_multiplier = 50
+
+                    # all navigation actions should get at least 30 seconds
+                    monitor_duration = max(self.expected_navigation_duration_now(task.start_node_id) * duration_multiplier, rospy.Duration(30))
 
                     smach.Concurrence.add('MONITORED',
                                                 SimpleActionState(nav_action_name,
@@ -291,9 +298,11 @@ class AbstractTaskExecutor(BaseTaskExecutor):
 
                     # create a concurrence which monitors execution time along with doing the execution
                     action_concurrence = smach.Concurrence(outcomes=['succeeded', 'preempted', 'aborted'],
-                                            default_outcome='aborted',
+                                            default_outcome='preempted',
                                             outcome_cb=self.outcome_cb,
-                                            child_termination_cb=concurrence_child_term_cb)
+                                            child_termination_cb=concurrence_child_term_cb,
+                                            # give states 30 seconds to service a request to shut down
+                                            termination_timeout = 30)
 
                     # register callback for logging
                     action_concurrence.register_start_cb(self.action_start_cb)
@@ -302,7 +311,7 @@ class AbstractTaskExecutor(BaseTaskExecutor):
 
                     with action_concurrence:
                         smach.Concurrence.add('MONITORED', SimpleActionState(task.action, action_clz, goal=goal))
-                        wiggle_room = rospy.Duration(5)
+                        wiggle_room = rospy.Duration(30)
 
                         # this prevents the task being interupted if it runs out of time but should still run
                         def task_can_be_interrupted():
@@ -345,7 +354,7 @@ class AbstractTaskExecutor(BaseTaskExecutor):
         return successfully_joined
 
     def cancel_active_task(self):
-        preempt_timeout_secs = 30
+        preempt_timeout_secs = 60
         if self.task_sm is not None:
             rospy.loginfo('Requesting preempt on state machine in state %s' % self.task_sm.get_active_states())
             self.task_sm.request_preempt()

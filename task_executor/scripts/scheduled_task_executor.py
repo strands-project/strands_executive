@@ -107,6 +107,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         for task in tasks:
             self.fill_times(task)
             # if no end node, set it to the same as the start
+            # note that if start is blank, this isn't going to help later
             if task.end_node_id == '':
                 task.end_node_id = task.start_node_id 
 
@@ -188,7 +189,6 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         else:
             raise RuntimeError('Unknown nav service: %s'% self.nav_service)
 
-
     def get_duration_matrix_mdp(self, tasks):
         """
         Creates the matrix of durations between waypoints needed as input to the scheuler.
@@ -208,22 +208,27 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         for first_task in tasks:
             dm.durations.append(DurationList())
             for second_task in tasks:
+
                 start = first_task.end_node_id
                 epoch = second_task.start_after
                 target = second_task.start_node_id
 
-                # we need to get the travel_duration for this tuple if we haven't seen the time before or the target for this time before
-                if epoch not in travel_durations or target not in travel_durations[epoch]:
-                    if epoch not in travel_durations:
-                        travel_durations[epoch] = dict()
-                    # call mdp duration service
-                    resp = self.get_mdp_vector(target, epoch)
-                    travel_durations[epoch][target] = resp
+                # if the task should happen where the robot is currently stood then the travel is free
+                if target == '':
+                    dm.durations[-1].durations.append(rospy.Duration(0))
                 else:
-                    # rospy.loginfo('Saving a call: %s %s %s', start, epoch.secs, target)                    
-                    resp = travel_durations[epoch][target]
+                    # we need to get the travel_duration for this tuple if we haven't seen the time before or the target for this time before
+                    if epoch not in travel_durations or target not in travel_durations[epoch]:
+                        if epoch not in travel_durations:
+                            travel_durations[epoch] = dict()
+                        # call mdp duration service
+                        resp = self.get_mdp_vector(target, epoch)
+                        travel_durations[epoch][target] = resp
+                    else:
+                        # rospy.loginfo('Saving a call: %s %s %s', start, epoch.secs, target)                    
+                        resp = travel_durations[epoch][target]
 
-                dm.durations[-1].durations.append(resp.travel_times[resp.source_waypoints.index(start)])
+                    dm.durations[-1].durations.append(resp.travel_times[resp.source_waypoints.index(start)])
 
         return dm
 
@@ -611,8 +616,8 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
             if(self.execution_schedule.wait_for_execution_change(wait_time)):
                 if self.running:
                     next_task = self.execution_schedule.get_current_task()
-                    rospy.loginfo('Next task to execute: %s' % next_task.task_id)
                     if next_task is not None:
+                        rospy.loginfo('Next task to execute: %s' % next_task.task_id)
                         self.execute_task(next_task)                
                     else:
                         rospy.logwarn('Next task was None')

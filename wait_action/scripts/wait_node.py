@@ -13,6 +13,7 @@ class WaitServer(AbstractTaskServer):
     def __init__(self, interruptible=True, name='wait_action'):
         super(WaitServer, self).__init__(name, action_type=WaitAction,
                                          interruptible=interruptible)
+        self.maximise_duration_delta = rospy.Duration(rospy.get_param('~maximise_duration_delta', 0))
 
     def end_wait(self, req):
 
@@ -25,7 +26,12 @@ class WaitServer(AbstractTaskServer):
     def create(self, req):
         t = super(WaitServer, self).create(req)
         task_utils.add_time_argument(t, rospy.Time())
-        task_utils.add_duration_argument(t, t.max_duration)
+        if self.maximise_duration_delta > rospy.Duration(0):
+            d = (t.end_before - t.start_after) - self.maximise_duration_delta
+            task_utils.add_duration_argument(t, d)
+            t.max_duration = d
+        else:
+            task_utils.add_duration_argument(t, t.max_duration)
         return t
 
     def execute(self, goal):
