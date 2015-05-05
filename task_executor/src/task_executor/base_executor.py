@@ -289,6 +289,9 @@ class BaseTaskExecutor(object):
 
             req.task.task_id = self.task_counter        
             self.task_counter += 1
+            # give the task some sensible defaults
+            req.task.start_after = rospy.get_rostime() - rospy.Duration(10)
+            req.task.end_before = rospy.get_rostime() + (req.task.max_duration * 20)
             req.task.execution_time = rospy.get_rostime()
 
 
