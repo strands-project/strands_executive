@@ -2,8 +2,8 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.24 (2015-05-05)
+-------------------
 * Made verbose the default
 * Contributors: Nick Hawes
 
