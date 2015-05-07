@@ -474,6 +474,8 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
       to_schedule.extend(additional_tasks)
 
       current_id = 0 #TODO lenka delete this from scheduler service?
+
+      throwen_away = []
       
       if(len(to_schedule)>0): #only if I have something to schedule :)
         if(len(additional_tasks)==0): #method was called only to reschedule old ones
@@ -495,34 +497,55 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
         else: #we have new tasks
             sched_result = self.call_scheduler(to_schedule, lower_bound, current_id)
-            while(not sched_result and (len(additional_tasks)>0)): #schedule is not found, but we have still new tasks to throw away
-                to_schedule = []
-                to_schedule.extend(to_old_schedule)
-
-
+            while(not sched_result and (len(additional_tasks)>0)): #schedule is not found, but we have still tasks to throw away
                 
-                sub_additional, throwen_away, priority_reached = self.throw_away_tasks(additional_tasks, 0.2) #throw away 20% if tasks have same prio
-                
+                sub_additional, throwen_away, priority_reached = self.throw_away_tasks(to_schedule, 0.2) #throw away 20% if tasks have same prio
+
+                               
 
                 # maybe it will be nice to add last step more softer - like throwing tasks one by one 
 
                 
          
+                
                 if(not priority_reached): #there are only tasks with higher priority than active task has
                   self.pause_execution() #this will preempt active task and put it to unscheduled task with previously scheduled tasks as well
                   
-                  for task in sub_additional: #put all tasks to unscheduled
-                    self.unscheduled_tasks.put(task) 
-                  self.start_execution() #start again from scratch
+                  #remove all tasks which were previously scheduled
+                  old_tasks = self.execution_schedule.get_schedulable_tasks()
+                  for taskO in old_tasks:
+                    self.execution_schedule.remove_task_with_id(taskO.task_id)
+                  
+                  for taskN in sub_additional: #put all tasks to unscheduled
+                    for taskU in self.unscheduled_tasks:
+                      if taskN.task_id == taskU.taskID:
+                        unF = unF +1 
+                    if unF == 0: #the taskN is not in unscheduled
+                      taskN.execution_time = rospy.Time(0) # for beeing sure, set execution to zeto
+                      self.unscheduled_tasks.put(deepcopy(taskN)) # create a new instance
+                      unF = 0
+                    else: #the task is already in unschedule, do nothing
+                      unF = 0  
+
+                  self.start_execution() #start again from scratch, TODO: this will create new threads? how to kill previous once?
                   return False, []
 
                 else: #we throw something away
+                  to_schedule = []
+                  #to_schedule.extend(to_old_schedule)
                   to_schedule.extend(sub_additional)
                   additional_tasks = sub_additional #rewrite original set of added tasks
 
                   
                   #This part tries to priorities important task which would be throwen away
                   if((len(sub_additional)==0) and (len(throwen_away)>0)): #we throw away all tasks
+
+                    old_tasks = self.execution_schedule.get_schedulable_tasks()
+                    for taskD in throwen_away:
+                      for taskO in old_tasks:
+                        if taskD.task_id == taskO.task_id: #droped task is in old task, we need to remove it
+                          self.execution_schedule.remove_task_with_id(taskO.task_id)
+
                     throwen_away.sort(key=attrgetter('priority'),reverse=True) # highest priority first
                     last = throwen_away[0] #get last task
                     if(self.active_task is not None):
@@ -531,6 +554,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
                         if self.active_task is not None and not self.is_task_interruptible(self.active_task):
                           rospy.loginfo('EXECUTOR: Couldnt preemt previous task in order to propagate higher priority.')
+                          return False, []
                         else:
                           rospy.loginfo('Task % is going to be propagated as on demand' % last.task_id)
                           last.execution_time = last.start_after #set the first possible time for tasks
@@ -546,12 +570,19 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
   
 
             if(len(additional_tasks) == 0):
-              rospy.loginfo('EXECUTOR: All new tasks were throwen away') 
+              rospy.loginfo('EXECUTOR: All tasks (new and not executed) were throwen away') 
+              old_tasks = self.execution_schedule.get_schedulable_tasks()
+              for taskD in throwen_away:
+                for taskO in old_tasks:
+                  if taskD.task_id == taskO.task_id: #droped task is in old task, we need to remove it
+                    self.execution_schedule.remove_task_with_id(taskO.task_id)
+                       
+
               if(not sched_result): #scheduler didnt find a solution by while loop ended because there are no additional tasks          
                 return False, []
-              else: #scheduler was successfull, but all new tasks were throwen away, we still would like to set new schedule
-                #TODO test this part
-                # put scheduled tasks back into execution. this will trigger a change in execution if necessary
+              else: #scheduler was successfull, but all tasks were throwen away, to_schedule is empty
+                # test this part
+                #               
                 self.execution_schedule.set_schedule(to_schedule)
 
                 rospy.loginfo('Added %s tasks into the schedule to get total of %s' % (len(additional_tasks), self.execution_schedule.get_execution_queue_length()))
@@ -561,17 +592,55 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
             else: #scheduler was successfull, and we have new tasks to add
             
-                self.execution_schedule.add_new_tasks(additional_tasks)
+                #self.execution_schedule.add_new_tasks(additional_tasks)
+                #we need to add new tasks, but meanwhile we lost track whihc are new (in drop method)
+                old_tasks = self.execution_schedule.get_schedulable_tasks()
+                new_tasks = []
+                newF = 0
+                
+                if(len(old_tasks)>0):
+                 
+                  for taskN in to_schedule:
+                    for taskO in old_tasks:
+                      if taskO.task_id == taskN.task_id:
+                        newF = newF + 1
+                     
+                    if (newF ==0): # task is not presented in the old set
+                      new_tasks.append(taskN)
+                      #print "added"
+                      #print taskN
+                      newF = 0
+                    else: #is presented
+                      newF = 0
+
+                  
+                  for taskD in throwen_away:
+                    for taskO in old_tasks:
+                      if taskD.task_id == taskO.task_id: #droped task is in old task, we need to remove it
+                        self.execution_schedule.remove_task_with_id(taskO.task_id)
+                        #print taskO
+
+                  
+                  self.execution_schedule.add_new_tasks(new_tasks)
+                  self.execution_schedule.set_schedule(to_schedule)
+
+                  rospy.loginfo('Added %s tasks into the schedule to get total of %s' % (len(new_tasks), self.execution_schedule.get_execution_queue_length()))
+                  return True, new_tasks
+                else:  #there are no old tasks 
+                      
+                  self.execution_schedule.add_new_tasks(to_schedule)                
+                  self.execution_schedule.set_schedule(to_schedule)
+
+                  rospy.loginfo('Added %s tasks into the schedule to get total of %s' % (len(to_schedule), self.execution_schedule.get_execution_queue_length()))
+                  return True, to_schedule  
+                                    
 
                 #Lenka note: why the actual task is removed? Makes no sense with adding -> commented out
                 # and remove the current task from the new schedule
                 #to_schedule = [t for t in to_schedule if t.task_id != current_id]
 
                 # put scheduled tasks back into execution. this will trigger a change in execution if necessary
-                self.execution_schedule.set_schedule(to_schedule)
-
-                rospy.loginfo('Added %s tasks into the schedule to get total of %s' % (len(additional_tasks), self.execution_schedule.get_execution_queue_length()))
-                return True, additional_tasks
+                
       
       else:
         return True,[] #we didnt have anything to schedule
