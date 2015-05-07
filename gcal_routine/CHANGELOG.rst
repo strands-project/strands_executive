@@ -2,6 +2,9 @@
 Changelog for package gcal_routine
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.24 (2015-05-05)
+-------------------
+
 0.0.23 (2015-04-27)
 -------------------
 * added time window in GCal API query, fixes `#194 <https://github.com/strands-project/strands_executive/issues/194>`_

@@ -2,6 +2,11 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.24 (2015-05-05)
+-------------------
+* Made verbose the default
+* Contributors: Nick Hawes
+
 0.0.23 (2015-04-27)
 -------------------
 * This commit allows execution to recover from non-terminating or slow-to-terminate execution processes (either tasks or navigation).

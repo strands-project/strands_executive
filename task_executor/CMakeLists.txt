@@ -63,13 +63,13 @@ catkin_python_setup()
 
 # Generate actions in the 'action' folder
 add_action_files(
-  FILES
-  TestExecution.action
+  FILES TestExecution.action TaskTest.action
 )
 
 # Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
+generate_messages(  
+  DEPENDENCIES 
+  strands_executive_msgs
   geometry_msgs
   actionlib_msgs
 )
@@ -127,6 +127,7 @@ if (CATKIN_ENABLE_TESTING)
   find_package(catkin REQUIRED COMPONENTS rostest)
   # add_rostest(tests/fifo_tester.test)
   add_rostest(tests/scheduled_exe_tester.test)
+  add_rostest(tests/time_tester.test)
 endif()
 
 
