@@ -2,8 +2,8 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.25 (2015-05-10)
+-------------------
 * Added defaults for demanded task
 * Simple test to check that navigation time is included in executor.
 * Made execution schedule aware of navigation time
