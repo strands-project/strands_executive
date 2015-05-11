@@ -502,7 +502,8 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
                 
                 sub_additional, throwen_away, priority_reached = self.throw_away_tasks(to_schedule, 0.2) #throw away 20% if tasks have same prio
 
-                all_throwen.append(throwen_away)             
+                for drop in throwen_away:
+                  all_throwen.append(drop)             
 
                 # maybe it will be nice to add last step more softer - like throwing tasks one by one 
 
