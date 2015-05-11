@@ -497,11 +497,12 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
         else: #we have new tasks
             sched_result = self.call_scheduler(to_schedule, lower_bound, current_id)
+            all_throwen = [] # to save all throwen tasks
             while(not sched_result and (len(additional_tasks)>0)): #schedule is not found, but we have still tasks to throw away
                 
                 sub_additional, throwen_away, priority_reached = self.throw_away_tasks(to_schedule, 0.2) #throw away 20% if tasks have same prio
 
-                               
+                all_throwen.append(throwen_away)             
 
                 # maybe it will be nice to add last step more softer - like throwing tasks one by one 
 
@@ -572,13 +573,14 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
             if(len(additional_tasks) == 0):
               rospy.loginfo('EXECUTOR: All tasks (new and not executed) were throwen away') 
               old_tasks = self.execution_schedule.get_schedulable_tasks()
-              for taskD in throwen_away:
+              for taskD in all_throwen:
                 for taskO in old_tasks:
                   if taskD.task_id == taskO.task_id: #droped task is in old task, we need to remove it
                     self.execution_schedule.remove_task_with_id(taskO.task_id)
                        
 
-              if(not sched_result): #scheduler didnt find a solution by while loop ended because there are no additional tasks          
+              if(not sched_result): #scheduler didnt find a solution by while loop ended because there are no additional tasks   
+                self.execution_schedule.set_schedule([])       
                 return False, []
               else: #scheduler was successfull, but all tasks were throwen away, to_schedule is empty
                 # test this part
@@ -614,7 +616,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
                       newF = 0
 
                   
-                  for taskD in throwen_away:
+                  for taskD in all_throwen:
                     for taskO in old_tasks:
                       if taskD.task_id == taskO.task_id: #droped task is in old task, we need to remove it
                         self.execution_schedule.remove_task_with_id(taskO.task_id)
