@@ -2,8 +2,8 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.26 (2015-05-13)
+-------------------
 * Fixing the bug with queue/list of unscheduled tasks
 * fixing tiny bug in creating list of throwen tasks
 * fixed mismatching of tasks numbers
