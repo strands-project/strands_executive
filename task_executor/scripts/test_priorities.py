@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
   #for simplicity all tasks happens in same locations
   
-  test = 11
+  test = 12
 
   #Test A - tasks with same priority, all valid tasks
   #Travel duration is 10!
@@ -75,7 +75,7 @@ if __name__ == '__main__':
       set_execution_status(True) # Set the task executor running (if it isn't already)
       rospy.sleep(2) 
 
-  elif(test==5):  #TODO mismatching number in executor sometimes
+  elif(test==5):  
     #Test A2II - some (3) feasible, arriving separately
     
     st = rospy.Time.now()  
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     tasks = []
     st = rospy.Time.now()  
     for i in range(0,5):
-      tasks.append(create_wait_task('h_2', st, st+rospy.Duration(37), rospy.Duration(5),6-i))
+      tasks.append(create_wait_task('h_2', st, st+rospy.Duration(37), rospy.Duration(5),5-i))
     task_id = add_task(tasks)
     set_execution_status(True) # Set the task executor running (if it isn't already)
   
@@ -142,12 +142,26 @@ if __name__ == '__main__':
     st = rospy.Time.now()  
     for i in range(0,5):
       tasks = []
-      tasks.append(create_wait_task('h_2', st, st+rospy.Duration(43), rospy.Duration(5),i))
+      tasks.append(create_wait_task('h_2', st, st+rospy.Duration(43), rospy.Duration(5),i+1))
       task_id = add_task(tasks)
       set_execution_status(True) # Set the task executor running (if it isn't already)
       rospy.sleep(2)
-  
-  
+
+  elif(test==12):
+    #Test C1 - 5 feasible, arriving in the batch, + one with higher priority overlapping with them
+    tasks = []
+    st = rospy.Time.now()+rospy.Duration(0)  
+    for i in range(0,5):
+      tasks.append(create_wait_task('h_2', st, st+rospy.Duration(65), rospy.Duration(5),1))
+    task_id = add_task(tasks)
+    set_execution_status(True) # Set the task executor running (if it isn't already)
+    rospy.sleep(6)
+ 
+    tasks = []
+    tasks.append(create_wait_task('h_2', st, st+rospy.Duration(65), rospy.Duration(50),2))
+
+    task_id = add_task(tasks)
+
  #TODO test if non-interruptable tasks
 
 
