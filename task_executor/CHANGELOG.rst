@@ -2,6 +2,14 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fixing the bug with queue/list of unscheduled tasks
+* fixing tiny bug in creating list of throwen tasks
+* fixed mismatching of tasks numbers
+* Fixing that drop method takes into account all tasks(even the previously scheduled)
+* Contributors: Lenka
+
 0.0.25 (2015-05-10)
 -------------------
 * Added defaults for demanded task
