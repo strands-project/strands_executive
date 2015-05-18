@@ -11,7 +11,51 @@ from task_executor import task_routine, task_query
 from task_executor.utils import rostime_to_python
 
 import argparse
+import cmd
 
+
+class RoutineAnalyser(cmd.Cmd):
+
+    def __init__(self, routine_pairs):
+        cmd.Cmd.__init__(self)
+        # super(RoutineAnalyser, self).__init__()
+        self.routine_pairs = routine_pairs
+
+    def do_merge(self, idx):    
+        try:
+            idx = int(idx)
+            if idx >= 0 and idx < len(self.routine_pairs) - 1:
+                print 'merging %s into %s' % (idx, idx+1)
+                self.routine_pairs[idx+1] = (self.routine_pairs[idx][0], self.routine_pairs[idx+1][1])
+                del self.routine_pairs[idx]
+            else:
+                print 'invalid routine index, valid range from 0 to %s' % (len(self.routine_pairs) - 2)
+        except ValueError, e:
+            print 'provided argument was not an int: %s' % idx
+
+
+    def do_print(self, line):
+        for i in range(len(self.routine_pairs)):
+            start = rostime_to_python(self.routine_pairs[i][0].time)
+            end = rostime_to_python(self.routine_pairs[i][1].time)
+            results = task_query.query_tasks(msg_store, 
+                        start_date=start,
+                        end_date=end,
+                        event=[TaskEvent.TASK_STARTED]
+                        )
+
+            print 'routine %s: %s to %s, duration: %s, tasks: %s' % (i, start, end, end-start, len(results))
+    
+
+    def help_greet(self):
+        print '\n'.join([ 'print', 'Print the available routines'])
+
+    def help_merge(self):
+        print '\n'.join([ 'merge [idx]', 'Merge the routine at idx into the routine after it'])
+
+
+    def do_EOF(self, line):
+        return True
 
 if __name__ == '__main__':
 
@@ -69,7 +113,10 @@ if __name__ == '__main__':
 
             if len(results) >= args.tasks:
                 filtered_routines.append(routines[i])
-                print 'routine %s: %s to %s, duration: %s, tasks: %s' % (len(filtered_routines)-1, start, end, end-start, len(results))
+                # print 'routine %s: %s to %s, duration: %s, tasks: %s' % (len(filtered_routines)-1, start, end, end-start, len(results))
+
+        RoutineAnalyser(filtered_routines).cmdloop()
+
 
         # if args.start is None:
         #     # find latest routine start
