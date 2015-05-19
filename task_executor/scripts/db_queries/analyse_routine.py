@@ -181,6 +181,11 @@ if __name__ == '__main__':
                 routines.append((start, event))
                 start = None
 
+        allow_open = True
+        if results[-1][0].event == TaskEvent.ROUTINE_STARTED and allow_open:
+            dummy_end = TaskEvent(event = TaskEvent.ROUTINE_STOPPED, task = Task())
+            routines.append((results[-1][0], dummy_end))
+
 
         filtered_routines = []
         for i in range(len(routines)):
