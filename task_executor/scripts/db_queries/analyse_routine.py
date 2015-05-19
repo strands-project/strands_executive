@@ -1,5 +1,5 @@
 #!/usr/bin/env python
- -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import rospy
 import mongodb_store_msgs.srv as dc_srv
@@ -131,6 +131,11 @@ class RoutineAnalyser(cmd.Cmd):
         print '\n'.join([ 'summarise [idx]', 'Summarise task executions in routine idx (int).'])
 
 
+    def do_EOF(self, line):
+        return True
+
+    def help_EOF(self):
+        print 'Exit (CTRL-D)'
 
 
 if __name__ == '__main__':
