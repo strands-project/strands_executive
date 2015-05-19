@@ -122,15 +122,16 @@ class RoutineAnalyser(cmd.Cmd):
         print '\n'.join([ 'print', 'Print the available routines'])
 
     def help_merge(self):
-        print '\n'.join([ 'merge [idx | all]', 'Merge the routine at idx (int) into the routine after it. If idx is the string all, then merge all routines together.'])
+        print '\n'.join([ 'merge [idx | all]', 'Merge routine idx (int) into the routine after it. If idx is the string all, then merge all routines together.'])
 
     def help_executions(self):
-        print '\n'.join([ 'merge [idx]', 'Show all task executions in routine at idx (int).'])
+        print '\n'.join([ 'executions [idx]', 'Show all task executions in routine idx (int).'])
+
+    def help_summarise(self):
+        print '\n'.join([ 'summarise [idx]', 'Summarise task executions in routine idx (int).'])
 
 
 
-    def do_EOF(self, line):
-        return True
 
 if __name__ == '__main__':
 
@@ -183,7 +184,8 @@ if __name__ == '__main__':
 
         allow_open = True
         if results[-1][0].event == TaskEvent.ROUTINE_STARTED and allow_open:
-            dummy_end = TaskEvent(event = TaskEvent.ROUTINE_STOPPED, task = Task())
+            print 'adding open'
+            dummy_end = TaskEvent(event = TaskEvent.ROUTINE_STOPPED, task = Task(), time = rospy.get_rostime())
             routines.append((results[-1][0], dummy_end))
 
 
