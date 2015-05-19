@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+ -*- coding: utf-8 -*-
 
 import rospy
 import mongodb_store_msgs.srv as dc_srv
