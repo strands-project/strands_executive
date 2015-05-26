@@ -399,7 +399,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
           else: #task which should be throwen away has higher priority then active task
             if(self.active_task is not None) and (not self.is_task_interruptible(self.active_task)): #we cant preemt, thus returninf True and throwing away task
               rospy.loginfo('Active task cannot be preempted.')
-              rospy.logingo('Schedule not found, trying to discard %s tasks with priority higher prio %s', str(throw_num), str(low_prio.priority))
+              rospy.loginfo('Schedule not found, trying to discard %s tasks with priority higher prio %s', str(throw_num), str(low_prio.priority))
               
               for i in range(0,amount_tasks):
                 if i < throw_index:
