@@ -6,7 +6,7 @@ import mongodb_store_msgs.srv as dc_srv
 import mongodb_store.util as dc_util
 from mongodb_store.message_store import MessageStoreProxy
 from strands_executive_msgs.msg import Task, TaskEvent
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time, date
 from task_executor import task_routine, task_query
 from task_executor.utils import rostime_to_python
 
@@ -16,11 +16,16 @@ import cmd
 
 class RoutineAnalyser(cmd.Cmd):
 
-    def __init__(self, msg_store, routine_pairs):
+    def __init__(self, msg_store, routine_pairs, daily_start = None, daily_end = None):
         cmd.Cmd.__init__(self)
         # super(RoutineAnalyser, self).__init__()
         self.routine_pairs = routine_pairs
         self.msg_store = msg_store
+        self.daily_start = daily_start if daily_start is not None else time(0,0)
+        self.daily_end = daily_end if daily_end is not None else time(23,59)
+        # hand code for now
+        self.days_off = ['Saturday', 'Sunday', date(2015, 5, 25), date(2015, 5, 4) ]
+
 
     def check_idx(self, idx):
         if idx < 0 or idx >= len(self.routine_pairs):
@@ -61,7 +66,6 @@ class RoutineAnalyser(cmd.Cmd):
 
     def do_summarise(self, idx):    
 
-
         try:
             idx = int(idx)
 
@@ -82,6 +86,94 @@ class RoutineAnalyser(cmd.Cmd):
 
         except ValueError, e:
             print 'provided argument was not an int: %s' % idx
+
+
+    def all_task_events_in_window(self, window_start, window_end, action = None):
+        return task_query.query_tasks(self.msg_store, 
+            event=range(TaskEvent.TASK_STARTED, TaskEvent.ROUTINE_STARTED), 
+            action=action,
+            start_date=window_start,
+            end_date=window_end,
+            )
+
+
+
+    def autonomy_durations(self, daily_start, daily_end):
+        daily_events = self.all_task_events_in_window(daily_start, daily_end)
+        autonomy_duration = task_query.autonomy_time(daily_start, daily_end, daily_events)
+        day_duration = daily_end - daily_start 
+        return autonomy_duration, day_duration
+
+
+    def autonomy_day(self, daily_start, daily_end):    
+        day = daily_start.strftime("%A")
+        date = daily_start.date()
+
+        if day not in self.days_off and date not in self.days_off:
+
+            autonomy_duration, day_duration = self.autonomy_durations(daily_start, daily_end)
+            autonomy_percentage = (autonomy_duration.total_seconds() / day_duration.total_seconds()) * 100.0
+            return autonomy_duration, day_duration            
+
+            print '%s: %s from %s -> %s' % (daily_start.date(), autonomy_duration, day_duration, autonomy_percentage)
+        else:
+            print 'Skipping %s %s' % (day, date)
+            return timedelta(), timedelta()
+
+    def do_autonomy(self, idx):    
+        try:
+            idx = int(idx)
+
+            if not self.check_idx(idx):
+                return
+
+            window_start = rostime_to_python(self.routine_pairs[idx][0].time)
+            window_end = rostime_to_python(self.routine_pairs[idx][1].time)
+
+            print 'start', window_start
+            print 'end', window_end
+
+            # coerce window start into acceptable routine range
+
+            # if greater than the end of the day, start at daily_start on the next day
+            if window_start.time() > self.daily_end:
+                daily_start = datetime.combine((window_start + timedelta(days=1)).date(), self.daily_start)
+            # if less that then start of the day, start at daily start on this day
+            elif window_start.time() < self.daily_start:
+                daily_start = datetime.combine(window_start.date(), self.daily_start)
+            else:
+                daily_start = window_start
+
+            daily_end = datetime.combine(daily_start.date(), self.daily_end)
+
+            total_autonomy_duration = timedelta(seconds=0)
+            total_life_duration = timedelta(seconds=1)
+
+            while daily_end < window_end:
+
+                autonomy_duration, day_duration = self.autonomy_day(daily_start, daily_end)
+                total_autonomy_duration += autonomy_duration
+                total_life_duration += day_duration
+
+                daily_start = datetime.combine((daily_start + timedelta(days=1)).date(), self.daily_start)
+                daily_end = datetime.combine((daily_end + timedelta(days=1)).date(), self.daily_end)
+
+
+            # catch the final loop 
+            if daily_start < window_end and window_end < daily_end:
+                daily_end = window_end
+
+                autonomy_duration, day_duration = self.autonomy_day(daily_start, daily_end)
+                total_autonomy_duration += autonomy_duration
+                total_life_duration += day_duration
+
+
+            total_autonomy_percentage = (total_autonomy_duration.total_seconds() / total_life_duration.total_seconds()) * 100.0
+            print 'A: %s' % total_autonomy_percentage
+
+        except ValueError, e:
+            print 'provided argument was not an int: %s' % idx
+
 
     def do_executions(self, line):    
         try:
@@ -130,6 +222,8 @@ class RoutineAnalyser(cmd.Cmd):
     def help_summarise(self):
         print '\n'.join([ 'summarise [idx]', 'Summarise task executions in routine idx (int).'])
 
+    def help_autonomy(self):
+        print '\n'.join([ 'autonomy [idx]', 'Print autonomy percentage for routine idx (int).'])
 
     def do_EOF(self, line):
         return True
@@ -154,16 +248,16 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--tasks', type=int, default=1, nargs='?',
                     help='Number of tasks required for a routine to be considered')
 
-    parser.add_argument('-o', '--open', type=task_query.mktime, nargs='?', 
-                    help='Daily start time of the routine. Formatted "H:M" e.g. "06:38"')
+    parser.add_argument('-ds', '--daily_start', type=task_query.mktime, nargs='?', default=time(0,0),
+                    help='Daily start time of the routine. Formatted "H:M" e.g. "06:38". Default 00:00')
 
-    parser.add_argument('-c', '--close', type=task_query.mktime, nargs='?', 
-                    help='Daily end time of the routine. Formatted "H:M" e.g. "17:45"')
+    parser.add_argument('-de', '--daily_end', type=task_query.mktime, nargs='?', default=time(23,59),
+                    help='Daily end time of the routine. Formatted "H:M" e.g. "17:45". Default 23:59')
 
     
     args = parser.parse_args()
 
-
+    assert args.daily_end > args.daily_start
      
     try:
 
@@ -189,7 +283,6 @@ if __name__ == '__main__':
 
         allow_open = True
         if results[-1][0].event == TaskEvent.ROUTINE_STARTED and allow_open:
-            print 'adding open'
             dummy_end = TaskEvent(event = TaskEvent.ROUTINE_STOPPED, task = Task(), time = rospy.get_rostime())
             routines.append((results[-1][0], dummy_end))
 
@@ -208,8 +301,7 @@ if __name__ == '__main__':
                 filtered_routines.append(routines[i])
                 # print 'routine %s: %s to %s, duration: %s, tasks: %s' % (len(filtered_routines)-1, start, end, end-start, len(results))
 
-        RoutineAnalyser(msg_store, filtered_routines).cmdloop()
-
+        RoutineAnalyser(msg_store, filtered_routines, daily_start = args.daily_start, daily_end = args.daily_end).cmdloop()
 
         # if args.start is None:
         #     # find latest routine start

@@ -8,6 +8,7 @@ from mongodb_store.message_store import MessageStoreProxy
 from strands_executive_msgs.msg import Task, TaskEvent
 from datetime import datetime, timedelta
 from task_executor import task_routine
+from task_executor.utils import rostime_to_python
 
 def remove_duplicates(results):
     seen = set()
@@ -203,6 +204,18 @@ def executions(results):
             print "".join(word.ljust(col_width) for word in row)
         else:
             print row
+
+def autonomy_time(window_start, window_end, events):
+    if len(events) == 0:
+        print 'No task events match the query'
+        return 
+
+    event_groups = group(events)
+    execution_duration = timedelta()
+    for event_group in event_groups:
+        execution_duration += rostime_to_python(event_group[-1].time) - rostime_to_python(event_group[0].time)
+
+    return execution_duration
 
 
 # def aggregate(results):
