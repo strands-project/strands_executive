@@ -213,7 +213,16 @@ def autonomy_time(window_start, window_end, events):
     event_groups = group(events)
     execution_duration = timedelta()
     for event_group in event_groups:
-        execution_duration += rostime_to_python(event_group[-1].time) - rostime_to_python(event_group[0].time)
+        # we shouldn't count waiting around as autonomy
+        end_event = event_group[-1]
+        if event_group[0].task.action == 'wait_action':
+            for event in event_group:
+                if event.event < TaskEvent.EXECUTION_STARTED:
+                    end_event = event
+                else:
+                    break
+
+        execution_duration += rostime_to_python(end_event.time) - rostime_to_python(event_group[0].time)
 
     return execution_duration
 

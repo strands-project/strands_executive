@@ -25,7 +25,7 @@ class RoutineAnalyser(cmd.Cmd):
         self.daily_end = daily_end if daily_end is not None else time(23,59)
         # hand code for now
         self.days_off = ['Saturday', 'Sunday', date(2015, 5, 25), date(2015, 5, 4) ]
-
+        # self.days_off = []
 
     def check_idx(self, idx):
         if idx < 0 or idx >= len(self.routine_pairs):
