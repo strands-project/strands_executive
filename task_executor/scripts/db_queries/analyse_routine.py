@@ -113,9 +113,9 @@ class RoutineAnalyser(cmd.Cmd):
 
             autonomy_duration, day_duration = self.autonomy_durations(daily_start, daily_end)
             autonomy_percentage = (autonomy_duration.total_seconds() / day_duration.total_seconds()) * 100.0
+            print '%s: %s from %s -> %s' % (daily_start.date(), autonomy_duration, day_duration, autonomy_percentage)
             return autonomy_duration, day_duration            
 
-            print '%s: %s from %s -> %s' % (daily_start.date(), autonomy_duration, day_duration, autonomy_percentage)
         else:
             print 'Skipping %s %s' % (day, date)
             return timedelta(), timedelta()
