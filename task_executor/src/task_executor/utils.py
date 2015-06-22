@@ -88,8 +88,8 @@ class CheckTaskActionServer(object):
         self.task_server.start()
 
 
-def rostime_to_python(rtime):
-    return datetime.fromtimestamp(rtime.to_sec())        
+def rostime_to_python(rtime, tz = None):
+    return datetime.fromtimestamp(rtime.to_sec(), tz)        
 
 def rosduration_to_python(rdur):
     return timedelta(seconds=rdur.to_sec())        

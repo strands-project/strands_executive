@@ -9,6 +9,9 @@ from strands_executive_msgs.msg import Task, TaskEvent
 from datetime import datetime, timedelta, time, date
 from task_executor import task_routine, task_query
 from task_executor.utils import rostime_to_python
+import pytz
+
+import matplotlib.pyplot as plt
 
 import argparse
 import cmd
@@ -16,7 +19,7 @@ import cmd
 
 class RoutineAnalyser(cmd.Cmd):
 
-    def __init__(self, msg_store, routine_pairs, daily_start = None, daily_end = None):
+    def __init__(self, msg_store, routine_pairs, tz, daily_start = None, daily_end = None):
         cmd.Cmd.__init__(self)
         # super(RoutineAnalyser, self).__init__()
         self.routine_pairs = routine_pairs
@@ -26,6 +29,7 @@ class RoutineAnalyser(cmd.Cmd):
         # hand code for now
         self.days_off = ['Saturday', 'Sunday', date(2015, 5, 25), date(2015, 5, 4) ]
         # self.days_off = []
+        self.tz = tz
 
     def check_idx(self, idx):
         if idx < 0 or idx >= len(self.routine_pairs):
@@ -53,8 +57,8 @@ class RoutineAnalyser(cmd.Cmd):
 
     def do_print(self, line):
         for i in range(len(self.routine_pairs)):
-            start = rostime_to_python(self.routine_pairs[i][0].time)
-            end = rostime_to_python(self.routine_pairs[i][1].time)
+            start = rostime_to_python(self.routine_pairs[i][0].time, self.tz)
+            end = rostime_to_python(self.routine_pairs[i][1].time, self.tz)
             results = task_query.query_tasks(msg_store, 
                         start_date=start,
                         end_date=end,
@@ -73,8 +77,8 @@ class RoutineAnalyser(cmd.Cmd):
                 return
 
 
-            window_start = rostime_to_python(self.routine_pairs[idx][0].time)
-            window_end = rostime_to_python(self.routine_pairs[idx][1].time)
+            window_start = rostime_to_python(self.routine_pairs[idx][0].time, self.tz)
+            window_end = rostime_to_python(self.routine_pairs[idx][1].time, self.tz)
 
             results = task_query.query_tasks(self.msg_store, 
                         event=range(TaskEvent.TASK_STARTED, TaskEvent.ROUTINE_STARTED), 
@@ -120,6 +124,8 @@ class RoutineAnalyser(cmd.Cmd):
             print 'Skipping %s %s' % (day, date)
             return timedelta(), timedelta()
 
+
+
     def do_autonomy(self, idx):    
         try:
             idx = int(idx)
@@ -127,11 +133,9 @@ class RoutineAnalyser(cmd.Cmd):
             if not self.check_idx(idx):
                 return
 
-            window_start = rostime_to_python(self.routine_pairs[idx][0].time)
-            window_end = rostime_to_python(self.routine_pairs[idx][1].time)
+            window_start = rostime_to_python(self.routine_pairs[idx][0].time, self.tz)
+            window_end = rostime_to_python(self.routine_pairs[idx][1].time, self.tz)
 
-            print 'start', window_start
-            print 'end', window_end
 
             # coerce window start into acceptable routine range
 
@@ -174,6 +178,48 @@ class RoutineAnalyser(cmd.Cmd):
         except ValueError, e:
             print 'provided argument was not an int: %s' % idx
 
+    def do_timeplot(self, idx):
+        try: 
+            idx = int(idx)
+
+            if not self.check_idx(idx):
+                return
+
+            window_start = rostime_to_python(self.routine_pairs[idx][0].time, self.tz)
+            window_end = rostime_to_python(self.routine_pairs[idx][1].time, self.tz)
+
+            # get all the task starts
+            results = task_query.query_tasks(self.msg_store, 
+                        event=TaskEvent.TASK_STARTED, 
+                        start_date=window_start,
+                        end_date=window_end,
+                        )
+
+            # convert to an array of times
+            dates = [rostime_to_python(event[0].time, self.tz) for event in results]            
+            n, bins, patches = plt.hist([date.hour + date.minute/60.0 for date in dates], bins = 24*60/15)
+            plt.show()
+
+        except ValueError, e:
+            print 'provided argument was not an int: %s' % idx
+
+
+    def do_taskplot(self, idx):
+        try: 
+            idx = int(idx)
+
+            if not self.check_idx(idx):
+                return
+
+            window_start = rostime_to_python(self.routine_pairs[idx][0].time, self.tz)
+            window_end = rostime_to_python(self.routine_pairs[idx][1].time, self.tz)
+
+            for daily_start, daily_end in task_query.daily_windows_in_range(self.daily_start, self.daily_end, window_start, window_end):
+                print daily_start, daily_end
+
+        except ValueError, e:
+            print 'provided argument was not an int: %s' % idx
+
 
     def do_executions(self, line):    
         try:
@@ -194,8 +240,8 @@ class RoutineAnalyser(cmd.Cmd):
                 return
 
             print 'executions in routine %s' % idx
-            window_start = rostime_to_python(self.routine_pairs[idx][0].time)
-            window_end = rostime_to_python(self.routine_pairs[idx][1].time)
+            window_start = rostime_to_python(self.routine_pairs[idx][0].time, self.tz)
+            window_end = rostime_to_python(self.routine_pairs[idx][1].time, self.tz)
 
             results = task_query.query_tasks(self.msg_store, 
                         event=range(TaskEvent.TASK_STARTED, TaskEvent.ROUTINE_STARTED), 
@@ -254,6 +300,8 @@ if __name__ == '__main__':
     parser.add_argument('-de', '--daily_end', type=task_query.mktime, nargs='?', default=time(23,59),
                     help='Daily end time of the routine. Formatted "H:M" e.g. "17:45". Default 23:59')
 
+    parser.add_argument('-tz', '--time_zone', type=str, nargs='?', default='gb',
+                    help='Country code for timezone lookup. Default is "gb". Examples include "at" and "de".')
     
     args = parser.parse_args()
 
@@ -280,17 +328,21 @@ if __name__ == '__main__':
                 assert start is not None
                 routines.append((start, event))
                 start = None
+            else:
+                print 'unterminated routine'
 
-        allow_open = True
+        allow_open = False
         if results[-1][0].event == TaskEvent.ROUTINE_STARTED and allow_open:
             dummy_end = TaskEvent(event = TaskEvent.ROUTINE_STOPPED, task = Task(), time = rospy.get_rostime())
             routines.append((results[-1][0], dummy_end))
 
+        tz = pytz.timezone(pytz.country_timezones[args.time_zone][0])
+
 
         filtered_routines = []
         for i in range(len(routines)):
-            start = rostime_to_python(routines[i][0].time)
-            end = rostime_to_python(routines[i][1].time)
+            start = rostime_to_python(routines[i][0].time, tz)
+            end = rostime_to_python(routines[i][1].time, tz)
             results = task_query.query_tasks(msg_store, 
                         start_date=start,
                         end_date=end,
@@ -301,7 +353,18 @@ if __name__ == '__main__':
                 filtered_routines.append(routines[i])
                 # print 'routine %s: %s to %s, duration: %s, tasks: %s' % (len(filtered_routines)-1, start, end, end-start, len(results))
 
-        RoutineAnalyser(msg_store, filtered_routines, daily_start = args.daily_start, daily_end = args.daily_end).cmdloop()
+
+        analyser = RoutineAnalyser(msg_store, filtered_routines, daily_start = args.daily_start.replace(tzinfo=tz), daily_end = args.daily_end.replace(tzinfo=tz), tz=tz)
+        # interactive mode
+        # analyser.cmdloop()
+        # testing some things
+        # analyser.do_merge('all')
+        # analyser.do_timeplot('0')
+
+        analyser.do_taskplot('22')
+        # analyser.do_summarise('20')
+        # analyser.do_print('20')
+
 
         # if args.start is None:
         #     # find latest routine start

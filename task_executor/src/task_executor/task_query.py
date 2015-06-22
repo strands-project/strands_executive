@@ -10,6 +10,42 @@ from datetime import datetime, timedelta
 from task_executor import task_routine
 from task_executor.utils import rostime_to_python
 
+
+def daily_windows_in_range(daily_start_time, daily_end_time, window_start, window_end):
+    """A generator which returns datetime pairs for the start and end 
+    points of a daily internal during the overall time window.
+    """
+    # coerce window start into acceptable routine range
+    #  daily_start, and daily_end are the returned pairs
+
+    # if greater than the end of the day, start at daily_start on the next day
+    if window_start.time() > daily_end_time:
+        daily_start = datetime.combine((window_start + timedelta(days=1)).date(), daily_start_time)
+    # if less that then start of the day, start at daily start on this day
+    elif window_start.time() < daily_start_time:
+        daily_start = datetime.combine(window_start.date(), daily_start_time)
+    else:
+        daily_start = window_start
+
+    daily_end = datetime.combine(daily_start.date(), daily_end_time)
+
+
+    while daily_end < window_end:
+
+        yield daily_start, daily_end
+
+        daily_start = datetime.combine((daily_start + timedelta(days=1)).date(), daily_start_time)
+        daily_end = datetime.combine((daily_end + timedelta(days=1)).date(), daily_end_time)
+
+    # catch the final loop 
+    if daily_start < window_end and window_end < daily_end:
+        daily_end = window_end
+
+        yield daily_start, daily_end
+
+
+
+
 def remove_duplicates(results):
     seen = set()
     seen_add = seen.add
