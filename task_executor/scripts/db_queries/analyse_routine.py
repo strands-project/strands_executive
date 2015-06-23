@@ -33,6 +33,8 @@ class RoutineAnalyser(cmd.Cmd):
         self.days_off = ['Saturday', 'Sunday', date(2015, 5, 25), date(2015, 5, 4) ]
         # self.days_off = []
         self.tz = tz
+        self.colour_mappings = dict()
+
 
     def check_idx(self, idx):
         if idx < 0 or idx >= len(self.routine_pairs):
@@ -209,6 +211,8 @@ class RoutineAnalyser(cmd.Cmd):
 
 
     def do_lateness(self, idx):
+        """ Not recommended for use...
+        """
         try: 
             idx = int(idx)
 
@@ -217,13 +221,44 @@ class RoutineAnalyser(cmd.Cmd):
 
             window_start = rostime_to_python(self.routine_pairs[idx][0].time, self.tz)
             window_end = rostime_to_python(self.routine_pairs[idx][1].time, self.tz)
-            
+
+            means = []
+            stddev = []
+            count = []
+
+
             for daily_start, daily_end in daily_windows_in_range(self.daily_start, self.daily_end, window_start, window_end):
-                day_errors = np.array([(task_group[1].task.execution_time - task_group[1].time).to_sec() for task_group in task_groups_in_window(daily_start, daily_end, self.msg_store, event=[TaskEvent.ADDED, TaskEvent.NAVIGATION_SUCCEEDED])])        
-                print len(day_errors), day_errors.mean()
+                day_errors = np.array([((task_group[2].task.execution_time - task_group[2].time).to_sec()/(task_group[2].time - task_group[1].time).to_sec()) for task_group in task_groups_in_window(daily_start, daily_end, self.msg_store, event=[TaskEvent.ADDED, TaskEvent.NAVIGATION_STARTED, TaskEvent.NAVIGATION_SUCCEEDED])])        
+                if len(day_errors) > 5:
+                    means.append(day_errors.mean())
+                    stddev.append(day_errors.std())
+                    count.append(len(means))
+
+            plt.errorbar(count, means, stddev)
+
+            plt.show()
+
 
         except ValueError, e:
             print 'provided argument was not an int: %s' % idx
+
+
+
+
+    def draw_task(self, y, action, start_time, end_time):
+        # start and end times are ros times, we need to turn them into just hours
+            
+        start_midnight = datetime.fromordinal(rostime_to_python(start_time, self.tz).date().toordinal())
+        start_midnight = start_midnight.replace(tzinfo=self.tz)
+
+        start = (rostime_to_python(start_time, self.tz) - start_midnight).total_seconds()
+        end = (rostime_to_python(end_time, self.tz) - start_midnight).total_seconds()
+
+        if action not in self.colour_mappings:
+            colour_map = plt.get_cmap('Paired')    
+            self.colour_mappings[action] = colour_map(len(self.colour_mappings) * 30)
+
+        plt.hlines(y, start, end, self.colour_mappings[action], lw=10)
 
     def do_taskplot(self, idx):
         try: 
@@ -235,10 +270,75 @@ class RoutineAnalyser(cmd.Cmd):
             window_start = rostime_to_python(self.routine_pairs[idx][0].time, self.tz)
             window_end = rostime_to_python(self.routine_pairs[idx][1].time, self.tz)
 
-            for daily_start, daily_end in daily_windows_in_range(self.daily_start, self.daily_end, window_start, window_end):
-                for task_group in task_groups_in_window(daily_start, daily_end, self.msg_store):        
-                    print task_group
+            daily_tasks = []
+            for daily_start, daily_end in daily_windows_in_range(self.daily_start, self.daily_end, window_start, window_end, self.days_off):
+                
+                succeeded_tasks = np.array([(task_group[0].task.action, task_group[0].time, task_group[1].time) for task_group in task_groups_in_window(daily_start, daily_end, self.msg_store, event=[TaskEvent.TASK_STARTED, TaskEvent.TASK_SUCCEEDED])], dtype=object)
+                failed_tasks = np.array([(task_group[0].task.action, task_group[0].time, task_group[1].time) for task_group in task_groups_in_window(daily_start, daily_end, self.msg_store, event=[TaskEvent.TASK_STARTED, TaskEvent.TASK_FAILED])], dtype=object)        
+                # print len(succeeded_tasks)
+                # print len(failed_tasks)
 
+                # can't concatenate 0  length np.arrays
+                if len(succeeded_tasks) == 0:
+                    all_tasks = failed_tasks
+                elif len(failed_tasks) == 0:
+                    # print succeeded_tasks
+                    all_tasks = succeeded_tasks
+                else:
+                    all_tasks = np.concatenate((succeeded_tasks,failed_tasks), axis=0)
+                
+                print daily_start.date(), len(all_tasks) 
+                daily_tasks.append([daily_start.date(), all_tasks])
+
+            y_sep = 10
+            y = 0
+
+            # 
+            y_label_points = []
+            y_labels = []
+
+            for task_date, task_times in reversed(daily_tasks):
+                y += y_sep
+                y_label_points.append(y)
+                y_labels.append(task_date.strftime('%A, %B %d %Y'))
+                for task_time in task_times:
+                    self.draw_task(y, task_time[0], task_time[1], task_time[2])        
+                
+                
+            plt.ylim(0, y + y_sep)
+
+            x_label_points = []
+            x_labels = []
+            for hour in range(self.daily_start.hour-1, self.daily_end.hour+1):
+                seconds_per_hour = 60 * 60
+                x_label_points.append(hour * seconds_per_hour)
+                x_labels.append('%s:00' % hour)
+
+            plt.xticks(x_label_points, x_labels, rotation='vertical')
+            plt.yticks(y_label_points, y_labels, rotation='horizontal')
+
+            # (y, xstart, xstop, color, lw=4)
+            # plt.vlines(xstart, y+0.03, y-0.03, color, lw=2)
+            # plt.vlines(xstop, y+0.03, y-0.03, color, lw=2)
+
+            #Setup the plot
+            # ax = plt.gca()
+            # ax.xaxis_date()
+            # # myFmt = DateFormatter('%H:%M:%S')
+            # ax.xaxis.set_major_formatter(myFmt)
+            # ax.xaxis.set_major_locator(SecondLocator(interval=20)) # used to be SecondLocator(0, interval=20)
+
+            # #To adjust the xlimits a timedelta is needed.
+            # delta = (stop.max() - start.min())/10
+
+            # plt.yticks(y[unique_idx], captions)
+            # plt.ylim(0,1)
+            # plt.xlim(start.min()-delta, stop.max()+delta)
+            # plt.xlabel('Time')
+            plt.show()
+
+
+                
         except ValueError, e:
             print 'provided argument was not an int: %s' % idx
 
@@ -353,7 +453,7 @@ if __name__ == '__main__':
             else:
                 print 'unterminated routine'
 
-        allow_open = False
+        allow_open = True
         if results[-1][0].event == TaskEvent.ROUTINE_STARTED and allow_open:
             dummy_end = TaskEvent(event = TaskEvent.ROUTINE_STOPPED, task = Task(), time = rospy.get_rostime())
             routines.append((results[-1][0], dummy_end))
@@ -387,40 +487,10 @@ if __name__ == '__main__':
         # analyser.do_merge('21')
         # analyser.do_merge('21')
         # analyser.do_lateness('21')
-        analyser.do_lateness('0')
+        analyser.do_taskplot('0')
         # analyser.do_summarise('20')
         # analyser.do_print('20')
 
-
-        # if args.start is None:
-        #     # find latest routine start
-        #     results = task_query.query_tasks(msg_store, event=TaskEvent.ROUTINE_STARTED)
-        #     assert len(results) > 0
-        #     start = rostime_to_python(results[-1][0].time)
-        # else:
-        #     start = args.start
-
-        # end = args.end
-        # if end is None:           
-        #     results = task_query.query_tasks(msg_store, event=TaskEvent.ROUTINE_STOPPED)
-        #     if len(results) > 0:
-        #         end_routine = rostime_to_python(results[-1][0].time)               
-        #         if start is not None and end_routine > start:
-        #             end = end_routine
-
-        
-        # results = task_query.query_tasks(msg_store, 
-        #                 start_date=start,
-        #                 end_date=end,
-        #                 event=[TaskEvent.TASK_STARTED, TaskEvent.TASK_FINISHED, TaskEvent.NAVIGATION_SUCCEEDED]
-        #                 )
-
- 
-
-
-        # print 'Tasks Start: %s' % start
-        # print 'Tasks End: %s' % end
-        # task_query.summarise(results)
 
 
 

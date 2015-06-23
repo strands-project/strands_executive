@@ -289,7 +289,7 @@ def task_groups_in_window(window_start, window_end, msg_store, event=None):
         yield g
 
 
-def daily_windows_in_range(daily_start_time, daily_end_time, window_start, window_end):
+def daily_windows_in_range(daily_start_time, daily_end_time, window_start, window_end, days_off = []):
     """A generator which returns datetime pairs for the start and end 
     points of a daily internal during the overall time window.
     """
@@ -310,7 +310,11 @@ def daily_windows_in_range(daily_start_time, daily_end_time, window_start, windo
 
     while daily_end < window_end:
 
-        yield daily_start, daily_end
+        day = daily_start.strftime("%A")
+        date = daily_start.date()
+
+        if day not in days_off and date not in days_off:
+            yield daily_start, daily_end
 
         daily_start = datetime.combine((daily_start + timedelta(days=1)).date(), daily_start_time)
         daily_end = datetime.combine((daily_end + timedelta(days=1)).date(), daily_end_time)
@@ -319,4 +323,8 @@ def daily_windows_in_range(daily_start_time, daily_end_time, window_start, windo
     if daily_start < window_end and window_end < daily_end:
         daily_end = window_end
 
-        yield daily_start, daily_end
+        day = daily_start.strftime("%A")
+        date = daily_start.date()
+
+        if day not in days_off and date not in days_off:
+            yield daily_start, daily_end
