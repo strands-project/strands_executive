@@ -11,37 +11,7 @@ from task_executor import task_routine
 from task_executor.utils import rostime_to_python
 
 
-def daily_windows_in_range(daily_start_time, daily_end_time, window_start, window_end):
-    """A generator which returns datetime pairs for the start and end 
-    points of a daily internal during the overall time window.
-    """
-    # coerce window start into acceptable routine range
-    #  daily_start, and daily_end are the returned pairs
 
-    # if greater than the end of the day, start at daily_start on the next day
-    if window_start.time() > daily_end_time:
-        daily_start = datetime.combine((window_start + timedelta(days=1)).date(), daily_start_time)
-    # if less that then start of the day, start at daily start on this day
-    elif window_start.time() < daily_start_time:
-        daily_start = datetime.combine(window_start.date(), daily_start_time)
-    else:
-        daily_start = window_start
-
-    daily_end = datetime.combine(daily_start.date(), daily_end_time)
-
-
-    while daily_end < window_end:
-
-        yield daily_start, daily_end
-
-        daily_start = datetime.combine((daily_start + timedelta(days=1)).date(), daily_start_time)
-        daily_end = datetime.combine((daily_end + timedelta(days=1)).date(), daily_end_time)
-
-    # catch the final loop 
-    if daily_start < window_end and window_end < daily_end:
-        daily_end = window_end
-
-        yield daily_start, daily_end
 
 
 
@@ -87,9 +57,16 @@ def query_tasks(msg_store, task_id=None, action=None, start_date=None, end_date=
 
 
     # results.sort(key=lambda x: x[1]["inserted_at"])
-    results.sort(key=lambda x: x[0].time.to_sec())
+    # results.sort(key=lambda x: x[0].time.to_sec())
 
     return results
+
+def sort_results_by_logged_time(results):
+    results.sort(key=lambda x: x[0].time.to_sec())
+
+
+    
+
 
 def task_event_string(te):
     if te == TaskEvent.ADDED:
@@ -155,35 +132,66 @@ def mkdatetime(date_string):
 
 
 def start_of_new_group(event, open_group):
-    if event.event == TaskEvent.TASK_STARTED:
-        return True
-    elif len(open_group) == 0:
-        return False
-    # else:
-    #     return event.task.task_id != open_group[-1].task.task_id
 
-def group(results):
+    # events should come in order by logged id then by logged time. 
+    # this means they should roughly be in order so we can 
+    # distinguish them based on event id, as this as this should 
+    # always increase within a group. the exception is 1->2 which 
+    # is added to demanded which could happen sequentially but should
+    # be treated as separate groups
+
+    if len(open_group) == 0:
+        return False
+    elif event.event <= open_group[-1].event:
+        return True
+    elif event.event == TaskEvent.DEMANDED and open_group[-1].event == TaskEvent.ADDED:
+        return True    
+    else:
+        return False
+
+def print_group(group):
+    print '['
+    for event in group:
+        print event.task.task_id, event.event, rostime_to_python(event.task.start_after), rostime_to_python(event.time)
+    print ']'
+
+def group(results, group_length = 0):
     """ 
-    Groups events into individual executions
+    Groups results of query_tasks into individual execution groups. 
+    If group_length is not 0, only groups of this length are returned
     """
 
     if len(results) == 0:
         return []
 
+    results.sort(key=lambda x: x[0].time.to_sec())
+    results.sort(key=lambda x: x[0].task.task_id)
+
     groups = []
     open_group = [results[0][0]]
 
     for event, meta in results[1:]:
+        # print event.task.task_id, event.event, rostime_to_python(event.task.start_after), rostime_to_python(event.time)
+
         # start of an event group
-        if start_of_new_group(event, open_group):
-            groups.append(open_group)
+        if start_of_new_group(event, open_group):            
+            if group_length == 0 or len(open_group) == group_length:
+                groups.append(open_group)
             open_group = []
         
         open_group.append(event)
 
     # any remaining bits
     if len(open_group) > 0:
-        groups.append(open_group)
+        if group_length == 0 or len(open_group) == group_length:
+            groups.append(open_group)
+
+    # now sort so the groups are in execution order
+    # this is done using the logged time of the last event in the gourp
+    groups.sort(key=lambda g: g[-1].time.to_sec())
+
+    # for g in groups:
+    #     print_group(g)
 
     return groups
 
@@ -263,117 +271,52 @@ def autonomy_time(window_start, window_end, events):
     return execution_duration
 
 
-# def aggregate(results):
 
-#     duration = timedelta()
-#     charge_wait_duration = timedelta()
+def task_groups_in_window(window_start, window_end, msg_store, event=None):
+    """A generator which returns groups of events for tasks during the given window.
+    """
+    results = query_tasks(msg_store, 
+        event=event,             
+        start_date=window_start,
+        end_date=window_end)
 
-#     started_task_event = TaskEvent()
-#     count = 0
-#     dubious = []
-#     charge_wait_count = 0
-#     unstarted_count = 0
-#     start_count = 0
-#     day_durations = {}
+    group_length = 0
+    if event is not None:
+        group_length = len(event)
 
-#     for i in range(0, len(results)):
-
-#         if i > 0:
-#             previous = results[i-1][0]
-#         else:
-#             previous = None
-
-#         task_event = results[i][0]
-        
-#         if i < len(results) - 1:
-#             next = results[i+1][0]
-#         else:
-#             next = None
-
-#         start = False
-#         end = False
-
-#         if task_event.event == TaskEvent.TASK_STARTED or task_event.task.task_id != previous.task.task_id:
-#             start = True
-#         elif (task_event.event == TaskEvent.TASK_FINISHED or task_event.task.task_id != next.task.task_id or (task_event.task.action == '' and task_event.event == TaskEvent.NAVIGATION_SUCCEEDED)) and started_task_event.task.task_id != 0:
-#             end = True
-
-#         if start:
-#             started_task_event = task_event
-#             start_count += 1
-#         elif end:
-
-#             # if we're closing the previous event
-#             if task_event.task.task_id == started_task_event.task.task_id:
-        
-#                 end_time = datetime.utcfromtimestamp(task_event.time.to_sec())
-#                 task_duration = end_time - datetime.utcfromtimestamp(started_task_event.time.to_sec())
-
-#                 if task_event.task.action == 'wait_action' and task_event.task.start_node_id == 'ChargingPoint':
-#                     charge_wait_duration += task_duration
-#                     charge_wait_count += 1
-#                 else:
-                    
-#                     if task_duration > timedelta(hours=3):
-#                         dubious.append((started_task_event, task_event))
-#                         # task_query.print_event(started_task_event)
-#                         # task_query.print_event(task_event)                            
-#                         # print '%s\n' % task_duration                  
-#                     else:
-
-#                         task_date = end_time.date()
-
-#                         if task_date in day_durations:
-#                             day_durations[task_date].append(task_duration)
-#                         else:
-#                             day_durations[task_date] = [task_duration]
-
-#                         duration += task_duration
-#                         count += 1
-
-#                 # make sure we don't look for another end to this task
-#                 started_task_event = TaskEvent()
-
-#             else:
-#                 # print 'Finished an unstarted task: %s' % task_event
-#                 unstarted_count += 1
-#                 # task_query.print_event(started_task_event)
-#                 # task_query.print_event(task_event)
-#                 # print '\n'
-        
-#     start = results[0][0].time
-#     end = results[-1][0].time
+    groups = group(results, group_length)
+    for g in groups:
+        yield g
 
 
-#     print 'Starts: %s' % start_count
-#     print 'Ends: %s (%s + %s + %s)' % (count + charge_wait_count  +  len(dubious), count, charge_wait_count, len(dubious))
+def daily_windows_in_range(daily_start_time, daily_end_time, window_start, window_end):
+    """A generator which returns datetime pairs for the start and end 
+    points of a daily internal during the overall time window.
+    """
+    # coerce window start into acceptable routine range
+    #  daily_start, and daily_end are the returned pairs
 
-#     print 'Unstarted: %s' % unstarted_count
-#     print 'Dubious: %s' % len(dubious)
+    # if greater than the end of the day, start at daily_start on the next day
+    if window_start.time() > daily_end_time:
+        daily_start = datetime.combine((window_start + timedelta(days=1)).date(), daily_start_time)
+    # if less that then start of the day, start at daily start on this day
+    elif window_start.time() < daily_start_time:
+        daily_start = datetime.combine(window_start.date(), daily_start_time)
+    else:
+        daily_start = window_start
 
-#     print 'Tasks Completed: %s' % count        
-#     print 'Task Duration: %s' % duration
+    daily_end = datetime.combine(daily_start.date(), daily_end_time)
 
-#     print 'Charge Waits Finished: %s' % charge_wait_count        
-#     print 'Charge Waits Duration: %s' % charge_wait_duration
 
-#     print 'Tasks Start: %s' % datetime.utcfromtimestamp(start.to_sec())
-#     print 'Tasks End: %s' % datetime.utcfromtimestamp(end.to_sec())
+    while daily_end < window_end:
 
-#     print 'Total activity span: %s ' % timedelta(seconds=(end - start).to_sec())
+        yield daily_start, daily_end
 
-#     days = day_durations.keys()
-#     days.sort()
+        daily_start = datetime.combine((daily_start + timedelta(days=1)).date(), daily_start_time)
+        daily_end = datetime.combine((daily_end + timedelta(days=1)).date(), daily_end_time)
 
-#     print 'Tasks and duration each day'
-#     total_possible = timedelta()
-#     for day in days:
-#         total_possible += timedelta(hours=9)
-#         durations = day_durations[day]
-#         total = timedelta()
-#         for d in durations:
-#             total += d
-#         print '%s:\t%s\t%s' % (day, len(durations), total)
+    # catch the final loop 
+    if daily_start < window_end and window_end < daily_end:
+        daily_end = window_end
 
-#     print 'Autonomy percentage: %.2f' % ((duration.total_seconds()/total_possible.total_seconds()) * 100)
-
+        yield daily_start, daily_end

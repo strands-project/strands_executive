@@ -9,8 +9,11 @@ from strands_executive_msgs.msg import Task, TaskEvent
 from datetime import datetime, timedelta, time, date
 from task_executor import task_routine, task_query
 from task_executor.utils import rostime_to_python
+from task_executor.task_query import task_groups_in_window, daily_windows_in_range
 import pytz
+from dateutil.relativedelta import *
 
+import numpy as np
 import matplotlib.pyplot as plt
 
 import argparse
@@ -204,6 +207,24 @@ class RoutineAnalyser(cmd.Cmd):
             print 'provided argument was not an int: %s' % idx
 
 
+
+    def do_lateness(self, idx):
+        try: 
+            idx = int(idx)
+
+            if not self.check_idx(idx):
+                return
+
+            window_start = rostime_to_python(self.routine_pairs[idx][0].time, self.tz)
+            window_end = rostime_to_python(self.routine_pairs[idx][1].time, self.tz)
+            
+            for daily_start, daily_end in daily_windows_in_range(self.daily_start, self.daily_end, window_start, window_end):
+                day_errors = np.array([(task_group[1].task.execution_time - task_group[1].time).to_sec() for task_group in task_groups_in_window(daily_start, daily_end, self.msg_store, event=[TaskEvent.ADDED, TaskEvent.NAVIGATION_SUCCEEDED])])        
+                print len(day_errors), day_errors.mean()
+
+        except ValueError, e:
+            print 'provided argument was not an int: %s' % idx
+
     def do_taskplot(self, idx):
         try: 
             idx = int(idx)
@@ -214,8 +235,9 @@ class RoutineAnalyser(cmd.Cmd):
             window_start = rostime_to_python(self.routine_pairs[idx][0].time, self.tz)
             window_end = rostime_to_python(self.routine_pairs[idx][1].time, self.tz)
 
-            for daily_start, daily_end in task_query.daily_windows_in_range(self.daily_start, self.daily_end, window_start, window_end):
-                print daily_start, daily_end
+            for daily_start, daily_end in daily_windows_in_range(self.daily_start, self.daily_end, window_start, window_end):
+                for task_group in task_groups_in_window(daily_start, daily_end, self.msg_store):        
+                    print task_group
 
         except ValueError, e:
             print 'provided argument was not an int: %s' % idx
@@ -358,10 +380,14 @@ if __name__ == '__main__':
         # interactive mode
         # analyser.cmdloop()
         # testing some things
-        # analyser.do_merge('all')
+        analyser.do_merge('all')
         # analyser.do_timeplot('0')
 
-        analyser.do_taskplot('22')
+        # analyser.do_merge('21')
+        # analyser.do_merge('21')
+        # analyser.do_merge('21')
+        # analyser.do_lateness('21')
+        analyser.do_lateness('0')
         # analyser.do_summarise('20')
         # analyser.do_print('20')
 
