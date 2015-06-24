@@ -8,11 +8,11 @@ from mongodb_store.message_store import MessageStoreProxy
 from strands_executive_msgs.msg import Task, TaskEvent
 from datetime import datetime, timedelta, time, date
 from task_executor import task_routine, task_query
-from task_executor.utils import rostime_to_python
+from task_executor.utils import rostime_to_python, python_to_rostime
 from task_executor.task_query import task_groups_in_window, daily_windows_in_range
 import pytz
 from dateutil.relativedelta import *
-
+import matplotlib.patches as mpatches
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -254,11 +254,13 @@ class RoutineAnalyser(cmd.Cmd):
         start = (rostime_to_python(start_time, self.tz) - start_midnight).total_seconds()
         end = (rostime_to_python(end_time, self.tz) - start_midnight).total_seconds()
 
+        label = None
         if action not in self.colour_mappings:
             colour_map = plt.get_cmap('Paired')    
-            self.colour_mappings[action] = colour_map(len(self.colour_mappings) * 30)
+            self.colour_mappings[action] = colour_map(len(self.colour_mappings) * 30)         
+            label = action
 
-        plt.hlines(y, start, end, self.colour_mappings[action], lw=10)
+        plt.hlines(y, start, end, self.colour_mappings[action], lw=10, label=label)
 
     def do_taskplot(self, idx):
         try: 
@@ -317,24 +319,9 @@ class RoutineAnalyser(cmd.Cmd):
             plt.xticks(x_label_points, x_labels, rotation='vertical')
             plt.yticks(y_label_points, y_labels, rotation='horizontal')
 
-            # (y, xstart, xstop, color, lw=4)
-            # plt.vlines(xstart, y+0.03, y-0.03, color, lw=2)
-            # plt.vlines(xstop, y+0.03, y-0.03, color, lw=2)
 
-            #Setup the plot
-            # ax = plt.gca()
-            # ax.xaxis_date()
-            # # myFmt = DateFormatter('%H:%M:%S')
-            # ax.xaxis.set_major_formatter(myFmt)
-            # ax.xaxis.set_major_locator(SecondLocator(interval=20)) # used to be SecondLocator(0, interval=20)
 
-            # #To adjust the xlimits a timedelta is needed.
-            # delta = (stop.max() - start.min())/10
-
-            # plt.yticks(y[unique_idx], captions)
-            # plt.ylim(0,1)
-            # plt.xlim(start.min()-delta, stop.max()+delta)
-            # plt.xlabel('Time')
+            plt.legend(loc='lower right', bbox_to_anchor=(1,1), ncol=4)
             plt.show()
 
 
@@ -400,8 +387,7 @@ class RoutineAnalyser(cmd.Cmd):
         print 'Exit (CTRL-D)'
 
 
-if __name__ == '__main__':
-
+def init():
     rospy.init_node("routine_analysis")
 
     msg_store = MessageStoreProxy(collection='task_events')
@@ -430,13 +416,34 @@ if __name__ == '__main__':
     assert args.daily_end > args.daily_start
      
     try:
+        tz = pytz.timezone(pytz.country_timezones[args.time_zone][0])
 
-        results = task_query.query_tasks(msg_store, event=[TaskEvent.ROUTINE_STARTED, TaskEvent.ROUTINE_STOPPED])
+        analysis_start = args.start
+        analysis_end = args.end
+
+        if analysis_start is not None:
+            analysis_start = analysis_start.replace(tzinfo=tz)
+        
+        if analysis_end is not None:
+            analysis_end = analysis_end.replace(tzinfo=tz)
+
+        if analysis_end is not None and analysis_start is not None:
+            assert analysis_end > analysis_start
+
+        results = task_query.query_tasks(msg_store, event=[TaskEvent.ROUTINE_STARTED, TaskEvent.ROUTINE_STOPPED],
+                                            start_date=analysis_start, end_date=analysis_end)
+
+            
+
 
         # make sure we start with a ROUTINE_STARTED
-        while results[0][0].event == TaskEvent.ROUTINE_STOPPED:
+        while len(results) > 0 and results[0][0].event == TaskEvent.ROUTINE_STOPPED:
             del results[0]
             print 'pruned stop start'
+
+        if len(results) == 0:
+            print 'No routines found in the specified window %s to %s' % (analysis_start, analysis_end)
+            return
 
         routines = []
         start = None
@@ -453,12 +460,13 @@ if __name__ == '__main__':
             else:
                 print 'unterminated routine'
 
+
         allow_open = True
         if results[-1][0].event == TaskEvent.ROUTINE_STARTED and allow_open:
-            dummy_end = TaskEvent(event = TaskEvent.ROUTINE_STOPPED, task = Task(), time = rospy.get_rostime())
+            end_of_routines = python_to_rostime(analysis_end) if analysis_end is not None else rospy.get_rostime()
+            dummy_end = TaskEvent(event = TaskEvent.ROUTINE_STOPPED, task = Task(), time = end_of_routines)
             routines.append((results[-1][0], dummy_end))
 
-        tz = pytz.timezone(pytz.country_timezones[args.time_zone][0])
 
 
         filtered_routines = []
@@ -497,6 +505,10 @@ if __name__ == '__main__':
 
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
+
+if __name__ == '__main__':
+    init()
+    
 
 
         

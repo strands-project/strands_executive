@@ -94,4 +94,7 @@ def rostime_to_python(rtime, tz = None):
 def rosduration_to_python(rdur):
     return timedelta(seconds=rdur.to_sec())        
 
+def python_to_rostime(ptime):
+    return rospy.Time((ptime - datetime(1970,1,1, tzinfo=ptime.tzinfo)).total_seconds())
+
 
