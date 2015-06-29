@@ -28,7 +28,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         self.schedule_srv = rospy.ServiceProxy(schedule_srv_name, GetSchedule)
 
         # topic on which current schedule is broadcast
-        self.schedule_publisher = rospy.Publisher('/current_schedule', ExecutionStatus, queue_size=1)
+        self.schedule_publisher = rospy.Publisher('/current_schedule', ExecutionStatus, queue_size=1, latch=True)
 
 	#Lenka why this is here?
         # defaults for setting the ends of tasks
@@ -159,7 +159,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         # try to schedule them back in 
         self.execution_schedule.add_new_tasks([demanded_task])
         # put scheduled tasks back into execution. this will trigger a change in execution if necessary
-        self.execution_schedule.set_schedule([demanded_task])
+        self.set_execution_schedule([demanded_task])
 
 
         # now try to put the other tasks back in
@@ -423,6 +423,13 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
          
           return sub_additional, throwen_away, True  
 
+    def set_execution_schedule(self, to_schedule):
+        rospy.loginfo('new schedule to be released for execution')
+        self.set_execution_schedule(to_schedule)
+        self.publish_schedule()
+
+
+
     def try_schedule(self, additional_tasks):
       '''Trying to call scheduler to find a schedule. Also, some tasks might be dropped here.'''
 
@@ -488,7 +495,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
                 #to_schedule = [t for t in to_schedule if t.task_id != current_id]
 
                 # put scheduled tasks back into execution. this will trigger a change in execution if necessary
-                self.execution_schedule.set_schedule(to_schedule)
+                self.set_execution_schedule(to_schedule)
 
                 rospy.loginfo('Only rescheduling old schedule, total tasks to perform %s' % self.execution_schedule.get_execution_queue_length())
                 return True, additional_tasks
@@ -597,11 +604,11 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
               if(not sched_result): #scheduler didnt find a solution by while loop ended because there are no additional tasks   
                 #rather then setting empty schedule, leave there previous schedule
-                #self.execution_schedule.set_schedule([])       
+                #self.set_execution_schedule([])       
                 return False, []
               else: #scheduler was successfull, but all tasks were throwen away, to_schedule is empty
                 #rather then setting empty schedule, leave there previous schedule              
-                #self.execution_schedule.set_schedule(to_schedule)
+                #self.set_execution_schedule(to_schedule)
                 rospy.loginfo('EXECUTOR: all tasks were throwen away, scheduler found a primitive (empty) solution')
                 #rospy.loginfo('Added %s tasks into the schedule to get total of %s' % (len(additional_tasks), self.execution_schedule.get_execution_queue_length()))
                 return True, []
@@ -640,14 +647,14 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
                   
                   self.execution_schedule.add_new_tasks(new_tasks)
-                  self.execution_schedule.set_schedule(to_schedule)
+                  self.set_execution_schedule(to_schedule)
 
                   rospy.loginfo('Added %s tasks into the schedule to get total of %s' % (len(new_tasks), self.execution_schedule.get_execution_queue_length()))
                   return True, new_tasks
                 else:  #there are no old tasks 
                       
                   self.execution_schedule.add_new_tasks(to_schedule)                
-                  self.execution_schedule.set_schedule(to_schedule)
+                  self.set_execution_schedule(to_schedule)
 
                   rospy.loginfo('Added %s tasks into the schedule to get total of %s' % (len(to_schedule), self.execution_schedule.get_execution_queue_length()))
                   return True, to_schedule  
