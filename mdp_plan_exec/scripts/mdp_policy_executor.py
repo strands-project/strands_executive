@@ -183,11 +183,11 @@ class MdpPolicyExecutor(object):
                         self.current_prod_state=dict(prob_post_cond[1])
                         return
         if self.current_prod_state["dra_state1"] == self.product_mdp.props_def["dra_acc_state1"].conds["dra_state1"]: 
-            rospy.loginfo("Skipping MDP state update as target state has already been visited")
-            return
-        self.current_prod_state=None
-        rospy.logerr("Error getting MDP next state. Aborting.")
-        self.top_nav_policy_exec.cancel_all_goals()
+            rospy.logwarn("Skipping MDP state update as target state has already been visited")
+            return        
+        rospy.logwarn("Error getting MDP next state: There is no transition modelling the state evolution. Keeping LTL automaton in the same state. Execution might have issues if the task is not simple reachability.")
+        self.current_prod_state={'waypoint':waypoint_val,  'dra_state1':self.current_prod_state["dra_state1"]}
+
      
     def main(self):
         # Wait for control-c
