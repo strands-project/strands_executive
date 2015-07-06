@@ -146,6 +146,8 @@ def start_of_new_group(event, open_group):
         return True
     elif event.event == TaskEvent.DEMANDED and open_group[-1].event == TaskEvent.ADDED:
         return True    
+    elif event.task.task_id != open_group[-1].task.task_id:
+        return True    
     else:
         return False
 
@@ -249,24 +251,31 @@ def executions(results):
         else:
             print row
 
-def autonomy_time(window_start, window_end, events):
-    if len(events) == 0:
-        print 'No task events match the query'
-        return 
+def autonomy_time(window_start, window_end, msg_store):
 
-    event_groups = group(events)
     execution_duration = timedelta()
-    for event_group in event_groups:
+
+    for event_group in task_groups_in_window(window_start, window_end, msg_store):
+    
+        i = 0
+        while i < len(event_group) - 1 and event_group[i].event < TaskEvent.TASK_STARTED:
+            i+=1
+
         # we shouldn't count waiting around as autonomy
+        start_event = event_group[i]
         end_event = event_group[-1]
-        if event_group[0].task.action == 'wait_action':
+        if start_event.task.action == 'wait_action':
             for event in event_group:
                 if event.event < TaskEvent.EXECUTION_STARTED:
                     end_event = event
                 else:
+                    # print 'ignoring wait time'
                     break
 
-        execution_duration += rostime_to_python(end_event.time) - rostime_to_python(event_group[0].time)
+        if end_event.time < start_event.time:
+            print_group(event_group)
+
+        execution_duration += rostime_to_python(end_event.time) - rostime_to_python(start_event.time)
 
     return execution_duration
 
@@ -328,3 +337,43 @@ def daily_windows_in_range(daily_start_time, daily_end_time, window_start, windo
 
         if day not in days_off and date not in days_off:
             yield daily_start, daily_end
+
+
+
+def reconstruct_routines(results, min_tasks=1, allow_open=True):
+    """Pair up routine starts and ends. This typically requires all task events to infer end of earlier unclosed routines.
+    """
+
+    routines = []
+    start = None
+    task_count = 0
+
+    # make sure we just have the pairs which are start/end
+    for i in range(len(results)):
+        event = results[i][0]
+        if event.event == TaskEvent.ROUTINE_STARTED:
+            if start is not None:
+                # need to close previous routine
+                dummy_end = TaskEvent(event = TaskEvent.ROUTINE_STOPPED, task = Task(), time = results[i-1][0].time)
+                if task_count >= min_tasks:
+                    print 'closing unterminated routine'
+                    routines.append((start, dummy_end))
+            start = event
+            task_count = 0
+        elif event.event == TaskEvent.ROUTINE_STOPPED and start is not None:
+            if task_count >= min_tasks:
+                routines.append((start, event))
+            start = None
+        else:
+            task_count += 1
+
+        # if this is the last event and it's not an event, close routine here
+        if i == len(results) - 1 and start is not None:
+            dummy_end = TaskEvent(event = TaskEvent.ROUTINE_STOPPED, task = Task(), time = event.time)
+            if task_count >= min_tasks:
+                print 'closing unterminated routine at the end'
+                routines.append((start, dummy_end))
+
+
+    return routines
+
