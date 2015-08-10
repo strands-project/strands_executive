@@ -1,0 +1,15 @@
+<launch>
+
+
+  <!-- run mongo in test mode so it doesn't need a storage dir -->
+  <include file="$(find mongodb_store)/launch/mongodb_store.launch">
+    <arg name="test_mode" default="true" />
+  </include>
+
+  <!-- dummy topological nav -->
+  <include file="$(find topological_utils)/launch/dummy_topological_navigation.launch" />
+
+  <!-- run executive framework -->
+  <include file="$(find task_executor)/launch/task-scheduler.launch" />
+
+</launch>
