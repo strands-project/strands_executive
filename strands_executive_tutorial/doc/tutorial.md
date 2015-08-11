@@ -62,21 +62,62 @@ To specify that this task should trigger the wait action, set the action field t
 task.action = '/wait_action'
 ```
 
+
+As our action server requires arguments (i.e. wait_until or wait_duration), we must add these to the task too. Arguments must be added **in the order they are defined in your action message**. Arguments are added to the task using the helper functions from [strands_executive_msgs.task_utils](http://strands-project.github.io/strands_executive/strands_executive_msgs/html/namespacestrands__executive__msgs_1_1task__utils.html). For our wait_action, this means we must add a value for wait_until then a value for wait_duration (as this is the order defined in the action definition included above). The following code specifies an action that waits for 10 seconds. 
+
+```python
+task_utils.add_time_argument(task, rospy.Time())
+task_utils.add_duration_argument(task, rospy.Duration(10))
+```
+
+Tasks can be assigned any argument type that is required by the action server. This is done via the mongodb_store and is explained in more detail [here](https://github.com/strands-project/strands_executive#tasks).
+
+### Task Execution
+
+We have now specified enough information to allow the task to be executed. For this to happen we must do three things. First, we must start up the execution system. The `strands_executive_tutorial` package contains a launch file which runs everything you need to get started: [mongodb_store](http://wiki.ros.org/mongodb_store); a [dummy topological navigation system](https://github.com/strands-project/strands_navigation/blob/indigo-devel/topological_utils/launch/dummy_topological_navigation.launch) (we will replace this with the robot's navigation system later); and the [executive framework](https://github.com/strands-project/strands_executive/blob/hydro-release/task_executor/launch/task-scheduler-mdp.launch) itself. Run this in a separate terminal as follows:
+
+```bash
+roslaunch strands_executive_tutorial tutorial_dependencies.launch
+```
+
+Second, we must tell the execution system that it can start executing task. This is done using the `SetExecutionStatus` service which can be used to pause and resume execution at runtime. The following provides functions which return the correct ROS service, after waiting for it to exist.
+
+```python
+def get_service(service_name, service_type):    
+    rospy.loginfo('Waiting for %s service...' % service_name)
+    rospy.wait_for_service(service_name)
+    rospy.loginfo("Done")        
+    return rospy.ServiceProxy(service_name, service_type)
+
+def get_execution_status_service():
+    return get_service('/task_executor/set_execution_status', SetExecutionStatus)
+```
+
+The resulting service can then be used to enable execution:
+
+```python
+set_execution_status = get_execution_status_service()
+set_execution_status(True)
+```
+
+*Note*, that this only needs to be done once after the execution system has been started. If you don't set it to `True` then tasks can be added but nothing will happen. 
+
+### Task Timing
+
 You must also set the maximum length of time you expect your task to execute for. This is used by the execution framework to determine whether your task is executing correctly, and by the scheduler to work out execution times. The duration is a `rospy.Duration` instance and is defined in seconds. The max_duration field is not connected with any argument to the action server itself. 
 
 ```python
-max_wait = 60 * 60
-task.max_duration = rospy.Duration(max_wait)
+max_wait_minutes = 60 * 60
+task.max_duration = rospy.Duration(max_wait_minutes)
 ```
-
-Finally, you can set an argument 
-
 
 
 
 - mapping between tasks and action servers
 - get an action server running (wait_node)
 - write a task spec and get it executed 
-  -- execise (future execution)
-
+-- exercises 
+  -- future execution
+  -- write a task execution that prints out details of the task that is being executed
+  -- pause execution
 
