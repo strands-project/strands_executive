@@ -62,6 +62,13 @@ To specify that this task should trigger the wait action, set the action field t
 task.action = '/wait_action'
 ```
 
+You must also set the maximum length of time you expect your task to execute for. This is used by the execution framework to determine whether your task is executing correctly, and by the scheduler to work out execution times. The duration is a `rospy.Duration` instance and is defined in seconds. The `max_duration` field is not connected with any argument to the action server itself. 
+
+```python
+max_wait_minutes = 60 * 60
+task.max_duration = rospy.Duration(max_wait_minutes)
+```
+
 
 As our action server requires arguments (i.e. wait_until or wait_duration), we must add these to the task too. Arguments must be added **in the order they are defined in your action message**. Arguments are added to the task using the helper functions from [strands_executive_msgs.task_utils](http://strands-project.github.io/strands_executive/strands_executive_msgs/html/namespacestrands__executive__msgs_1_1task__utils.html). For our wait_action, this means we must add a value for wait_until then a value for wait_duration (as this is the order defined in the action definition included above). The following code specifies an action that waits for 10 seconds. 
 
@@ -100,24 +107,145 @@ set_execution_status = get_execution_status_service()
 set_execution_status(True)
 ```
 
-*Note*, that this only needs to be done once after the execution system has been started. If you don't set it to `True` then tasks can be added but nothing will happen. 
+*Note*, that this only needs to be done once after the execution system has been started. If you don't set it to `True` then tasks can be added but nothing will happen. Once it has been set to `True` then it won't be set to `False` unless the service is called again (which will pause execution), or the task executor is shut down and started again.
 
-### Task Timing
-
-You must also set the maximum length of time you expect your task to execute for. This is used by the execution framework to determine whether your task is executing correctly, and by the scheduler to work out execution times. The duration is a `rospy.Duration` instance and is defined in seconds. The max_duration field is not connected with any argument to the action server itself. 
+Finally, we can request the *immediate* execution of the task using the `DemandTask` service. This service interrupts any task that is currently executing (provided the associated action server supports pre-emption) and starts the execution of the specified one.  The following code demonstrates this.
 
 ```python
-max_wait_minutes = 60 * 60
-task.max_duration = rospy.Duration(max_wait_minutes)
+def get_demand_task_service():
+    return get_service('/task_executor/demand_task', DemandTask)
+
+demand_task = get_demand_task_service()
+demand_task(task) 
 ```
 
+If you run all of the code provided so far (structured in an appropriate way), you should see some output like the following from the launch file you previously started:
+
+```
+[INFO] [WallTime: 1439285826.115682] State machine starting in initial state 'TASK_INITIALISATION' with userdata: 
+	['task']
+[INFO] [WallTime: 1439285826.118216] State machine transitioning 'TASK_INITIALISATION':'succeeded'-->'TASK_EXECUTION'
+[INFO] [WallTime: 1439285826.118692] Concurrence starting with userdata: 
+	['task']
+[INFO] [WallTime: 1439285826.118842] Action /wait_action started for task 1
+[WARN] [WallTime: 1439285826.121560] Still waiting for action server '/wait_action' to start... is it running?
+[INFO] [WallTime: 1439285826.155626] Connected to action server '/wait_action'.
+[INFO] [WallTime: 1439285826.192815] target wait time: 2015-08-11 10:37:16
+[INFO] [WallTime: 1439285836.196404] waited until: 2015-08-11 10:37:16
+[INFO] [WallTime: 1439285836.207261] Concurrent state 'MONITORED' returned outcome 'succeeded' on termination.
+[INFO] [WallTime: 1439285837.166333] Concurrent state 'MONITORING' returned outcome 'preempted' on termination.
+[INFO] [WallTime: 1439285837.181308] Concurrent Outcomes: {'MONITORED': 'succeeded', 'MONITORING': 'preempted'}
+[INFO] [WallTime: 1439285837.181774] Action terminated with outcome succeeded
+[INFO] [WallTime: 1439285837.186778] State machine transitioning 'TASK_EXECUTION':'succeeded'-->'TASK_SUCCEEDED'
+[INFO] [WallTime: 1439285837.190386] Execution of task 1 succeeded
+[INFO] [WallTime: 1439285837.190591] State machine terminating 'TASK_SUCCEEDED':'succeeded':'succeeded'
+``` 
+
+Most of this is output from the task execution node as it steps through the [finite state machine](https://github.com/strands-project/strands_executive/blob/hydro-release/task_executor/README.md#task-execution-and-monitoring) used for task execution. The following lines show the task is working as we want:
+
+```
+[INFO] [WallTime: 1439285826.192815] target wait time: 2015-08-11 10:37:16
+[INFO] [WallTime: 1439285836.196404] waited until: 2015-08-11 10:37:16
+```
+
+### Task Scheduling
+
+We can now extend our task specification to include information about *when* the task should be executed. This is an essential part of our long-term autonomy approach, which requires behaviours to happen at times specified either by a user, or the robot's on subsystems. Each task should be given a time window during which task execution should occur. The task scheduler which is part of the executive framework sequences all the tasks it is managing to ensure that the time window of every task is respected. If this is not possible then the most recently added tasks are dropped (unless you are using priorities, in which case lower priority tasks are dropped until a schedule can be found).
+
+The opening time of the task's execution window is specified using the `start_after` field. The code below sets the start window to ten seconds into the future.
+
+```python
+task.start_after = rospy.get_rostime() + rospy.Duration(10)
+```
+
+The execution window should provide enough time to execute the task, but should also offer some slack as other tasks added to the system may have to executed first. The closing time of the the execution window is specified using the `end_before` field. The code below sets the end of the window such that the window is three times the maximum duration of the task. 
+
+```python
+task.end_before = task.start_after + rospy.Duration(task.max_duration.to_sec() * 3)
+```
+
+Previously we *demanded* task execution using the `DemandTask` service. This ignores the time window of the task and executes it immediately. To respect the time window we must use the service `/task_executor/add_tasks` of type `AddTasks`. 
+
+```python
+def get_add_tasks_service():
+    return get_service('/task_executor/add_tasks', AddTasks)
+```
+
+This adds a list of tasks to the executive framework, which in turn triggers scheduling and updates the robot's execution schedule (assuming execution status has already been set to `True`). 
+
+```python
+add_tasks = get_add_tasks_service()
+add_tasks([task])
+```
+
+When this script is executed, rather than the immediate execution of your task as previously, you should see the executor delay for some time (not quite ten seconds as there is an assumption of a minimum travel time before task execution) before executing the wait action. The output should be similar to that shown below, which shows the scheduler creating a schedule (which only contains the wait task) then the executor delaying execution until the star window of the task is open.
+
+```
+[ INFO] [1439548004.349319000]: SCHEDULER: Going to solve
+[ INFO] [1439548004.397583000]: SCHEDULER: found a solution
+[INFO] [WallTime: 1439548004.398210] start window: 11:26:53.412277
+[INFO] [WallTime: 1439548004.398465]          now: 11:26:44.398102
+[INFO] [WallTime: 1439548004.398639]  travel time:  0:00:02
+[INFO] [WallTime: 1439548004.398825] need to delay 7.14174938 for execution
+[INFO] [WallTime: 1439548004.399264] Added 1 tasks into the schedule to get total of 1
+```
+
+### Execution Information
+
+You can use the following sources of information to inspect the current state of the executive framework.
+
+The current execution status can be obtained using the service `GetExecutionStatus` on `/task_executor/get_execution_status`. A return value of `true` means the execution system is running, whereas `false` means that the execution system has either not been started or it has been paused.
+
+To see the execution schedule, subscribe to the topic `/current_schedule` which gets the list of tasks in execution order. If `currently_executing` is `true` then this means the first element of `execution_queue` is the currently active task. If it is false then the system is delaying until it starts executing that task.
+
+To just get the currently active task, use the service `strands_executive_msgs/GetActiveTask` on `/task_executor/get_active_task`. If the returned task has a `task_id` of `0` then there is no active task (as you can't return `None` over a service).
+
+To get print outs in the terminal describing the operation of the executive framework, you can use the following scripts:
+
+```bash
+rosrun task_executor schedule_status.py
+```
+
+`schedule_status.py` prints out the current schedule and execution information. For example, for the above wait action, you might see something like
+
+```
+[INFO] [WallTime: 1439549489.280268] Waiting to execute /wait_action (task 3)
+[INFO] [WallTime: 1439549489.280547] Execution to start at 2015-08-14 11:51:39
+[INFO] [WallTime: 1439549489.280785] A further 0 tasks queued for execution
+[INFO] [WallTime: 1439549494.295445] 
+
+```
+
+```bash
+rosrun task_executor task_status.py
+```
+
+`task_status.py` prints out the events that occur internally in the framework. For one of our wait tasks, you might see the following:
+
+```
+task 3    /wait_action    ADDED   14/08/15 11:51:29
+task 3    /wait_action    TASK_STARTED    14/08/15 11:51:37
+task 3    /wait_action    EXECUTION_STARTED   14/08/15 11:51:37
+task 3    /wait_action    EXECUTION_SUCCEEDED   14/08/15 11:51:47
+task 3    /wait_action    TASK_SUCCEEDED    14/08/15 11:51:47
+```
+
+You can also subscribe to these events on the topic `/task_executor/events`.
 
 
-- mapping between tasks and action servers
-- get an action server running (wait_node)
-- write a task spec and get it executed 
--- exercises 
-  -- future execution
-  -- write a task execution that prints out details of the task that is being executed
-  -- pause execution
+### Exercise 1
+
+a) Given what you know so far, create a script which schedules a configurable number of wait action tasks. All tasks should have the same duration and time window, but you should make sure that the time window is created such that it allows all the tasks to be executed. Use `schedule_status.py` and `task_status.py` to monitor the progress of execution and debug your script if necessary.
+
+b) Optional. Create an action server which prints out all the details of a task, then uses this in place of the wait action for 1(a). See the [task documentation](https://github.com/strands-project/strands_executive#tasks) for how to add user-defined message types as task arguments.
+
+### Tasks with locations
+
+So far we have ignored the robot entirely. Now we will extend our task to feature the location of the robot when the task is performed. 
+
+
+- exercises 
+- future execution
+- write a task execution that prints out details of the task that is being executed
+- pause execution
 

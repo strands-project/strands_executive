@@ -19,13 +19,13 @@ def get_service(service_name, service_type):
 def get_execution_status_service():
     return get_service('/task_executor/set_execution_status', SetExecutionStatus)
 
-def get_demand_task_service():
-    return get_service('/task_executor/demand_task', DemandTask)
+def get_add_tasks_service():
+    return get_service('/task_executor/add_tasks', AddTasks)
 
 
 if __name__ == '__main__':
-    
-    rospy.init_node('tutorial_1')
+
+    rospy.init_node('tutorial_2')
 
     # construct task
     task = Task()
@@ -43,12 +43,17 @@ if __name__ == '__main__':
     task_utils.add_time_argument(task, rospy.Time())
     task_utils.add_duration_argument(task, rospy.Duration(10))
 
+    # don't start the task until at least 10 seconds in the future
+    task.start_after = rospy.get_rostime() + rospy.Duration(10)
+    # and give a window of three times the max execution time in which to execute
+    task.end_before = task.start_after + rospy.Duration(task.max_duration.to_sec() * 3)
+
     # get the services we need to interact with the framework
     set_execution_status = get_execution_status_service()
-    demand_task = get_demand_task_service()
+    add_tasks = get_add_tasks_service()
 
     # if this is the first time tasks have been added to the to framework since it was started
     # you need to enable execution
     set_execution_status(True)
 
-    demand_task(task)
+    add_tasks([task])
