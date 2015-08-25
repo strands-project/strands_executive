@@ -56,7 +56,10 @@ if __name__ == '__main__':
     # you need to enable execution
     set_execution_status(True)
 
-    wps = ['WayPoint6', 'WayPoint3', 'WayPoint5' ]
-    tasks = [wait_task_at_waypoint(wp, 10, rospy.get_rostime(), rospy.get_rostime() + rospy.Duration(10 * 3 + 60 * 3)) for wp in wps]
+    wps = ['WayPoint6', 'WayPoint3', 'WayPoint5', 'WayPoint3',]
+
+    wait_secs = 10
+    assumed_travel = 300
+    tasks = [wait_task_at_waypoint(wp, wait_secs, rospy.get_rostime(), rospy.get_rostime() + rospy.Duration(wait_secs * len(wps) + assumed_travel * len(wps))) for wp in wps]
 
     add_tasks(tasks)

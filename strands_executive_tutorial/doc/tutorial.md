@@ -239,18 +239,133 @@ a) Given what you know so far, create a script which schedules a configurable nu
 
 b) Optional. Create an action server which prints out all the details of a task, then uses this in place of the wait action for 1(a). See the [task documentation](https://github.com/strands-project/strands_executive#tasks) for how to add user-defined message types as task arguments.
 
-### Tasks with locations
+### Tasks with Locations
 
-So far we have ignored the robot entirely. Now we will extend our task to feature the location of the robot when the task is performed. Each task can optionally have a start location and an end location. Locations are names of nodes in the robot's topological map (which you should have worked with yesterday).  
+So far we have ignored the robot entirely. Now we will extend our task to feature the location of the robot when the task is performed. Each task can optionally have a start location and an end location. Locations are names of nodes in the robot's topological map (which you should have worked with yesterday). If the start location is provided, the task executive drives the robot to this location before starting the execution of the task action. If navigation fails, the task will not be executed. The end location describes the location the executive system expects the robot to be at when the task execution is completed. If left blank, this is assumed to be the same as the start location. The start and end locations are used by the scheduler to determine what order to execute the tasks.
 
-If the start location is provided, the 
+*For this part of the tutorial, we will work with the UOL MHT simulation and the associated topological map. From here on the examples assume you are running the correct mongodb store, simulation and navigation launch files for this simulated setup.*
+
+Since you now have a simulated robot running (see note above), you now **should not** use the `tutorial_dependencies` launch file. Instead, launch the executive framework as follows:
+
+```bash
+roslaunch task_executor task-scheduler.launch scheduler_version:=1
+
+```
+
+The `scheduler_version:=1` parameter ensures the optimal version of the scheduler is used (the original Coltin et al. algorithm). This version produces optimal schedules (including the travel time between locations), although it starts to take a long time to produce schedules once you go above 20 or so tasks in a single scheduling problem. You can omit this parameter to run the non-optimal version which uses preprocessing to produce non-optimal schedules quickly.
+
+To configure a task's location, set the following fields in the task object:
+
+```python
+task.start_node_id = `Waypoint3`
+task.end_node_id = `Waypoint3`
+```
+
+Make sure you add the above lines to your existing code *before* the task is send to the scheduler. You can then use the `add_tasks` service as before, and you should see the robot drive to `Waypoint3` before executing a wait action (assuming you're extending the code from above).
+
+**Note** that now the robot must travel between locations you need to be make sure your time windows for execution are updated appropriately. The time window specifies the time in which the action is executed, not the navigation time. However, whereas you could previously easily fit two 10 second wait tasks in a 30 second time window (if you gave them both the same window), if it takes 120 seconds to travel between the two locations then the scheduler will not be able to include them both in the same schedule as the travel time between them will place one task outside its time window. 
+
+### Exercise 2
+
+a) Extend your previous multi-task code to include locations in the tasks, with the robot travelling to at least three different locations.
+
+### Changes to Execution
+
+You now know how to have a list of tasks scheduled and executed. If a task is *demanded* using the `DemandTask` service (as in the first part of this tutorial), the currently executing task is interrupted and the demanded one is executed in its place. In parallel, a new schedule is created which contains the remaining scheduled tasks and the interrupted one if possible (i.e. if the time windows can be respected). In all cases, if all tasks cannot be scheduled some are dropped until a valid schedule can be produced. 
+
+You can also pause the execution of the current task by sending a value of `false` to the `SetExecutionStatus` service. This will pause the task execution in the current state it is in, either navigation or action execution, until a value of `true` is sent to the service.
+
+If you have written a task which should not be interrupted by these methods, you can create a service which informs the executive whether or not interruption is possible. The instructions for this are [here](https://github.com/strands-project/strands_executive#interruptibility-at-execution-time).
+
+### Exercise 3
+
+a) Use your previous code to start the simulated robot executing scheduled tasks. Once it is executing, experiment with setting the execution status and demand tasks. Monitor the effects of these interactions using 
+
+```bash
+rosrun task_executor schedule_status.py
+```
+
+You can alter the execution status from the command line using 
+
+```bash
+rosservice call /task_executor/set_execution_status "status: true"
+```
+
+### Routines
+
+For long-term operation, we often want the robot to execute tasks according to some *routine*, e.g. visit all the rooms in the building between 9am and 11am. The STRANDS executive framework supports the creations of such routines through two mechanisms. The `DailyRoutine` and `DailyRoutineRunner` classes (described [here](https://github.com/strands-project/strands_executive#creating-a-routine)) support the creation of routines of daily repeating tasks. The `RobotRoutine` class (described [here](https://github.com/strands-project/strands_executive_behaviours/tree/hydro-devel/routine_behaviours#routine-behaviours)) builds on these objects to provide managed routine behaviour for a robot. This class also manages the battery level of the robot, provides a hook for when the robot is idle (i.e. it has no tasks to execute in the near future), and also manages the difference between day and night for the robot (at night the robot docks on a charger and can then only execute tasks without movement). 
+
+The `PatrolRoutine` class provides an example subclass of `RobotRoutine` which simply generates a patrol behaviour which creates tasks to wait at every node in the topological map. You can see this in operation by running:
+
+```bash
+rosrun routine_behaviours patroller_routine_node.py
+```
+
+With this node running you should see that the robot creates a schedule to visit all the nodes, or it fails to create on (if the time windows are not satisfiable) and instead visits a random node when idle.
+
+Before going further, we can use the code from this node to understand the basic properties of a routine.
+
+```python
+import rospy
+
+from datetime import time
+from dateutil.tz import tzlocal
+
+from routine_behaviours.patrol_routine import PatrolRoutine
+    
+
+if __name__ == '__main__':
+    rospy.init_node("patroller_routine")
+
+    # start and end times -- all times should be in local timezone
+    localtz = tzlocal()
+    start = time(8,00, tzinfo=localtz)
+    end = time(20,00, tzinfo=localtz)
+
+    idle_duration=rospy.Duration(20)
+
+    routine = PatrolRoutine(daily_start=start, daily_end=end, idle_duration=idle_duration)    
+     
+    routine.create_routine()
+ 
+    routine.start_routine()
+
+    rospy.spin()
+
+```
+
+Looking at the code in more detail:
+
+```python
+    start = time(8,00, tzinfo=localtz)
+    end = time(20,00, tzinfo=localtz)
+```
+
+The above code defines the working day of the robot. No task execution will happen before `start`, and when `end` is reached, all execution will cease and the robot will dock for the night.
+
+```python
+    idle_duration=rospy.Duration(20)
+```
+
+The above code is used to configure how long the robot should not be executing a task before it considers itself idle.
+
+```python
+    routine = PatrolRoutine(daily_start=start, daily_end=end, idle_duration=idle_duration)    
+```
+
+This creates the routine object, passing the defined values.
+
+```python
+
+   routine.create_routine()
+ 
+   routine.start_routine()
+```
+
+`create_routine()` runs code which specifies the tasks and populates the routine within the object. You can see the code for this [here](https://github.com/strands-project/strands_executive_behaviours/blob/hydro-devel/routine_behaviours/src/routine_behaviours/patrol_routine.py#L84). Following this, `start_routine` triggers the execution of the populated routine from the previous step.
 
 
-WayPoint3, WayPoint5, WayPoint6
+## Additional Resources
 
 
-- make sure they do the right order
-- include travel time in the window -- try without and see what happens
-
-- pause execution
 
