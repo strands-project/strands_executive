@@ -244,8 +244,11 @@ b) Optional. Create an action server which prints out all the details of a task,
 So far we have ignored the robot entirely. Now we will extend our task to feature the location of the robot when the task is performed. 
 
 
-- exercises 
-- future execution
-- write a task execution that prints out details of the task that is being executed
+WayPoint3, WayPoint5, WayPoint6
+
+
+- make sure they do the right order
+- include travel time in the window -- try without and see what happens
+
 - pause execution
 
