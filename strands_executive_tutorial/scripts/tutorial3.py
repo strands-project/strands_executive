@@ -63,3 +63,6 @@ if __name__ == '__main__':
     tasks = [wait_task_at_waypoint(wp, wait_secs, rospy.get_rostime(), rospy.get_rostime() + rospy.Duration(wait_secs * len(wps) + assumed_travel * len(wps))) for wp in wps]
 
     add_tasks(tasks)
+
+
+

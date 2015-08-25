@@ -16,6 +16,8 @@ In addition to assuming [a working knowledge of ROS](http://wiki.ros.org/ROS/Tut
 
 This executive framework, schedules and manages the execution of *tasks*. An instance of a task object describes the desired exection of an [actionlib action server](http://wiki.ros.org/actionlib), usually within a *time window* and at a given robot location. In the first part of this tutorial you will create instances of tasks and manage their execution via the executive framework.
 
+**Note**, whilst any actionlib server can be used with the execution framework, it is important that the server correctly responds to preemption requests.
+
 ### The Wait Action 
 
 To save the work of implementing an action server, we will work with one which is provided by the execution framework: the wait action. This action server simply either waits until a particular time or for a given duration before returning. The definition of action is as follows:
@@ -364,8 +366,117 @@ This creates the routine object, passing the defined values.
 
 `create_routine()` runs code which specifies the tasks and populates the routine within the object. You can see the code for this [here](https://github.com/strands-project/strands_executive_behaviours/blob/hydro-devel/routine_behaviours/src/routine_behaviours/patrol_routine.py#L84). Following this, `start_routine` triggers the execution of the populated routine from the previous step.
 
+If you want to create a routine that performs tasks at all, or a selection of, nodes in the map, you can create a subclass of `PatrolRoutine` and override methods such as `create_patrol_routine` and `create_patrol_task` to create task-specific behaviour. For the final part of this tutorial we will eschew this approach, and instead create a simple routine from `RobotRoutine`.  Use the following code as a structure for your routine.
+
+```python
+
+#!/usr/bin/env python
+
+import rospy
+
+from routine_behaviours.robot_routine import RobotRoutine
+
+from datetime import time, date, timedelta
+from dateutil.tz import tzlocal
+
+from strands_executive_msgs.msg import Task
+from strands_executive_msgs import task_utils
+
+
+class ExampleRoutine(RobotRoutine):
+    """ Creates a routine which simply visits nodes. """
+
+    def __init__(self, daily_start, daily_end, idle_duration=rospy.Duration(5), charging_point = 'ChargingPoint'):
+        # super(PatrolRoutine, self).__init__(daily_start, daily_end)        
+        RobotRoutine.__init__(self, daily_start, daily_end, idle_duration=idle_duration, charging_point=charging_point)
+
+    def create_routine(self):
+        pass        
+
+    def on_idle(self):
+        """
+            Called when the routine is idle. Default is to trigger travel to the charging. As idleness is determined by the current schedule, if this call doesn't utlimately cause a task schedule to be generated this will be called repeatedly.
+        """
+        rospy.loginfo('I am idle')    
+
+
+
+if __name__ == '__main__':
+
+    rospy.init_node('tutorial_4')
+
+    # start and end times -- all times should be in local timezone
+    localtz = tzlocal()
+    start = time(8,00, tzinfo=localtz)
+    end = time(20,00, tzinfo=localtz)
+
+    # how long to stand idle before doing something
+    idle_duration=rospy.Duration(20)
+
+    routine = ExampleRoutine(daily_start=start, daily_end=end, idle_duration=idle_duration)    
+     
+    routine.create_routine()
+ 
+    routine.start_routine()
+
+    rospy.spin()
+```
+
+This is similar to the `patroller_routine_node` code we saw previously, except we now see the (currently empty) implementation of some parts of routine class. If you run this (alongside the executive framework, simulation, navigation etc.) you should see something like the follows:
+
+
+```
+[INFO] [WallTime: 1440522933.015355] Waiting for task_executor service...
+[INFO] [WallTime: 1440522933.018245] Done
+[INFO] [WallTime: 1440522933.023142] Fetching parameters from dynamic_reconfigure
+[INFO] [WallTime: 1440522933.027528] Config set to 30, 10
+[INFO] [WallTime: 1440522933.533364] Current day starts at 2015-08-25 08:00:00+01:00
+[INFO] [WallTime: 1440522933.533773] Current day ends at 2015-08-25 20:00:00+01:00
+[INFO] [WallTime: 1440522933.547498] extra_tasks_for_today
+[INFO] [WallTime: 1440522933.547924] Scheduling 0 tasks now and 0 later
+[INFO] [WallTime: 1440522933.548184] triggering day start cb at 2015-08-25 18:15:33.547396+01:00
+[INFO] [WallTime: 1440522933.548409] Good morning
+[INFO] [WallTime: 1440522933.554520] Scheduling 0 tasks now and 0 later
+[INFO] [WallTime: 1440522958.590649] I am idle
+```
+
+The `I am idle` line should appear after 20 seconds, as configured by `idle_duration`. Nothing else should happen, as we have not yet added tasks. 
+
+To add tasks, we will fill in the `create_routine` method. In this method we will use the instance of `DailyRoutine` contained within `RobotRoutine`. Tasks are added using the `repeat_every*` methods from this object. These take a list of tasks and store them such that they can be correctly instantiated with start and end times every day. When creating tasks for a routine, you should not specify `start_after` or `end_before` as these will be determined by the routine itself. Let's assume we have a function called `wait_task_at_waypoint` which creates a `Task` object to perform a  10 second wait at a given waypoint. We can then get the routine to schedule two such wait tasks to be performed every day.
+
+
+```python
+    def create_routine(self):
+        daily_wps = ['WayPoint6', 'WayPoint3']
+        daily_wp_tasks = [wait_task_at_waypoint(wp) for wp in daily_wps]
+        self.routine.repeat_every_day(daily_wp_tasks)
+```
+
+If you use this code in your previous script, you should see the robot execute the two tasks, then go idle. If you wait long enough (until the start of the next day!) the robot will repeat this execution. Rather that wait that long, let's add some tasks with a shorter repeat rate into `create_routine`.
+
+```python
+        minute_wps = ['WayPoint5']
+        minute_wp_tasks = [wait_task_at_waypoint(wp) for wp in minute_wps]
+        self.routine.repeat_every_delta(minute_wp_tasks, delta=timedelta(minutes=5))
+```
+
+This causes a task to wait at the given waypoint to be scheduled at five minute intervals throughout the day. These tasks will be scheduled alongside the ones from the `daily_wp_tasks` (provided you didn't remove the code). `repeat_every_delta` is the most flexible of the routine creation tools, but you can also use [other methods from `DailyRoutine`](http://strands-project.github.io/strands_executive/task_executor/html/classtask__executor_1_1task__routine_1_1DailyRoutine.html).
+
+### Exercise 4
+
+a) Create a routine that mixes tasks with hourly and daily repeats.
+
+b) Add tasks that either happen in the morning or afternoon. You will need to use the `start_time` argument to `repeat_every`. 
+
+c) Once you have all of this working in simulation, move your code to your group's robot. Create a routine to patrol the nodes in your topological map. Extend this code to create metric maps at certain waypoints at regular intervals.
 
 ## Additional Resources
 
+ * [framework README](https://github.com/strands-project/strands_executive/blob/hydro-release/README.md)
 
+ * [task_executor documentation](https://github.com/strands-project/strands_executive/blob/hydro-release/task_executor/README.md) and [API](http://strands-project.github.io/strands_executive/task_executor/html/namespaces.html)
+
+ * [scheduler documentation](https://github.com/strands-project/strands_executive/blob/hydro-release/scheduler/README.md) 
+
+ * [routine_behaviours documentation](https://github.com/strands-project/strands_executive_behaviours/blob/hydro-devel/routine_behaviours/README.md) and [API](http://strands-project.github.io/strands_executive_behaviours/routine_behaviours/html)
 
