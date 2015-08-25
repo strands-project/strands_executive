@@ -41,7 +41,7 @@ If true, the scheduling problems received by the scheduler (via `get_schedule`) 
 
 `~scheduler_version` (`int`)
 
-Switch the version of the algorithm the scheduler is running. If not specified, the Mudrova and Hawes algorithm is used. If the value XXX specified, then the original Coltin et al algorothm is used.
+Switch the version of the algorithm the scheduler is running. If not specified, the Mudrova and Hawes algorithm is used. If the value 1 specified, then the original Coltin et al algorothm is used.
 
 `~output_file` (`string`)
 
