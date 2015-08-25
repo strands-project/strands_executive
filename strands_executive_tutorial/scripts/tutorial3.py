@@ -48,7 +48,6 @@ if __name__ == '__main__':
 
     rospy.init_node('tutorial_3')
 
-
     # get the services we need to interact with the framework
     set_execution_status = get_execution_status_service()
     add_tasks = get_add_tasks_service()
@@ -57,7 +56,7 @@ if __name__ == '__main__':
     # you need to enable execution
     set_execution_status(True)
 
-    wps = ['WayPoint6', 'WayPoint5', 'WayPoint3']
+    wps = ['WayPoint6', 'WayPoint3', 'WayPoint5' ]
     tasks = [wait_task_at_waypoint(wp, 10, rospy.get_rostime(), rospy.get_rostime() + rospy.Duration(10 * 3 + 60 * 3)) for wp in wps]
 
     add_tasks(tasks)

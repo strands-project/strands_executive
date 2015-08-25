@@ -241,7 +241,9 @@ b) Optional. Create an action server which prints out all the details of a task,
 
 ### Tasks with locations
 
-So far we have ignored the robot entirely. Now we will extend our task to feature the location of the robot when the task is performed. 
+So far we have ignored the robot entirely. Now we will extend our task to feature the location of the robot when the task is performed. Each task can optionally have a start location and an end location. Locations are names of nodes in the robot's topological map (which you should have worked with yesterday).  
+
+If the start location is provided, the 
 
 
 WayPoint3, WayPoint5, WayPoint6
