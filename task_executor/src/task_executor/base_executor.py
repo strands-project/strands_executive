@@ -136,7 +136,7 @@ class BaseTaskExecutor(object):
     def expected_navigation_duration_now(self, end):
         # if we're going nowhere, return some default
         if end == '':
-            return rospy.Duration(10)
+            return rospy.Duration(2)
         else:
             return self.get_navigation_duration(start=self.get_topological_node(), end=end)
 
@@ -201,14 +201,14 @@ class BaseTaskExecutor(object):
             self.expected_time_lock.acquire()
             if start == '' or end == '':
                 # if we're going nowhere, return some default
-                return rospy.Duration(10)
+                return rospy.Duration(2)
             else:
                 et = self.expected_time(start, end, task)
                 # rospy.loginfo('expected travel time %s' % et)                
-                return rospy.Duration(max(et.to_sec(), 10))
+                return rospy.Duration(max(et.to_sec(), 2))
         except Exception, e:
             rospy.logwarn('Caught exception when getting expected time: %s' % e)
-            return rospy.Duration(10)
+            return rospy.Duration(2)
         finally:
             self.expected_time_lock.release()
                     

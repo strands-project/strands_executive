@@ -1,14 +1,15 @@
 <launch>
 
-  
-
+  <arg name="scheduler_version" default="4"/>
 
   <!-- run mdp plan exec -->
   <include file="$(find mdp_plan_exec)/launch/mdp_plan_exec.launch">
   </include>
 
 
-  <node pkg="scheduler" type="scheduler_node" name="schedule_server"  output="screen"/>
+  <node pkg="scheduler" type="scheduler_node" name="schedule_server"  output="screen">
+    <param name="scheduler_version" type="int" value="$(arg scheduler_version)"/>
+  </node>
 
   <!-- task system using mdp navigation -->
   <node pkg="task_executor" type="scheduled_task_executor.py" name="scheduled_task_executor"  output="screen">
