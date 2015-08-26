@@ -2,6 +2,11 @@
 Changelog for package strands_executive_tutorial
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fixing install statements so directories are installed not contents
+* Contributors: Nick Hawes
+
 0.1.0 (2015-08-25)
 ------------------
 * Tutorial draft complete
