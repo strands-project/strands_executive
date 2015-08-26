@@ -120,18 +120,18 @@ include_directories(
 ## Install ##
 #############
 
-install(DIRECTORY scripts/
+install(DIRECTORY scripts
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
         USE_SOURCE_PERMISSIONS)
 
 # Mark other files for installation (e.g. launch and bag files, etc.)
 install(
-  DIRECTORY launch/
+  DIRECTORY launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
 install(
-  DIRECTORY doc/
+  DIRECTORY doc
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
