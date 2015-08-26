@@ -2,6 +2,9 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.1.1 (2015-08-26)
 ------------------
 * Fixing install statements so directories are installed not contents
