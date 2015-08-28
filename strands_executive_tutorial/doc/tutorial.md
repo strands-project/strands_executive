@@ -54,6 +54,10 @@ The `wait_duration` argument is self explanatory. The `wait_until` argument is s
 Now we have an action server we'd like to execute, we can write a task to have its execution managed by the executive framework. To create a task, first create an instance of the `Task` message type. Examples are given in Python, as the helper functions currently only exist for Python, but C++ is also possible (and C++ helpers will be added if someone asks for them in the future).
 
 ```python
+#!/usr/bin/env python
+
+import rospy
+
 from strands_executive_msgs.msg import Task
 task = Task()
 ```
