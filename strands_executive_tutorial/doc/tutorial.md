@@ -472,7 +472,7 @@ a) Create a routine that mixes tasks with hourly and daily repeats.
 
 b) Add tasks that either happen in the morning or afternoon. You will need to use the `start_time` argument to `repeat_every`. 
 
-c) Once you have all of this working in simulation, move your code to your group's robot. Create a routine to patrol the nodes in your topological map. Extend this code to create metric maps at certain waypoints at regular intervals.
+c) Once you have all of this working in simulation, move your code to your group's robot. Create a routine to patrol the nodes in your topological map. Extend this code to create meta-room maps at certain waypoints at regular intervals. You can also try creating your own tasks/action servers, or scheduling the execution of existing ones (speech, PTU movement, topological edge traversal etc.).
 
 ## Additional Resources
 
