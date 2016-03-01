@@ -22,6 +22,9 @@ add_message_files(
   TaskEvent.msg
   DurationList.msg
   DurationMatrix.msg
+  Action.msg
+  ActionOutcome.msg
+  StateVar.msg
 )
 
 # Generate services in the 'srv' folder
