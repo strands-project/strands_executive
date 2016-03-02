@@ -5,7 +5,7 @@ from strands_navigation_msgs.srv import GetTopologicalMap, PredictEdgeState
 
 
 class TopMapMdp(Mdp):
-    def __init__(self,top_map_name):
+    def __init__(self,top_map_name, explicit_doors=False, forget_doors=False):
         Mdp.__init__(self)
         
         got_service=False
@@ -33,7 +33,15 @@ class TopMapMdp(Mdp):
 
         self.top_map=self.get_top_map_srv(self.top_map_name).map
         self.check_spaces_in_top_map()
+        
+       
+        self.door_transitions=[]
         self.create_top_map_mdp_structure()
+        
+        #DOOR MODELLING
+        if explicit_doors:            
+            self.n_door_edges=0
+            self.add_door_model(forget_doors)
                     
         rospy.loginfo("Topological MDP initialised")
 
@@ -73,13 +81,19 @@ class TopMapMdp(Mdp):
                 target_index=self.props.index(edge.node)
                 action_name=edge.edge_id
                 self.actions.append(action_name)
-                self.transitions.append(MdpTransitionDef(action_name=action_name,
+                trans=MdpTransitionDef(action_name=action_name,
                                                   pre_conds={'waypoint':i},
                                                   prob_post_conds=[(1.0, {'waypoint':target_index})],
                                                   rewards={'time':1.0},
-                                                  exec_count=0))
+                                                  exec_count=0)
+                self.transitions.append(trans)
+                if edge.action == "doorPassing":
+                    self.door_transitions.append(trans)
                 self.n_actions=self.n_actions+1 # all actions have a different name
             i=i+1
+            
+        
+        
 
     def parse_sta_to_waypoints(self, sta_file, n_states):
         state_vector_names=[None]*n_states
@@ -111,8 +125,53 @@ class TopMapMdp(Mdp):
         
 
     def set_initial_state_from_waypoint(self,current_waypoint):
-        self.initial_state=self.props_def[current_waypoint].conds
+        self.initial_state['waypoint']=self.props_def[current_waypoint].conds['waypoint']
         
     def target_in_topological_map(self, waypoint):
         return waypoint in [node.name for node in self.top_map.nodes]
+    
+    def add_door_model(self, forget_doors):
+        rospy.loginfo("Adding doors")
+        self.reward_names.append("info")
+        door_targets=[]
+        for i in range(0,len(self.door_transitions)):
+            transition = self.door_transitions[i]
+            #add stuff to model
+            source=transition.pre_conds['waypoint']
+            target=transition.prob_post_conds[0][1]['waypoint']
+            if source in door_targets:
+                index=door_targets.index(source)
+                var_name="door_edge" + str(index)
+                check_door_action_name='check_door' + str(index)
+            else:
+                door_targets.append(target)
+                var_name="door_edge"+str(self.n_door_edges)
+                print var_name
+                self.state_vars.append(var_name)
+                self.state_vars_range[var_name]=(-1,1) #-1, unkown, 0 closed, 1 open
+                self.initial_state[var_name]=-1
+                check_door_action_name="check_door"+str(self.n_door_edges)
+                self.actions.append(check_door_action_name)
+                self.n_actions=self.n_actions+1
+                self.n_door_edges=self.n_door_edges+1
+                #update transition <- can only pass if door is open
+            transition.pre_conds[var_name]=1
+            if forget_doors:
+                #reset dooo value to -1
+                for j in range(0, len(transition.prob_post_conds)):
+                    transition.prob_post_conds[j][1][var_name]=-1
+            #create check transition                
+            self.transitions.append(MdpTransitionDef(action_name=check_door_action_name,
+                                        pre_conds={'waypoint':source, var_name:-1},
+                                        prob_post_conds=[[0.1,{'waypoint':source, var_name:0}],[0.9,{'waypoint':source, var_name:1}]],
+                                        rewards={'time':0.1, 'info':1},
+                                        exec_count=0))
+            
+    def set_open_door_probabilities(self, file_name, epoch=None):
+        if epoch is not None:
+            rospy.loginfo("Getting probabilities for specific time of day")
+        else:
+            rospy.loginfo("Getting door probabilities for now")
+        #TODO change door transition probabilities
+        self.write_prism_model(file_name)
 
