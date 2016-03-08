@@ -28,7 +28,8 @@ class MdpPolicyExecutor(object):
             if rospy.is_shutdown():
                 return       
         self.special_waypoints_srv=rospy.ServiceProxy("/mdp_plan_exec/get_special_waypoints", GetSpecialWaypoints)
-        
+        self.special_waypoints=self.special_waypoints_srv()
+        self.leaving_forbidden_waypoints=False
         
         self.top_nav_policy_exec= SimpleActionClient('/topological_navigation/execute_policy_mode', ExecutePolicyModeAction)
         got_server=self.top_nav_policy_exec.wait_for_server(rospy.Duration(1))
@@ -76,33 +77,33 @@ class MdpPolicyExecutor(object):
         self.closest_waypoint=msg.data
 
     def generate_prism_specification(self, goal):
-        special_waypoints=self.special_waypoints_srv()
+        self.special_waypoints=self.special_waypoints_srv()
         if goal.task_type==ExecutePolicyGoal.GOTO_WAYPOINT:
             if not self.top_map_mdp.target_in_topological_map(goal.target_id):
                 rospy.logerr("Execute policy target  " + goal.target_id  + "  is not a node in the topological map. Aborting")
                 return None
-            if goal.target_id in special_waypoints.forbidden_waypoints:
+            if goal.target_id in self.special_waypoints.forbidden_waypoints:
                 rospy.logwarn("The goal is a forbidden waypoint. Aborting")
                 return None
-            elif self.current_waypoint in special_waypoints.forbidden_waypoints:
+            elif self.current_waypoint in self.special_waypoints.forbidden_waypoints:
                 rospy.logwarn("The current position is forbidden. Aborting")
                 return None
-            if special_waypoints.forbidden_waypoints==[]:
+            if self.special_waypoints.forbidden_waypoints==[]:
                 return 'R{"time"}min=? [ (F "' + goal.target_id + '") ]'
             else:
-                return 'R{"time"}min=? [ (' + special_waypoints.forbidden_waypoints_ltl_string + ' U "' + goal.target_id + '") ]'
+                return 'R{"time"}min=? [ (' + self.special_waypoints.forbidden_waypoints_ltl_string + ' U "' + goal.target_id + '") ]'
         elif goal.task_type==ExecutePolicyGoal.LEAVE_FORBIDDEN_AREA:
-            if special_waypoints.forbidden_waypoints==[]:
+            if self.special_waypoints.forbidden_waypoints==[]:
                 rospy.logwarn("No forbidden waypoints defined. Nothing to leave.")
                 return None
             else:
-                return 'R{"time"}min=? [ (F ' + special_waypoints.forbidden_waypoints_ltl_string + ') ]'
+                return 'R{"time"}min=? [ (F ' + self.special_waypoints.forbidden_waypoints_ltl_string + ') ]'
         elif goal.task_type==ExecutePolicyGoal.GOTO_CLOSEST_SAFE_WAYPOINT:
-            if special_waypoints.safe_waypoints==[]:
+            if self.special_waypoints.safe_waypoints==[]:
                 rospy.logwarn("No safe waypoints defined. Nowhere to go to.")
                 return None
             else:
-                return 'R{"time"}min=? [ (F ' + special_waypoints.safe_waypoints_ltl_string + ') ]'
+                return 'R{"time"}min=? [ (F ' + self.special_waypoints.safe_waypoints_ltl_string + ') ]'
         elif goal.task_type==ExecutePolicyGoal.COSAFE_LTL:
             return 'R{"time"}min=? [ (' + goal.target_id + ') ]'
     
@@ -132,6 +133,10 @@ class MdpPolicyExecutor(object):
         return policy_msg  
 
     def execute_policy_cb(self,goal):
+        if goal.task_type==ExecutePolicyGoal.LEAVE_FORBIDDEN_AREA:
+            self.leaving_forbidden_area=True
+        else:
+            self.leaving_forbidden_area=False
         specification=self.generate_prism_specification(goal)
         if specification is None:
             self.mdp_nav_as.set_aborted()
@@ -170,7 +175,12 @@ class MdpPolicyExecutor(object):
     
     def top_nav_feedback_cb(self,feedback):
         rospy.loginfo("Reached waypoint " + feedback.route_status)
-        self.get_next_prod_state(feedback.route_status)
+        if not self.leaving_forbidden_area and feedback.route_status in self.special_waypoints.forbidden_waypoints:
+            rospy.logwarn("At forbidden waypoint!! Aborting")
+            self.current_prod_state=None
+            self.top_nav_policy_exec.cancel_all_goals()
+        else:
+            self.get_next_prod_state(feedback.route_status)
         
     def get_next_prod_state(self, current_waypoint):
         waypoint_val=self.product_mdp.props_def[current_waypoint].conds['waypoint']
