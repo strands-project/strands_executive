@@ -15,9 +15,8 @@ string BOOL_TYPE="____bool____"
 
 string name #action name in the MDP
 string action_server #action server to be called
+mongodb_store_msgs/StringPair[] arguments # Arguments to the action server. These are interpreted in two ways, either ("","string") is interpreted as a string or ("ros message type", "datacentre id") is a reference to the ObjectID of an entry in the datacentre obtained from the result of MongoInsertMsg.srv. 
 string[] waypoints #list of waypoints where action can be executed
-string pre_conds #string representing other valuations of state variables that need to hold for the action to be active USE diagnostic_msgs/KeyValue?
+strands_executive_msgs/StringIntPair[] pre_conds #string representing other valuations of state variables that need to hold for the action to be active USE diagnostic_msgs/KeyValue?
 strands_executive_msgs/ActionOutcome[] outcomes #list of possible outcomes. sum of outcome.probability should be 1
 
-# Arguments to the action server. These are interpreted in two ways, either ("","string") is interpreted as a string or ("ros message type", "datacentre id") is a reference to the ObjectID of an entry in the datacentre obtained from the result of MongoInsertMsg.srv. 
-mongodb_store_msgs/StringPair[] arguments

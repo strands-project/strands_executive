@@ -1,11 +1,7 @@
-from copy import deepcopy
 from mdp import Mdp, MdpTransitionDef, MdpPropDef
 import rospy
 import actionlib
-from actionlib_msgs.msg import GoalStatus
 from strands_navigation_msgs.srv import GetTopologicalMap, PredictEdgeState
-from strands_executive_msgs.msg import Action, ActionOutcome, StringIntPair, StringTriple
-from mongodb_store_msgs.msg import StringPair
 
 
 class TopMapMdp(Mdp):
@@ -42,14 +38,8 @@ class TopMapMdp(Mdp):
         self.door_transitions=[]
         self.create_top_map_mdp_structure()
         
-        self.action_descriptions={}
-        
-       
-        
-        
         #DOOR MODELLING
-        if explicit_doors:  
-            self.check_door_actions={}
+        if explicit_doors:            
             self.n_door_edges=0
             self.add_door_model(forget_doors)
                     
@@ -120,25 +110,18 @@ class TopMapMdp(Mdp):
             if value.conds['waypoint']==waypoint_var_val:
                 return key
         rospy.logerr("Waypoint not found!")
-        
-    def get_waypoint_var_val(self, waypoint_prop):
-        return self.props_def[waypoint_prop].conds['waypoint']
     
     def set_mdp_action_durations(self, file_name, epoch=None):
         if epoch is None:
             epoch=rospy.Time.now()
-        try:
-            predictions=self.get_edge_estimates(epoch)
-            if len(predictions.edge_ids) != self.n_actions:
-                rospy.logwarn("Did not receive travel time estimations for all edges, the total navigation expected values will not be correct")
-            for (edge, prob, duration) in zip(predictions.edge_ids, predictions.probs, predictions.durations):
-                index=self.actions.index(edge)
-                transition=self.transitions[index]
-                self.transitions[index].prob_post_conds=[(prob, dict(transition.prob_post_conds[0][1])), (1-prob, dict(transition.pre_conds))]
-                self.transitions[index].rewards["time"]=duration.to_sec()
-        except rospy.ServiceException, e:
-            rospy.logwarn("Error calling edge transversal times prediction service: " + str(e))
-            rospy.logwarn("The total navigation expected values will not be for the requested epoch.")
+        predictions=self.get_edge_estimates(epoch)
+        if len(predictions.edge_ids) != self.n_actions:
+            rospy.logwarn("Did not receive travel time estimations for all edges, the total navigatio expected values will not be correct")
+        for (edge, prob, duration) in zip(predictions.edge_ids, predictions.probs, predictions.durations):
+            index=self.actions.index(edge)
+            transition=self.transitions[index]
+            self.transitions[index].prob_post_conds=[(prob, dict(transition.prob_post_conds[0][1])), (1-prob, dict(transition.pre_conds))]
+            self.transitions[index].rewards["time"]=duration.to_sec()       
         self.write_prism_model(file_name)
         
 
@@ -150,6 +133,7 @@ class TopMapMdp(Mdp):
     
     def add_door_model(self, forget_doors):
         rospy.loginfo("Adding doors")
+        self.reward_names.append("info")
         door_targets=[]
         for i in range(0,len(self.door_transitions)):
             transition = self.door_transitions[i]
@@ -160,7 +144,6 @@ class TopMapMdp(Mdp):
                 index=door_targets.index(source)
                 var_name="door_edge" + str(index)
                 check_door_action_name='check_door' + str(index)
-                self.action_descriptions[check_door_action_name].waypoints.append(self.get_waypoint_prop(source))
             else:
                 door_targets.append(target)
                 var_name="door_edge"+str(self.n_door_edges)
@@ -172,30 +155,8 @@ class TopMapMdp(Mdp):
                 self.actions.append(check_door_action_name)
                 self.n_actions=self.n_actions+1
                 self.n_door_edges=self.n_door_edges+1
-                action_description=Action()
-                action_description.name=check_door_action_name
-                action_description.action_server="door_check"
-                action_description.waypoints=[self.get_waypoint_prop(source)]
-                action_description.pre_conds=[StringIntPair(string_data=var_name, int_data=-1)]
-                outcome=ActionOutcome()
-                outcome.probability=0.9
-                outcome.post_conds=[StringIntPair(string_data=var_name, int_data=1)]
-                outcome.duration_probs=[1]
-                outcome.durations=[0.1]
-                outcome.status=[GoalStatus.SUCCEEDED]
-                outcome.result=[StringTriple(attribute="open", type=ActionOutcome.BOOL_TYPE, value="True")]
-                action_description.outcomes.append(outcome)
-                outcome=ActionOutcome()
-                outcome.probability=0.1
-                outcome.post_conds=[StringIntPair(string_data=var_name, int_data=0)]
-                outcome.duration_probs=[1]
-                outcome.durations=[0.1]
-                outcome.status=[GoalStatus.SUCCEEDED]
-                outcome.result=[StringTriple(attribute="open", type=ActionOutcome.BOOL_TYPE, value="False")]
-                action_description.outcomes.append(outcome)
-                self.action_descriptions[check_door_action_name]=action_description
                 #update transition <- can only pass if door is open
-            transition.pre_conds[var_name]=1            
+            transition.pre_conds[var_name]=1
             if forget_doors:
                 #reset dooo value to -1
                 for j in range(0, len(transition.prob_post_conds)):
@@ -204,12 +165,8 @@ class TopMapMdp(Mdp):
             self.transitions.append(MdpTransitionDef(action_name=check_door_action_name,
                                         pre_conds={'waypoint':source, var_name:-1},
                                         prob_post_conds=[[0.1,{'waypoint':source, var_name:0}],[0.9,{'waypoint':source, var_name:1}]],
-                                        rewards={'time':0.1},
+                                        rewards={'time':0.1, 'info':1},
                                         exec_count=0))
-            
-            
-            
-            
             
     def set_open_door_probabilities(self, file_name, epoch=None):
         if epoch is not None:
@@ -218,12 +175,4 @@ class TopMapMdp(Mdp):
             rospy.loginfo("Getting door probabilities for now")
         #TODO change door transition probabilities
         self.write_prism_model(file_name)
-        
-
-    def add_action_defs(self, action_list):
-        self.action_defs=copy.deepcopy(self.check_door_actions)
-        for action in action_list:
-            self.action_defs.update({action.name:action})
-
-
 

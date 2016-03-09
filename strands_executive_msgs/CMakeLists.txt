@@ -25,6 +25,8 @@ add_message_files(
   Action.msg
   ActionOutcome.msg
   StateVar.msg
+  StringIntPair.msg
+  StringTriple.msg
 )
 
 # Generate services in the 'srv' folder
