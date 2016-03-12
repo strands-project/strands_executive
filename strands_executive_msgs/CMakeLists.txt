@@ -22,11 +22,12 @@ add_message_files(
   TaskEvent.msg
   DurationList.msg
   DurationMatrix.msg
-  Action.msg
-  ActionOutcome.msg
-  StateVar.msg
+  MdpAction.msg
+  MdpActionOutcome.msg
+  MdpStateVar.msg
   StringIntPair.msg
   StringTriple.msg
+  MdpDomainSpec.msg
 )
 
 # Generate services in the 'srv' folder
@@ -54,6 +55,7 @@ find_package(catkin REQUIRED genmsg actionlib_msgs)
 add_action_files(
   FILES
   ExecutePolicy.action
+  ExecutePolicyExtended.action
 )
 
 # Generate added messages and services with any dependencies listed here

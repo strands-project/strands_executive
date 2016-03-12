@@ -3,13 +3,11 @@ class MdpTransitionDef(object):
                 action_name=None,
                 pre_conds=None,
                 prob_post_conds=None,
-                rewards=None,
-                exec_count=None):
+                rewards=None):
         self.action_name=action_name
         self.pre_conds=pre_conds
         self.prob_post_conds=prob_post_conds
         self.rewards=rewards
-        self.exec_count=exec_count
         
 class MdpPropDef(object):
     def __init__(self,

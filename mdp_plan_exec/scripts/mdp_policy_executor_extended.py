@@ -16,7 +16,7 @@ from actionlib_msgs.msg import GoalStatus
 
 from strands_navigation_msgs.msg import NavRoute, ExecutePolicyModeAction, ExecutePolicyModeFeedback, ExecutePolicyModeGoal
 from strands_executive_msgs.msg import ExecutePolicyAction, ExecutePolicyFeedback, ExecutePolicyGoal
-#from strands_executive_msgs.msg import ExecutePolicyExtendedAction, ExecutePolicyExtendedFeedback, ExecutePolicyExtendedGoal
+from strands_executive_msgs.msg import ExecutePolicyExtendedAction, ExecutePolicyExtendedFeedback, ExecutePolicyExtendedGoal
 
    
 class MdpPolicyExecutor(object):
@@ -44,6 +44,7 @@ class MdpPolicyExecutor(object):
         
         
         self.top_map_mdp=TopMapMdp(top_map, explicit_doors=True)
+        self.current_extended_mdp=None
         self.policy_mdp=None
         self.current_nav_policy_state_defs={}
         
@@ -66,7 +67,7 @@ class MdpPolicyExecutor(object):
         self.action_executor=ActionExecutor()
         
         self.cancelled=False
-        self.mdp_as=SimpleActionServer('mdp_plan_exec/execute_policy_extended', ExecutePolicyAction, execute_cb = self.execute_policy_cb, auto_start = False)
+        self.mdp_as=SimpleActionServer('mdp_plan_exec/execute_policy_extended', ExecutePolicyExtendedAction, execute_cb = self.execute_policy_cb, auto_start = False)
         self.mdp_as.register_preempt_callback(self.preempt_policy_execution_cb)
         self.mdp_as.start()
         
@@ -80,13 +81,13 @@ class MdpPolicyExecutor(object):
         self.closest_waypoint=msg.data
 
     def generate_prism_specification(self, ltl_spec):       
-        return 'partial(R{"time"}min=? [ (' + ltl_spec.target_id + ') ])'
+        return 'partial(R{"time"}min=? [ (' + ltl_spec + ') ])'
     
     def generate_policy_mdp(self,specification):
         #update initial state
         print(self.closest_waypoint)
-        self.top_map_mdp.set_initial_state_from_waypoint(self.closest_waypoint)
-        self.top_map_mdp.set_mdp_action_durations(self.directory+self.file_name,rospy.Time.now())
+        self.current_extended_mdp.set_initial_state_from_waypoint(self.closest_waypoint)
+        self.current_extended_mdp.set_mdp_action_durations(self.directory+self.file_name,rospy.Time.now())
         expected_time=float(self.prism_policy_generator.get_policy(specification, partial_sat=True))
         #feedback=ExecutePolicyFeedback(expected_time=expected_time)
         #self.mdp_nav_as.publish_feedback(feedback)
@@ -95,7 +96,7 @@ class MdpPolicyExecutor(object):
             rospy.logwarn("The goal is unattainable. Aborting...")
             self.policy_mdp=None
         else:
-            self.policy_mdp=PolicyMdp(self.top_map_mdp,self.directory + '/prod.aut',self.directory + '/prod.sta',self.directory + '/prod.lab', self.directory+'adv.tra')
+            self.policy_mdp=PolicyMdp(self.current_extended_mdp,self.directory + '/prod.aut',self.directory + '/prod.sta',self.directory + '/prod.lab', self.directory+'adv.tra')
             self.current_policy_flat_state=self.policy_mdp.initial_flat_state
             
 
@@ -111,8 +112,8 @@ class MdpPolicyExecutor(object):
             current_state_def=self.policy_mdp.flat_state_defs[new_flat_state]
             if self.policy_mdp.flat_state_policy.has_key(new_flat_state):
                 action=self.policy_mdp.flat_state_policy[new_flat_state]
-                if action in self.top_map_mdp.nav_actions and current_state_def["_da"]==current_dfa_state:
-                    source = self.top_map_mdp.get_waypoint_prop(current_state_def["waypoint"])
+                if action in self.current_extended_mdp.nav_actions and current_state_def["_da"]==current_dfa_state:
+                    source = self.current_extended_mdp.get_waypoint_prop(current_state_def["waypoint"])
                     policy_msg.source.append(source)
                     policy_msg.edge_id.append(action)
                     for suc_state in self.policy_mdp.flat_state_sucs[new_flat_state]:
@@ -143,7 +144,7 @@ class MdpPolicyExecutor(object):
         self.get_next_policy_state(feedback.route_status)
         
     def get_next_policy_state(self, current_waypoint):
-        waypoint_val=self.top_map_mdp.get_waypoint_var_val(current_waypoint)
+        waypoint_val=self.current_extended_mdp.get_waypoint_var_val(current_waypoint)
         current_state_def=self.current_nav_policy_state_defs[self.current_flat_state]
         #waypoint didnt change
         if waypoint_val==current_state_def["waypoint"]:
@@ -158,7 +159,7 @@ class MdpPolicyExecutor(object):
         new_state_def=deepcopy(current_state_def)
         new_state_def["waypoint"]=waypoint_val
         for (flat_state, flat_state_def) in self.policy_mdp.flat_state_defs.items():
-            if self.top_map_mdp.check_cond_sat(new_state_def, flat_state_def):
+            if self.current_extended_mdp.check_cond_sat(new_state_def, flat_state_def):
                 rospy.loginfo("Found state " + str(flat_state_def) + ". Updating.")
                 self.current_flat_state=flat_state
                 self.regenerate_policy=True #Assumes full policy export. In case we stop exporting full policy, change this so that replan is triggered when the new state doesnt have an action associated to it.
@@ -168,7 +169,8 @@ class MdpPolicyExecutor(object):
         self.top_nav_policy_exec.cancel_all_goals()
        
     def get_mdp_state_update_from_action_outcome(self, state_update):
-        current_state_def=self.current_nav_policy_state_defs[self.current_flat_state]
+        #current_state_def=self.current_nav_policy_state_defs[self.current_flat_state]
+        current_state_def=self.policy_mdp.flat_state_defs[self.current_flat_state]
         current_state_def.update(state_update)
         del current_state_def["_da"]
         for flat_suc in self.policy_mdp.flat_state_sucs[self.current_flat_state]:
@@ -179,7 +181,10 @@ class MdpPolicyExecutor(object):
 
 
     def execute_policy_cb(self,goal):
-        specification=self.generate_prism_specification(goal)
+        specification=self.generate_prism_specification(goal.spec.ltl_task)
+        self.current_extended_mdp=deepcopy(self.top_map_mdp)
+        self.current_extended_mdp.add_extra_domain(goal.spec.vars, goal.spec.actions)
+        
         rospy.loginfo("The specification is: " + specification)
         self.generate_policy_mdp(specification)
         if self.policy_mdp is None:
@@ -191,7 +196,7 @@ class MdpPolicyExecutor(object):
         status=self.execute_nav_policy(current_nav_policy)
         while self.policy_mdp.flat_state_policy.has_key(self.current_flat_state) and not self.cancelled:
             next_action=self.policy_mdp.flat_state_policy[self.current_flat_state]
-            if next_action in self.top_map_mdp.nav_actions:
+            if next_action in self.current_extended_mdp.nav_actions:
                 current_nav_policy=self.generate_current_nav_policy()
                 status=self.execute_nav_policy(current_nav_policy)
                 rospy.loginfo("Topological navigation execute policy action server exited with status: " + GoalStatus.to_string(status))
@@ -206,8 +211,9 @@ class MdpPolicyExecutor(object):
                     return
             else:
                 print("EXECUTE ACTION")
-                state_update=self.action_executor.execute_action(self.top_map_mdp.action_descriptions[next_action])
-                self.get_mdp_state_update_from_action_outcome(state_update)
+                state_update=self.action_executor.execute_action(self.current_extended_mdp.action_descriptions[next_action])
+                if not self.cancelled:
+                    self.get_mdp_state_update_from_action_outcome(state_update)
         
         
         if self.cancelled:
