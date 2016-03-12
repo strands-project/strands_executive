@@ -10,8 +10,11 @@ string TIME_TYPE="____time____"
 string DURATION_TYPE="____duration____"
 # Constant for bool type
 string BOOL_TYPE="____bool____"
+# Constant for string type
+string STRING_TYPE="____str____"
 
 float64 probability #prob of this outcome happening
+string waypoint #waypoint position after this outcome happening
 strands_executive_msgs/StringIntPair[] post_conds  #each element of the form (var_key, val). if this is the action outcome, the executor updates the current MDP state dict such that current_state[var_key]=val, for each element of the list. 
 float64[] duration_probs #list of probabilities associated to duration clusters for this outcome
 float64[] durations #list of duration clusters representatives. same lenght as duration_probs list, as elements in the 2 lists with the same index are related

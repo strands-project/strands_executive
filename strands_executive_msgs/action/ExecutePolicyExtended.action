@@ -1,0 +1,6 @@
+strands_executive_msgs/MdpDomainSpec spec
+---
+
+---
+float64 success_prob
+float64 expected_time

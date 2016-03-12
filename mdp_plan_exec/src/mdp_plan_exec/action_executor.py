@@ -3,7 +3,7 @@ import actionlib
 from actionlib_msgs.msg import GoalStatus
 from mongodb_store.message_store import MessageStoreProxy
 import mongodb_store.util as dc_util
-from strands_executive_msgs.msg import Action
+from strands_executive_msgs.msg import MdpAction
 
 
 class ActionExecutor(object):
@@ -23,17 +23,17 @@ class ActionExecutor(object):
         raise RuntimeError('No action associated with topic: %s'% action_server)
         
     def instantiate_from_string_pair(self, string_pair):
-        if len(string_pair[0]) == 0:
+        if len(string_pair[0]) == MdpAction.STRING_TYPE:
             return string_pair[1]
-        elif string_pair[0] == Action.INT_TYPE:
+        elif string_pair[0] == MdpAction.INT_TYPE:
             return int(string_pair[1])
-        elif string_pair[0] == Action.FLOAT_TYPE:
+        elif string_pair[0] == MdpAction.FLOAT_TYPE:
             return float(string_pair[1])     
-        elif string_pair[0] ==Action.TIME_TYPE:
+        elif string_pair[0] ==MdpAction.TIME_TYPE:
             return rospy.Time.from_sec(float(string_pair[1]))
-        elif string_pair[0] == Action.DURATION_TYPE:
+        elif string_pair[0] == MdpAction.DURATION_TYPE:
             return rospy.Duration.from_sec(float(string_pair[1]))
-        elif string_pair[0] == Action.BOOL_TYPE:   
+        elif string_pair[0] == MdpAction.BOOL_TYPE:   
             return string_pair[1] == 'True'
         else:
             msg = self.msg_store.query_id(string_pair[1], string_pair[0])[0]
@@ -43,7 +43,10 @@ class ActionExecutor(object):
             return msg
 
     def get_arguments(self, argument_list):
-        return map(self.instantiate_from_string_pair, argument_list)
+        res=[]
+        for string_pair in argument_list:
+            res.append(self.instantiate_from_string_pair([string_pair.first, string_pair.second]))
+        return res
  
     
     def get_max_action_duration(self, action_outcomes):
@@ -68,8 +71,6 @@ class ActionExecutor(object):
         if action_msg.action_server != '':
             try:
                 (action_string, goal_string) = self.get_action_types(action_msg.action_server)
-                print action_string
-                print goal_string
                 action_clz = dc_util.load_class(dc_util.type_to_class_string(action_string))
                 goal_clz = dc_util.load_class(dc_util.type_to_class_string(goal_string))
 
@@ -88,7 +89,6 @@ class ActionExecutor(object):
                 while (not action_finished) and (timer < max_action_duration + wiggle_room) and (not self.cancelled):
                     timer+=0.1
                     action_finished = action_client.wait_for_result(rospy.Duration(0.1))
-                    print("TIMER")
                     
                 if not action_finished:
                     action_client.cancel_all_goals()

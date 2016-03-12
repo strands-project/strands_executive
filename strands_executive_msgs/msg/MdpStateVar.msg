@@ -1,5 +1,5 @@
 #message representing a state variable in the MDP
 string name
-uint64 init_val
-uint64 min_range
-uint64 max_range
+int32 init_val
+int32 min_range
+int32 max_range
