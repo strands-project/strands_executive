@@ -1,11 +1,7 @@
-from copy import deepcopy
 from mdp import Mdp, MdpTransitionDef, MdpPropDef
 import rospy
 import actionlib
-from actionlib_msgs.msg import GoalStatus
 from strands_navigation_msgs.srv import GetTopologicalMap, PredictEdgeState
-from strands_executive_msgs.msg import MdpAction, MdpActionOutcome, StringIntPair, StringTriple
-from mongodb_store_msgs.msg import StringPair
 
 
 class TopMapMdp(Mdp):
@@ -42,13 +38,8 @@ class TopMapMdp(Mdp):
         self.door_transitions=[]
         self.create_top_map_mdp_structure()
         
-        self.action_descriptions={}
-        
-       
-        
-        
         #DOOR MODELLING
-        if explicit_doors:  
+        if explicit_doors:            
             self.n_door_edges=0
             self.add_door_model(forget_doors)
                     
@@ -94,7 +85,8 @@ class TopMapMdp(Mdp):
                 trans=MdpTransitionDef(action_name=action_name,
                                                   pre_conds={'waypoint':i},
                                                   prob_post_conds=[(1.0, {'waypoint':target_index})],
-                                                  rewards={'time':1.0})
+                                                  rewards={'time':1.0},
+                                                  exec_count=0)
                 self.transitions.append(trans)
                 if edge.action == "doorPassing":
                     self.door_transitions.append(trans)
@@ -118,9 +110,6 @@ class TopMapMdp(Mdp):
             if value.conds['waypoint']==waypoint_var_val:
                 return key
         rospy.logerr("Waypoint not found!")
-        
-    def get_waypoint_var_val(self, waypoint_prop):
-        return self.props_def[waypoint_prop].conds['waypoint']
     
     def set_mdp_action_durations(self, file_name, epoch=None):
         if epoch is None:
@@ -144,6 +133,7 @@ class TopMapMdp(Mdp):
     
     def add_door_model(self, forget_doors):
         rospy.loginfo("Adding doors")
+        self.reward_names.append("info")
         door_targets=[]
         for i in range(0,len(self.door_transitions)):
             transition = self.door_transitions[i]
@@ -154,7 +144,6 @@ class TopMapMdp(Mdp):
                 index=door_targets.index(source)
                 var_name="door_edge" + str(index)
                 check_door_action_name='check_door' + str(index)
-                self.action_descriptions[check_door_action_name].waypoints.append(self.get_waypoint_prop(source))
             else:
                 door_targets.append(target)
                 var_name="door_edge"+str(self.n_door_edges)
@@ -166,30 +155,8 @@ class TopMapMdp(Mdp):
                 self.actions.append(check_door_action_name)
                 self.n_actions=self.n_actions+1
                 self.n_door_edges=self.n_door_edges+1
-                action_description=MdpAction()
-                action_description.name=check_door_action_name
-                action_description.action_server="door_check"
-                action_description.waypoints=[self.get_waypoint_prop(source)]
-                action_description.pre_conds=[StringIntPair(string_data=var_name, int_data=-1)]
-                outcome=MdpActionOutcome()
-                outcome.probability=0.9
-                outcome.post_conds=[StringIntPair(string_data=var_name, int_data=1)]
-                outcome.duration_probs=[1]
-                outcome.durations=[0.1]
-                outcome.status=[GoalStatus.SUCCEEDED]
-                outcome.result=[StringTriple(attribute="open", type=MdpActionOutcome.BOOL_TYPE, value="True")]
-                action_description.outcomes.append(outcome)
-                outcome=MdpActionOutcome()
-                outcome.probability=0.1
-                outcome.post_conds=[StringIntPair(string_data=var_name, int_data=0)]
-                outcome.duration_probs=[1]
-                outcome.durations=[0.1]
-                outcome.status=[GoalStatus.SUCCEEDED]
-                outcome.result=[StringTriple(attribute="open", type=MdpActionOutcome.BOOL_TYPE, value="False")]
-                action_description.outcomes.append(outcome)
-                self.action_descriptions[check_door_action_name]=action_description
                 #update transition <- can only pass if door is open
-            transition.pre_conds[var_name]=1            
+            transition.pre_conds[var_name]=1
             if forget_doors:
                 #reset dooo value to -1
                 for j in range(0, len(transition.prob_post_conds)):
@@ -198,11 +165,8 @@ class TopMapMdp(Mdp):
             self.transitions.append(MdpTransitionDef(action_name=check_door_action_name,
                                         pre_conds={'waypoint':source, var_name:-1},
                                         prob_post_conds=[[0.1,{'waypoint':source, var_name:0}],[0.9,{'waypoint':source, var_name:1}]],
-                                        rewards={'time':0.1}))
-            
-            
-            
-            
+                                        rewards={'time':0.1, 'info':1},
+                                        exec_count=0))
             
     def set_open_door_probabilities(self, file_name, epoch=None):
         if epoch is not None:
@@ -211,60 +175,4 @@ class TopMapMdp(Mdp):
             rospy.loginfo("Getting door probabilities for now")
         #TODO change door transition probabilities
         self.write_prism_model(file_name)
-        
-
-    def string_int_pair_list_to_dict(self, string_int_pair_list):
-        res={}
-        for string_int_pair in string_int_pair_list:
-            res[string_int_pair.string_data]=string_int_pair.int_data
-        return res
-    
-    def action_msg_to_transition(self, action_msg, waypoint, use_expected_duration):
-        pre_conds=self.string_int_pair_list_to_dict(action_msg.pre_conds)
-        if waypoint is not None:
-            pre_conds["waypoint"]=self.get_waypoint_var_val(waypoint)
-        post_conds=[]
-        total_prob=0
-        for outcome in action_msg.outcomes:
-            total_prob+=outcome.probability
-            post_cond=self.string_int_pair_list_to_dict(outcome.post_conds)
-            if outcome.waypoint != '':
-                post_cond["waypoint"]=self.get_waypoint_var_val(outcome.waypoint)
-            post_conds.append([outcome.probability, post_cond])
-        if total_prob !=1:
-            rospy.logerr("Probabilities of action outcomes don't add up to 1")
-        
-        if use_expected_duration:
-            expected_duration=0
-            for outcome in action_msg.outcomes:
-                for (dur_prob, dur_val) in zip(outcome.duration_probs, outcome.durations):
-                    expected_duration+=outcome.probability*dur_prob*dur_val
-        else:
-            rospy.logerr("Clustered times not supported yet...")
-                    
-        return MdpTransitionDef(action_name=action_msg.name,
-                                    pre_conds=pre_conds,
-                                    prob_post_conds=post_conds,
-                                    rewards={"time":expected_duration})
-    
-    
-    def add_extra_domain(self, var_list, action_list, use_expected_duration=True):
-        for var in var_list:
-            self.n_state_vars+=1
-            self.state_vars.append(var.name)
-            self.initial_state[var.name]=var.init_val
-            self.state_vars_range[var.name]=[var.min_range, var.max_range]
-        
-        
-        for action in action_list:
-            self.action_descriptions.update({action.name:action})
-            if action.waypoints==[]:
-                self.transitions.append(self.action_msg_to_transition(action, None, use_expected_duration))
-            for waypoint in action.waypoints:
-                self.transitions.append(self.action_msg_to_transition(action, waypoint, use_expected_duration))
-                                            
-                                       
-        
-
-
 
