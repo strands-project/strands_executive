@@ -112,7 +112,7 @@ class ActionExecutor(object):
             status=GoalStatus.SUCCEEDED
             result=None
          
-        return self.build_update_state_dict(status, result, action_msg.outcomes)
+        return (status, self.build_update_state_dict(status, result, action_msg.outcomes))
     
     def build_update_state_dict(self, status, result, action_outcomes):
         for action_outcome_msg in action_outcomes:

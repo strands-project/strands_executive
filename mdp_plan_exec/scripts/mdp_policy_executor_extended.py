@@ -123,8 +123,6 @@ class MdpPolicyExecutor(object):
         status=self.top_nav_policy_exec.get_state()  
         return status
     
-    
-    
     def top_nav_feedback_cb(self,feedback):
         rospy.loginfo("Reached waypoint " + feedback.route_status)
         self.get_next_policy_state(feedback.route_status)
@@ -197,8 +195,12 @@ class MdpPolicyExecutor(object):
                     return
             else:
                 print("EXECUTE ACTION")
-                state_update=self.action_executor.execute_action(self.current_extended_mdp.action_descriptions[next_action])
+                starting_waypoint=self.current_waypoint
+                (status, state_update)=self.action_executor.execute_action(self.current_extended_mdp.action_descriptions[next_action])
                 if not self.cancelled:
+                    self.mdp_as.publish_feedback(ExecutePolicyExtendedFeedback(starting_waypoint=starting_waypoint,
+                                                                               executed_action=self.current_extended_mdp.action_descriptions[next_action].action_server,
+                                                                               execution_status=status))
                     self.get_mdp_state_update_from_action_outcome(state_update)
         
         

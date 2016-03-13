@@ -83,7 +83,8 @@ def create_metric_map_action(waypoint_name, duration=4*60):
     mau.add_int_argument(action, '30')
     return (var, action)
 
-
+def feedback_cb(feedback):
+    print("Got Feedback: " + str(feedback))
 
 if __name__ == '__main__':
     rospy.init_node('mdp_client_test')
@@ -91,6 +92,7 @@ if __name__ == '__main__':
     n_waypoints=4
     
     mdp_ac=actionlib.SimpleActionClient("/mdp_plan_exec/execute_policy_extended", ExecutePolicyExtendedAction)
+    
     mdp_ac.wait_for_server()
     goal=ExecutePolicyExtendedGoal()
     
@@ -115,7 +117,7 @@ if __name__ == '__main__':
     print(service_response)
     
     goal.spec=spec
-    mdp_ac.send_goal(goal)
+    mdp_ac.send_goal(goal, feedback_cb = feedback_cb)
     #mdp_ac.wait_for_result(rospy.Duration(10))
     #mdp_ac.cancel_all_goals()
     mdp_ac.wait_for_result()  
