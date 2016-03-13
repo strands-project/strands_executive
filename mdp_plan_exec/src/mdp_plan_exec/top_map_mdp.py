@@ -44,9 +44,6 @@ class TopMapMdp(Mdp):
         
         self.action_descriptions={}
         
-       
-        
-        
         #DOOR MODELLING
         if explicit_doors:  
             self.n_door_edges=0
@@ -101,8 +98,6 @@ class TopMapMdp(Mdp):
                 self.n_actions=self.n_actions+1 # all actions have a different name
             i=i+1
             
-        
-        
 
     def parse_sta_to_waypoints(self, sta_file, n_states):
         state_vector_names=[None]*n_states
@@ -113,6 +108,39 @@ class TopMapMdp(Mdp):
             state_vector_names[int(line[0])]=self.get_waypoint_prop(int(line[1][1:-2]))
         return state_vector_names
     
+    def map_state_vectors_to_waypoint_expectations(self, sta_file, exp_time_state_vector, prob_state_vector=None, exp_prog_state_vector=None): #TODO  also use probs and progs - needs update to PRISM
+        waypoint_names=[]
+        waypoint_probs=[]
+        waypoint_progs=[]
+        waypoint_times=[]
+        f=open(sta_file)  
+        variables = f.readline()
+        variables = variables.split(',')
+        variables[0] = variables[0].strip('(')
+        variables[-1] = variables[-1].strip(')\n')
+       
+        for line in f:
+            states_string = line.split(':')
+            state_id=int(states_string[0])
+            state_list = states_string[1].split(',')
+            state_list[0] = state_list[0].strip('(')
+            state_list[-1] = state_list[-1].strip(')\n')
+            state_dict={}
+            waypoint_name=None
+            for (var_name, value) in zip(variables, state_list):
+                if var_name=="waypoint":
+                    waypoint_name=self.get_waypoint_prop(int(value))
+                else:
+                    state_dict[var_name] = int(value)
+            if self.check_cond_sat(state_dict, self.initial_state):
+                waypoint_names.append(waypoint_name)
+                waypoint_probs.append(1)
+                waypoint_progs.append(1)
+                waypoint_times.append(exp_time_state_vector[state_id])
+        f.close()
+        return (waypoint_names, waypoint_probs, waypoint_progs, waypoint_times)
+  
+    
     def get_waypoint_prop(self, waypoint_var_val):
         for key, value  in self.props_def.iteritems():
             if value.conds['waypoint']==waypoint_var_val:
@@ -122,18 +150,24 @@ class TopMapMdp(Mdp):
     def get_waypoint_var_val(self, waypoint_prop):
         return self.props_def[waypoint_prop].conds['waypoint']
     
-    def set_mdp_action_durations(self, file_name, epoch=None):
+    def set_mdp_action_durations(self, file_name, epoch=None, set_initial_state=True):
         if epoch is None:
             epoch=rospy.Time.now()
         predictions=self.get_edge_estimates(epoch)
-        if len(predictions.edge_ids) != self.n_actions:
-            rospy.logwarn("Did not receive travel time estimations for all edges, the total navigatio expected values will not be correct")
+        if len(predictions.edge_ids) != len(self.nav_actions):
+            rospy.logwarn("Did not receive travel time estimations for all edges, the total navigation expected values will not be correct")
         for (edge, prob, duration) in zip(predictions.edge_ids, predictions.probs, predictions.durations):
-            index=self.actions.index(edge)
-            transition=self.transitions[index]
-            self.transitions[index].prob_post_conds=[(prob, dict(transition.prob_post_conds[0][1])), (1-prob, dict(transition.pre_conds))]
-            self.transitions[index].rewards["time"]=duration.to_sec()       
-        self.write_prism_model(file_name)
+            found_trans=False
+            for transition in self.transitions:
+                if transition.action_name == edge:
+                    found_trans=True
+                    break
+            if found_trans:
+                transition.prob_post_conds=[(prob, dict(transition.prob_post_conds[0][1])), (1-prob, dict(transition.pre_conds))]
+                transition.rewards["time"]=duration.to_sec()
+            else:
+                rospy.logerr("Error finding topological map edge in MDP for duration setting: " + edge)
+        self.write_prism_model(file_name, set_initial_state)
         
 
     def set_initial_state_from_waypoint(self,current_waypoint):
@@ -254,7 +288,6 @@ class TopMapMdp(Mdp):
             self.state_vars.append(var.name)
             self.initial_state[var.name]=var.init_val
             self.state_vars_range[var.name]=[var.min_range, var.max_range]
-        
         
         for action in action_list:
             self.action_descriptions.update({action.name:action})
