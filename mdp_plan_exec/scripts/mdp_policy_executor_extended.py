@@ -21,19 +21,8 @@ from strands_executive_msgs.msg import ExecutePolicyExtendedAction, ExecutePolic
    
 class MdpPolicyExecutor(object):
     def __init__(self,top_map): 
-        got_service=False
-        while not got_service:
-            try:
-                rospy.wait_for_service('/mdp_plan_exec/get_special_waypoints', 1)
-                got_service=True
-            except rospy.ROSException,e:
-                rospy.loginfo("Waiting for get_special_waypoints service...")
-            if rospy.is_shutdown():
-                return       
-        
-        self.wait_for_result_dur=rospy.Duration(0.1)
 
-        
+        self.wait_for_result_dur=rospy.Duration(0.1)
         self.top_nav_policy_exec= SimpleActionClient('/topological_navigation/execute_policy_mode', ExecutePolicyModeAction)
         got_server=self.top_nav_policy_exec.wait_for_server(rospy.Duration(1))
         while not got_server:
@@ -41,7 +30,6 @@ class MdpPolicyExecutor(object):
             got_server=self.top_nav_policy_exec.wait_for_server(rospy.Duration(1))
             if rospy.is_shutdown():
                 return
-        
         
         self.top_map_mdp=TopMapMdp(top_map, explicit_doors=True)
         self.current_extended_mdp=None
@@ -54,7 +42,7 @@ class MdpPolicyExecutor(object):
         except OSError as ex:
             print 'error creating PRISM directory:',  ex
         self.file_name=top_map+".mdp"
-        self.prism_policy_generator=PrismJavaTalker(8087,self.directory, self.file_name)
+        self.prism_policy_generator=PrismJavaTalker(8088,self.directory, self.file_name)
         
                
         self.current_waypoint=None
@@ -70,8 +58,6 @@ class MdpPolicyExecutor(object):
         self.mdp_as=SimpleActionServer('mdp_plan_exec/execute_policy_extended', ExecutePolicyExtendedAction, execute_cb = self.execute_policy_cb, auto_start = False)
         self.mdp_as.register_preempt_callback(self.preempt_policy_execution_cb)
         self.mdp_as.start()
-        
-
         
 
     def current_waypoint_cb(self,msg):
@@ -136,8 +122,6 @@ class MdpPolicyExecutor(object):
             nav_policy_finished=self.top_nav_policy_exec.wait_for_result(self.wait_for_result_dur)
         status=self.top_nav_policy_exec.get_state()  
         return status
-    
-    
     
     def top_nav_feedback_cb(self,feedback):
         rospy.loginfo("Reached waypoint " + feedback.route_status)
@@ -211,8 +195,12 @@ class MdpPolicyExecutor(object):
                     return
             else:
                 print("EXECUTE ACTION")
-                state_update=self.action_executor.execute_action(self.current_extended_mdp.action_descriptions[next_action])
+                starting_waypoint=self.current_waypoint
+                (status, state_update)=self.action_executor.execute_action(self.current_extended_mdp.action_descriptions[next_action])
                 if not self.cancelled:
+                    self.mdp_as.publish_feedback(ExecutePolicyExtendedFeedback(starting_waypoint=starting_waypoint,
+                                                                               executed_action=self.current_extended_mdp.action_descriptions[next_action].action_server,
+                                                                               execution_status=status))
                     self.get_mdp_state_update_from_action_outcome(state_update)
         
         

@@ -4,7 +4,8 @@ import rospy
 import actionlib
 
 from actionlib_msgs.msg import GoalStatus
-from strands_executive_msgs.msg import ExecutePolicyExtendedAction, ExecutePolicyExtendedFeedback, ExecutePolicyExtendedGoal, MdpStateVar, StringIntPair, StringTriple, MdpAction, MdpActionOutcome
+from strands_executive_msgs.msg import ExecutePolicyExtendedAction, ExecutePolicyExtendedFeedback, ExecutePolicyExtendedGoal, MdpStateVar, StringIntPair, StringTriple, MdpAction, MdpActionOutcome, MdpDomainSpec
+from strands_executive_msgs.srv import GetGuaranteesForCoSafeTask, GetGuaranteesForCoSafeTaskRequest
 import strands_executive_msgs.mdp_action_utils as mau
 
 def add_door(spec): #EXAMPLE OF ADDING AN ACTION WITH UNCERTAIN OUTCOME. NOTE THAT I ADD ACTIONS SIMILAR TO THIS ONE IN THE MDP ANYWAY, JUST AN EXAMPLE
@@ -82,32 +83,51 @@ def create_metric_map_action(waypoint_name, duration=4*60):
     mau.add_int_argument(action, '30')
     return (var, action)
 
-
+def feedback_cb(feedback):
+    print("Got Feedback: " + str(feedback))
 
 if __name__ == '__main__':
     rospy.init_node('mdp_client_test')
     
-    n_waypoints=10
+    n_waypoints=4
     
     mdp_ac=actionlib.SimpleActionClient("/mdp_plan_exec/execute_policy_extended", ExecutePolicyExtendedAction)
+    
     mdp_ac.wait_for_server()
     goal=ExecutePolicyExtendedGoal()
     
+    mdp_estimates=rospy.ServiceProxy("/mdp_plan_exec/get_guarantees_for_co_safe_task", GetGuaranteesForCoSafeTask)
+    request=GetGuaranteesForCoSafeTaskRequest()
+    
+    
+    
+    spec=MdpDomainSpec()
     ltl_task=''
     for i in range(1, n_waypoints+1):
         waypoint_name="WayPoint" + str(i)
         (var, action)=create_metric_map_action(waypoint_name)
-        goal.spec.vars.append(var)
-        goal.spec.actions.append(action)
+        spec.vars.append(var)
+        spec.actions.append(action)
         ltl_task+='(F executed_metric_map_at_' + waypoint_name + '=1) & '
+    spec.ltl_task=ltl_task[:-3]
+    ##spec.ltl_task='(F executed_metric_map_at_WayPoint10=1) & (F executed_metric_map_at_WayPoint5=1) & (F executed_metric_map_at_WayPoint7=1) & (F executed_metric_map_at_WayPoint1=1)'
     
-    #goal.spec.ltl_task=ltl_task[:-3]
-    goal.spec.ltl_task='(F executed_metric_map_at_WayPoint10=1) & (F executed_metric_map_at_WayPoint5=1) & (F executed_metric_map_at_WayPoint7=1) & (F executed_metric_map_at_WayPoint1=1)'
-    mdp_ac.send_goal(goal)
+    request.spec=spec
+    service_response=mdp_estimates(request)
+    print(service_response)
+    
+    goal.spec=spec
+    mdp_ac.send_goal(goal, feedback_cb = feedback_cb)
     #mdp_ac.wait_for_result(rospy.Duration(10))
     #mdp_ac.cancel_all_goals()
     mdp_ac.wait_for_result()  
     print(GoalStatus.to_string(mdp_ac.get_state()))
+    
+    
+   
+   
+   
+
     
     
     

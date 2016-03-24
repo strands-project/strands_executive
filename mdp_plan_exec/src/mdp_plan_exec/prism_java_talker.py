@@ -12,7 +12,8 @@ class PrismJavaTalker(object):
         HOST = "localhost"
         PORT = port
         #prism_dir='/opt/prism-robots/prism'
-        prism_dir='/home/strands/bruno_ws/prism-robots/prism'
+        #prism_dir='/home/strands/bruno_ws/prism-robots/prism'
+        prism_dir='/home/bruno/devel_ws/prism-robots/prism'
         os.chdir(prism_dir)
         os.environ['PRISM_MAINCLASS'] = 'prism.PrismPythonTalker'
         self.java_server=subprocess.Popen(["bin/prism",str(PORT),dir_name, file_name])
@@ -50,9 +51,12 @@ class PrismJavaTalker(object):
     
     
     
-    def get_state_vector(self,specification):
+    def get_state_vector(self,specification, is_partial=False):
         state_vector=[]
-        command='get_vector\n'
+        if is_partial:
+            command='partial_sat_get_vector\n'
+        else:
+            command='get_vector\n'
         command=command+specification+'\n'
         self.lock.acquire()
         self.sock.sendall(command)
@@ -73,7 +77,6 @@ class PrismJavaTalker(object):
                 rospy.logwarn("socket error while getting state vector")
                 self.sock.sendall("error\n")
         self.lock.release()
-        rospy.loginfo("Expected times to target state: " + str(state_vector))
         return state_vector       
         
     def shutdown(self,remove_dir=True):
