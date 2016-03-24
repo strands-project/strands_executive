@@ -119,8 +119,7 @@ class ProductMdp(Mdp):
                 self.transitions.append(MdpTransitionDef(action_name=action_name,
                                                   pre_conds=dict(from_state_def),
                                                   prob_post_conds=[(probability, dict(to_state_def))],
-                                                  rewards=dict(original_transition.rewards),
-                                                  exec_count=original_transition.exec_count))
+                                                  rewards=dict(original_transition.rewards)))
                 self.transitions[-1].rewards[self.ltl_reward_struct_name]=0
 
             self.transitions[-1].rewards[self.ltl_reward_struct_name]=self.transitions[-1].rewards[self.ltl_reward_struct_name]+probability*(self.automaton.distances_to_goal[from_state_def[self.dra_state_name]]-self.automaton.distances_to_goal[to_state_def[self.dra_state_name]])
