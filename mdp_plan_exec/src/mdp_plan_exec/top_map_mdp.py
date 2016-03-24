@@ -3,15 +3,18 @@ from mdp import Mdp, MdpTransitionDef, MdpPropDef
 import rospy
 import actionlib
 from actionlib_msgs.msg import GoalStatus
+from geometry_msgs.msg import PoseStamped
 from strands_navigation_msgs.srv import GetTopologicalMap, PredictEdgeState
 from strands_executive_msgs.msg import MdpAction, MdpActionOutcome, StringIntPair, StringTriple
+import strands_executive_msgs.mdp_action_utils as mau 
+from mongodb_store.message_store import MessageStoreProxy
 from mongodb_store_msgs.msg import StringPair
 
 
 class TopMapMdp(Mdp):
     def __init__(self,top_map_name, explicit_doors=False, forget_doors=False):
         Mdp.__init__(self)
-        
+        forget_doors=True
         got_service=False
         while not got_service:
             try:
@@ -30,6 +33,7 @@ class TopMapMdp(Mdp):
                 rospy.loginfo("Waiting for predict_edges service...")
             if rospy.is_shutdown():
                 return
+        self.mongo=MessageStoreProxy()
         
         self.top_map_name=top_map_name
         self.get_top_map_srv=rospy.ServiceProxy("/topological_map_publisher/get_topological_map", GetTopologicalMap)
@@ -39,6 +43,7 @@ class TopMapMdp(Mdp):
         self.check_spaces_in_top_map()
         
         self.nav_actions=[]
+        self.door_pass_action="door_wait_and_pass"
         self.door_transitions=[]
         self.create_top_map_mdp_structure()
         
@@ -93,7 +98,7 @@ class TopMapMdp(Mdp):
                                                   prob_post_conds=[(1.0, {'waypoint':target_index})],
                                                   rewards={'time':1.0})
                 self.transitions.append(trans)
-                if edge.action == "doorPassing":
+                if edge.action == self.door_pass_action:
                     self.door_transitions.append(trans)
                 self.n_actions=self.n_actions+1 # all actions have a different name
             i=i+1
@@ -150,18 +155,25 @@ class TopMapMdp(Mdp):
     def get_waypoint_var_val(self, waypoint_prop):
         return self.props_def[waypoint_prop].conds['waypoint']
     
-    def set_mdp_action_durations(self, file_name, epoch=None, set_initial_state=True):
+
+    def get_waypoint_pose_argument(self, waypoint):
+        for node in self.top_map.nodes:
+            if node.name==waypoint:
+                return self.mongo.insert(PoseStamped(pose=node.pose))
+            
+    
+    def set_mdp_action_durations(self, file_name, epoch=None):
         if epoch is None:
             epoch=rospy.Time.now()
         try:
             predictions=self.get_edge_estimates(epoch)
             if len(predictions.edge_ids) != self.n_actions:
-                rospy.logwarn("Did not receive travel time estimations for all edges, the total navigation expected values will not be correct")
+                rospy.logwarn("Did not receive travel time estimations for all edges, the total navigatio expected values will not be correct")
             for (edge, prob, duration) in zip(predictions.edge_ids, predictions.probs, predictions.durations):
-                index=self.actions.index(edge)
-                transition=self.transitions[index]
-                self.transitions[index].prob_post_conds=[(prob, dict(transition.prob_post_conds[0][1])), (1-prob, dict(transition.pre_conds))]
-                self.transitions[index].rewards["time"]=duration.to_sec()
+                for transition in self.transitions:
+                    if edge == transition.action_name:
+                        transition.prob_post_conds=[(prob, dict(transition.prob_post_conds[0][1])), (1-prob, dict(transition.pre_conds))]
+                        transition.rewards["time"]=duration.to_sec()
         except rospy.ServiceException, e:
             rospy.logwarn("Error calling edge transversal times prediction service: " + str(e))
             rospy.logwarn("The total navigation expected values will not be for the requested epoch.")
@@ -174,6 +186,34 @@ class TopMapMdp(Mdp):
     def target_in_topological_map(self, waypoint):
         return waypoint in [node.name for node in self.top_map.nodes]
     
+    def add_door_check_action_description(self, source_wp, target_wp, action_name, door_state_var_name):        
+        action_description=MdpAction()
+        action_description.name=action_name
+        action_description.action_server="door_wait"
+        action_description.waypoints=[source_wp]
+        action_description.pre_conds=[StringIntPair(string_data=door_state_var_name, int_data=-1)]
+        pose_id=self.get_waypoint_pose_argument(target_wp)
+        mau.add_object_id_argument(action_description, pose_id, PoseStamped)
+        mau.add_float_argument(action_description, 120)
+        outcome=MdpActionOutcome()
+        outcome.probability=0.9
+        outcome.post_conds=[StringIntPair(string_data=door_state_var_name, int_data=1)]
+        outcome.duration_probs=[1]
+        outcome.durations=[60]
+        outcome.status=[GoalStatus.SUCCEEDED]
+        outcome.result=[StringTriple(attribute="open", type=MdpActionOutcome.BOOL_TYPE, value="True")]
+        action_description.outcomes.append(outcome)
+        outcome=MdpActionOutcome()
+        outcome.probability=0.1
+        outcome.post_conds=[StringIntPair(string_data=door_state_var_name, int_data=0)]
+        outcome.duration_probs=[1]
+        outcome.durations=[120]
+        outcome.status=[GoalStatus.SUCCEEDED]
+        outcome.result=[StringTriple(attribute="open", type=MdpActionOutcome.BOOL_TYPE, value="False")]
+        action_description.outcomes.append(outcome)
+        self.action_descriptions[action_name]=action_description
+    
+    
     def add_door_model(self, forget_doors):
         rospy.loginfo("Adding doors")
         door_targets=[]
@@ -182,11 +222,12 @@ class TopMapMdp(Mdp):
             #add stuff to model
             source=transition.pre_conds['waypoint']
             target=transition.prob_post_conds[0][1]['waypoint']
+            source_wp=self.get_waypoint_prop(source)
+            target_wp=self.get_waypoint_prop(target)
             if source in door_targets:
                 index=door_targets.index(source)
                 var_name="door_edge" + str(index)
-                check_door_action_name='check_door' + str(index)
-                self.action_descriptions[check_door_action_name].waypoints.append(self.get_waypoint_prop(source))
+                check_door_action_name='check_door' + str(index) + '_at_' + source_wp 
             else:
                 door_targets.append(target)
                 var_name="door_edge"+str(self.n_door_edges)
@@ -194,44 +235,40 @@ class TopMapMdp(Mdp):
                 self.state_vars.append(var_name)
                 self.state_vars_range[var_name]=(-1,1) #-1, unkown, 0 closed, 1 open
                 self.initial_state[var_name]=-1
-                check_door_action_name="check_door"+str(self.n_door_edges)
+                check_door_action_name="check_door" + str(self.n_door_edges) + '_at_' + source_wp 
                 self.actions.append(check_door_action_name)
                 self.n_actions=self.n_actions+1
                 self.n_door_edges=self.n_door_edges+1
-                action_description=MdpAction()
-                action_description.name=check_door_action_name
-                action_description.action_server="door_check"
-                action_description.waypoints=[self.get_waypoint_prop(source)]
-                action_description.pre_conds=[StringIntPair(string_data=var_name, int_data=-1)]
-                outcome=MdpActionOutcome()
-                outcome.probability=0.9
-                outcome.post_conds=[StringIntPair(string_data=var_name, int_data=1)]
-                outcome.duration_probs=[1]
-                outcome.durations=[0.1]
-                outcome.status=[GoalStatus.SUCCEEDED]
-                outcome.result=[StringTriple(attribute="open", type=MdpActionOutcome.BOOL_TYPE, value="True")]
-                action_description.outcomes.append(outcome)
-                outcome=MdpActionOutcome()
-                outcome.probability=0.1
-                outcome.post_conds=[StringIntPair(string_data=var_name, int_data=0)]
-                outcome.duration_probs=[1]
-                outcome.durations=[0.1]
-                outcome.status=[GoalStatus.SUCCEEDED]
-                outcome.result=[StringTriple(attribute="open", type=MdpActionOutcome.BOOL_TYPE, value="False")]
-                action_description.outcomes.append(outcome)
-                self.action_descriptions[check_door_action_name]=action_description
-                #update transition <- can only pass if door is open
+            #update transition <- can only pass if door is open
             transition.pre_conds[var_name]=1            
             if forget_doors:
-                #reset dooo value to -1
+                #reset door value to -1
                 for j in range(0, len(transition.prob_post_conds)):
                     transition.prob_post_conds[j][1][var_name]=-1
             #create check transition                
             self.transitions.append(MdpTransitionDef(action_name=check_door_action_name,
                                         pre_conds={'waypoint':source, var_name:-1},
                                         prob_post_conds=[[0.1,{'waypoint':source, var_name:0}],[0.9,{'waypoint':source, var_name:1}]],
-                                        rewards={'time':0.1}))
+                                        rewards={'time':120*0.1+60*0.9}))
+            #add action description
+            self.add_door_check_action_description(source_wp, target_wp, check_door_action_name, var_name)
             
+            #make all other nav transitions from source forget if door was open
+            if forget_doors:
+                extra_trans_list=[]
+                for transition in self.transitions:
+                    if transition not in self.door_transitions and transition.action_name in self.nav_actions and transition.pre_conds["waypoint"]==source:
+                        trans_closed=deepcopy(transition)
+                        trans_open=deepcopy(transition)
+                        transition.pre_conds[var_name]=-1
+                        trans_closed.pre_conds[var_name]=0
+                        trans_open.pre_conds[var_name]=1
+                        for j in range(0, len(transition.prob_post_conds)):
+                            transition.prob_post_conds[j][1][var_name]=-1
+                            trans_closed.prob_post_conds[j][1][var_name]=0
+                            trans_open.prob_post_conds[j][1][var_name]=-1
+                            extra_trans_list+=[trans_open, trans_closed]
+                self.transitions+=extra_trans_list
             
             
             
