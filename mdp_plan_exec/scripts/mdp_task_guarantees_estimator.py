@@ -38,7 +38,7 @@ class MdpTaskGuaranteesEstimator(object):
         self.current_extended_mdp.add_extra_domain(req.spec.vars, req.spec.actions)
         if req.epoch != self.last_epoch:
             self.last_epoch=req.epoch
-            self.current_extended_mdp.set_mdp_action_durations(self.directory+self.file_name, req.epoch, set_initial_state=False)
+        self.current_extended_mdp.set_mdp_action_durations(self.directory+self.file_name, req.epoch, set_initial_state=False) #TODO we need this here to update the MDP model file, but we shouldn't need to get new action durations to do it when the epoch didnt change.
         specification=self.generate_prism_specification(req.spec.ltl_task)
         rospy.loginfo("The specification is " + specification)
         state_vector=self.prism_estimator.get_state_vector(specification, is_partial=True)
