@@ -44,6 +44,7 @@ class TopMapMdp(Mdp):
         
         self.nav_actions=[]
         self.door_pass_action="door_wait_and_pass"
+        self.door_timeout=240
         self.door_transitions=[]
         self.create_top_map_mdp_structure()
         
@@ -190,7 +191,7 @@ class TopMapMdp(Mdp):
         action_description.pre_conds=[StringIntPair(string_data=door_state_var_name, int_data=-1)]
         pose_id=self.get_waypoint_pose_argument(target_wp)
         mau.add_object_id_argument(action_description, pose_id, PoseStamped)
-        mau.add_float_argument(action_description, 120)
+        mau.add_float_argument(action_description, self.door_timeout)
         outcome=MdpActionOutcome()
         outcome.probability=0.9
         outcome.post_conds=[StringIntPair(string_data=door_state_var_name, int_data=1)]
@@ -203,7 +204,7 @@ class TopMapMdp(Mdp):
         outcome.probability=0.1
         outcome.post_conds=[StringIntPair(string_data=door_state_var_name, int_data=0)]
         outcome.duration_probs=[1]
-        outcome.durations=[120]
+        outcome.durations=[self.door_timeout]
         outcome.status=[GoalStatus.SUCCEEDED]
         outcome.result=[StringTriple(attribute="open", type=MdpActionOutcome.BOOL_TYPE, value="False")]
         action_description.outcomes.append(outcome)
@@ -245,7 +246,7 @@ class TopMapMdp(Mdp):
             self.transitions.append(MdpTransitionDef(action_name=check_door_action_name,
                                         pre_conds={'waypoint':source, var_name:-1},
                                         prob_post_conds=[[0.1,{'waypoint':source, var_name:0}],[0.9,{'waypoint':source, var_name:1}]],
-                                        rewards={'time':120*0.1+60*0.9}))
+                                        rewards={'time':self.door_timeout*0.1+60*0.9}))
             #add action description
             self.add_door_check_action_description(source_wp, target_wp, check_door_action_name, var_name)
             
