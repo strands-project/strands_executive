@@ -154,7 +154,7 @@ class MdpPolicyExecutor(object):
        
     def get_mdp_state_update_from_action_outcome(self, state_update):
         #current_state_def=self.current_nav_policy_state_defs[self.current_flat_state]
-        current_state_def=self.policy_mdp.flat_state_defs[self.current_flat_state]
+        current_state_def=deepcopy(self.policy_mdp.flat_state_defs[self.current_flat_state])
         current_state_def.update(state_update)
         del current_state_def["_da"]
         for flat_suc in self.policy_mdp.flat_state_sucs[self.current_flat_state]:
