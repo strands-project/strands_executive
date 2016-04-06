@@ -17,7 +17,7 @@ from std_msgs.msg import String
 import threading
 
 class BaseTaskExecutor(object):
-    # These can be implemented by sub classes to provide hooks into the execution system
+    # These should be implemented by sub classes to provide hooks into the execution system
 
     def add_tasks(self, tasks):
         """ Called with new tasks for the executor """
@@ -51,6 +51,10 @@ class BaseTaskExecutor(object):
     def cancel_task(self, task_id):
         """ Called when a request is received to cancel a task. The currently executing one is checked elsewhere. """
         return False
+
+    def cancel_active_task(self):
+        """ Called to cancel the task which is currently executing """
+        pass
 
     def clear_schedule(self):
         """ Called to clear all tasks from schedule, with the exception of the currently executing one. """

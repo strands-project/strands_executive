@@ -98,3 +98,7 @@ def python_to_rostime(ptime):
     return rospy.Time((ptime - datetime(1970,1,1, tzinfo=ptime.tzinfo)).total_seconds())
 
 
+def rostime_close(target, reading, delta = rospy.Duration(60)):
+    return abs((target - reading).to_sec()) <= delta.to_sec()
+
+

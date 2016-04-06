@@ -4,6 +4,7 @@ from __future__ import with_statement
 import rospy
 from Queue import Queue, Empty
 from strands_executive_msgs.msg import Task, ExecutionStatus, DurationMatrix, DurationList, ExecutePolicyExtendedAction, ExecutePolicyExtendedFeedback, ExecutePolicyExtendedGoal, MdpStateVar, StringIntPair, StringTriple, MdpAction, MdpActionOutcome, MdpDomainSpec
+from strands_executive_msgs.srv import GetGuaranteesForCoSafeTask, GetGuaranteesForCoSafeTaskRequest
 from task_executor.base_executor import BaseTaskExecutor
 from threading import Thread
 from task_executor.execution_schedule import ExecutionSchedule
@@ -13,6 +14,8 @@ from math import floor
 import threading
 import actionlib
 from task_executor.SortedCollection import SortedCollection
+from task_executor.utils import rostime_to_python, rostime_close
+from dateutil.tz import tzlocal
 
 
 class MDPTask(object):
@@ -61,6 +64,9 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
         # collection of MDPTasks sorted by deadline
         self.normal_tasks = SortedCollection(key=(lambda t: t.task.end_before))
+        self.time_critical_tasks = SortedCollection(key=(lambda t: t.task.execution_time))
+
+
         self.state_lock = threading.Lock()
         self.mdp_exec_client = None
         self.active_batch = []
@@ -69,8 +75,11 @@ class MDPTaskExecutor(BaseTaskExecutor):
         self.mdp_exec_thread = Thread(target=self.mdp_exec)    
         self.mdp_exec_thread.start()
         
-        self.advertise_services()
+        self.time_critical_expectation_thread = Thread(target=self.process_time_critical)
+        self.time_critical_expectation_thread.start()
 
+        self.advertise_services()
+        self.tz = tzlocal()
         
 
     def _convert_task_to_mdp_action(self, task):
@@ -134,23 +143,78 @@ class MDPTaskExecutor(BaseTaskExecutor):
         with self.state_lock:
             # are we in the window for a time-critical task?
             # 
-            # if not take the next n tasks
-            n = 5
-            self.active_batch = self.normal_tasks[:n]
-            if len(self.active_batch) > 0:
-                self.normal_tasks = SortedCollection(self.normal_tasks[n:], key=(lambda t: t.task.end_before))                
+
+            now = rospy.get_rostime()
+
+            # how much time is available for execution from now
+            available_time = rospy.Duration(3600)
+
+            if len(self.time_critical_tasks) > 0:
+                next_time_critical_task = self.time_critical_tasks[0]
+
+                # print 'now: ', rostime_to_python(now, tz=self.tz)
+                # print 'start after: ', rostime_to_python(next_time_critical_task.task.start_after, tz=self.tz)
+                # print 'first critical: ', rostime_to_python(next_time_critical_task.task.execution_time, tz=self.tz)
+
+                until_next_critical_task = next_time_critical_task.task.execution_time - now
+                print 'time to next critical task %s' % until_next_critical_task.to_sec()
+                if until_next_critical_task < available_time:
+                    available_time = until_next_critical_task
+
+            print 'available time for normal tasks %s' % available_time.to_sec()
+
+            # create mdp task, checking time at each point
+
+            batch_limit = 5
+            batch_size = 0
+            ltl_task = ''
+            mdp_spec = MdpDomainSpec()
+            request = GetGuaranteesForCoSafeTaskRequest()
+
+            mdp_estimates = rospy.ServiceProxy('mdp_plan_exec/get_guarantees_for_co_safe_task', GetGuaranteesForCoSafeTask)
+            mdp_estimates.wait_for_service()
+
+            for mdp_task in self.normal_tasks[:batch_limit]:                
+                if batch_size == batch_limit:
+                    break
+
+                mdp_spec.vars.append(mdp_task.state_var)
+                mdp_spec.actions.append(mdp_task.action)                    
+                ltl_task += '(F %s=1) & '% mdp_task.state_var.name                
+                mdp_spec.ltl_task = ltl_task[:-3]
+                request.spec = mdp_spec
+                service_response = mdp_estimates(request)
+                expected_policy_duration = service_response.travel_times[service_response.initial_waypoints.index(self.get_topological_node())]
+                print 'policy duration: ', expected_policy_duration.to_sec()
+                
+                if expected_policy_duration > available_time:
+                    break
+
+                batch_size += 1
+
+            print 'number of normal tasks: ', batch_size            
+
+            if batch_size > 0:
+                self.active_batch = self.normal_tasks[:batch_size]
+                self.normal_tasks = SortedCollection(self.normal_tasks[batch_size:], key=(lambda t: t.task.end_before))                
                 
                 mdp_goal = ExecutePolicyExtendedGoal()
-                mdp_spec = MdpDomainSpec()
-                ltl_task = ''
-                for mdp_task in self.active_batch:
-                    mdp_spec.vars.append(mdp_task.state_var)
-                    mdp_spec.actions.append(mdp_task.action)
-                    
-                    ltl_task += '(F %s=1) & '% mdp_task.state_var.name
-                
                 mdp_spec.ltl_task = ltl_task[:-3]
                 mdp_goal.spec = mdp_spec
+                self.mdp_exec_queue.put(mdp_goal)
+                
+            elif len(self.time_critical_tasks) and rostime_close(now, next_time_critical_task.task.execution_time):
+                print 'going for time critical'
+                self.active_batch = [next_time_critical_task]
+                self.time_critical_tasks = SortedCollection(self.time_critical_tasks[1:], key=(lambda t: t.task.execution_time))
+
+                mdp_goal = ExecutePolicyExtendedGoal()
+                
+                mdp_spec = MdpDomainSpec()
+                mdp_spec.vars.append(next_time_critical_task.state_var)
+                mdp_spec.actions.append(next_time_critical_task.action)                    
+                mdp_spec.ltl_task = '(F %s=1)'% next_time_critical_task.state_var.name                
+                mdp_goal.spec = mdp_spec    
                 self.mdp_exec_queue.put(mdp_goal)
 
 
@@ -169,7 +233,23 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
             self.next_execution_batch()
             
-                    
+    def process_time_critical(self):
+
+        while not rospy.is_shutdown():
+            
+            try:
+                mdp_task = self.new_time_critical_tasks.get(timeout = 1)
+                # mdp_estimates = rospy.ServiceProxy('mdp_plan_exec/get_guarantees_for_co_safe_task', GetGuaranteesForCoSafeTask)
+                # request = GetGuaranteesForCoSafeTaskRequest()
+                # faked nav time
+                expected_nav_time = rospy.Duration(120)
+                mdp_task.task.execution_time = mdp_task.task.start_after - expected_nav_time
+                with self.state_lock:
+                    self.time_critical_tasks.insert(mdp_task)
+
+            except Empty, e:
+                pass
+
 
 
         
