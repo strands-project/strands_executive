@@ -199,7 +199,7 @@ class MdpPolicyExecutor(object):
                 (status, state_update)=self.action_executor.execute_action(self.current_extended_mdp.action_descriptions[next_action])
                 if not self.cancelled:
                     self.mdp_as.publish_feedback(ExecutePolicyExtendedFeedback(starting_waypoint=starting_waypoint,
-                                                                               executed_action=self.current_extended_mdp.action_descriptions[next_action].action_server,
+                                                                               executed_action=self.current_extended_mdp.action_descriptions[next_action].name,
                                                                                execution_status=status))
                     self.get_mdp_state_update_from_action_outcome(state_update)
         
