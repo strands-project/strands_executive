@@ -1,0 +1,20 @@
+<launch>
+
+
+  <!-- run mdp plan exec -->
+  <include file="$(find mdp_plan_exec)/launch/mdp_plan_exec_extended.launch">
+  </include>
+
+
+  <!-- mdp task system using mdp navigation -->
+  <node pkg="task_executor" type="mdp_task_executor.py" name="mdp_task_executor"  output="screen">
+  	<param name="nav_service" type="string" value="mdp" />
+  </node>
+
+
+
+  
+  <!-- Utility node used for generating wait behaviours -->
+  <node pkg="wait_action" type="wait_node.py" name="wait_action"  output="screen"/>    
+
+</launch>

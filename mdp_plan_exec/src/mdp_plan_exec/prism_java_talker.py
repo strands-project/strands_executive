@@ -13,7 +13,8 @@ class PrismJavaTalker(object):
         PORT = port
         #prism_dir='/opt/prism-robots/prism'
         #prism_dir='/home/strands/bruno_ws/prism-robots/prism'
-        prism_dir='/home/bruno/devel_ws/prism-robots/prism'
+        # prism_dir='/home/bruno/devel_ws/prism-robots/prism'
+        prism_dir='/Users/nah/code/prism-robots/prism'
         os.chdir(prism_dir)
         os.environ['PRISM_MAINCLASS'] = 'prism.PrismPythonTalker'
         self.java_server=subprocess.Popen(["bin/prism",str(PORT),dir_name, file_name])
