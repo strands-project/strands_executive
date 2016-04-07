@@ -4,4 +4,4 @@ time epoch
 string[] initial_waypoints
 float64[] probabilities
 float64[] prog_rewards
-duration[] travel_times
+duration[] expected_times
