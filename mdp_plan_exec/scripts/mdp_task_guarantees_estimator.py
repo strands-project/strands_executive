@@ -58,6 +58,10 @@ class MdpTaskGuaranteesEstimator(object):
 
 if __name__ == '__main__':
     rospy.init_node('mdp_task_guarantees_estimator')
+    
+    while not rospy.has_param("/topological_map_name") and not rospy.is_shutdown():
+        rospy.sleep(0.1)
+
     top_map_name=rospy.get_param("/topological_map_name")
     mdp_estimator =  MdpTaskGuaranteesEstimator(top_map_name)
     mdp_estimator.main()
