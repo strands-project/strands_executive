@@ -6,11 +6,11 @@
   </include>
 
 
-  <!-- task system using mdp navigation -->
-<!--   <node pkg="task_executor" type="mdp_task_executor.py" name="mdp_task_executor"  output="screen">
+  <!-- mdp task system using mdp navigation -->
+  <node pkg="task_executor" type="mdp_task_executor.py" name="mdp_task_executor"  output="screen">
   	<param name="nav_service" type="string" value="mdp" />
   </node>
- -->
+
 
 
   
