@@ -25,7 +25,7 @@ class MdpTaskGuaranteesEstimator(object):
         self.file_name=top_map+".mdp"
         self.prism_estimator=PrismJavaTalker(8087,self.directory, self.file_name)
         self.last_epoch=-1
-        self.travel_times_to_waypoint_service = rospy.Service('/mdp_plan_exec/get_guarantees_for_co_safe_task',
+        self.get_guarantees_service = rospy.Service('/mdp_plan_exec/get_guarantees_for_co_safe_task',
                                                               GetGuaranteesForCoSafeTask,
                                                               self.get_guarantees_cb)
         rospy.loginfo("MDP task guarantees estimator initialised.")
@@ -46,7 +46,7 @@ class MdpTaskGuaranteesEstimator(object):
         return GetGuaranteesForCoSafeTaskResponse(initial_waypoints=waypoint_names,
                                                   probabilities=waypoint_probs,
                                                   prog_rewards=waypoint_progs,
-                                                  travel_times=map(rospy.Duration, waypoint_times))
+                                                  expected_times=map(rospy.Duration, waypoint_times))
         
 
     def main(self):
