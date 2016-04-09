@@ -3,7 +3,7 @@ import actionlib
 from actionlib_msgs.msg import GoalStatus
 from mongodb_store.message_store import MessageStoreProxy
 import mongodb_store.util as dc_util
-from strands_executive_msgs.msg import MdpAction
+from strands_executive_msgs.msg import MdpAction, Task
 
 
 class ActionExecutor(object):
@@ -23,19 +23,20 @@ class ActionExecutor(object):
         raise RuntimeError('No action associated with topic: %s'% action_server)
         
     def instantiate_from_string_pair(self, string_pair):
-        if len(string_pair[0]) == MdpAction.STRING_TYPE:
+        if string_pair[0] == Task.STRING_TYPE:
             return string_pair[1]
-        elif string_pair[0] == MdpAction.INT_TYPE:
+        elif string_pair[0] == Task.INT_TYPE:
             return int(string_pair[1])
-        elif string_pair[0] == MdpAction.FLOAT_TYPE:
+        elif string_pair[0] == Task.FLOAT_TYPE:
             return float(string_pair[1])     
-        elif string_pair[0] ==MdpAction.TIME_TYPE:
+        elif string_pair[0] ==Task.TIME_TYPE:
             return rospy.Time.from_sec(float(string_pair[1]))
-        elif string_pair[0] == MdpAction.DURATION_TYPE:
+        elif string_pair[0] == Task.DURATION_TYPE:
             return rospy.Duration.from_sec(float(string_pair[1]))
-        elif string_pair[0] == MdpAction.BOOL_TYPE:   
+        elif string_pair[0] == Task.BOOL_TYPE:   
             return string_pair[1] == 'True'
-        else:
+        else:           
+
             msg = self.msg_store.query_id(string_pair[1], string_pair[0])[0]
             # print msg
             if msg == None:

@@ -3,7 +3,7 @@ from mongodb_store_msgs.msg import StringPair
 from strands_executive_msgs.msg import Task
 
 def add_string_argument(task, string_arg):
-	task.arguments.append(StringPair(second=string_arg))
+	task.arguments.append(StringPair(first=Task.STRING_TYPE, second=string_arg))
 
 def add_int_argument(task, int_arg):
 	task.arguments.append(StringPair(first=Task.INT_TYPE, second=str(int_arg)))
