@@ -418,7 +418,7 @@ class BaseTaskExecutor(object):
 
 
     def instantiate_from_string_pair(self, string_pair):
-        if len(string_pair.first) == 0:
+        if string_pair.first == Task.STRING_TYPE:
             return string_pair.second
         elif string_pair.first == Task.INT_TYPE:
             return int(string_pair.second)
