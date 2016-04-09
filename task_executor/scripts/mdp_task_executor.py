@@ -90,7 +90,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
         # print task
 
 
-        action_name = task.action + '_at_' + task.start_node_id
+        action_name = 'n'+ str(task.task_id) + '_' + task.action + '_at_' + task.start_node_id  
         state_var_name = 'executed_' + action_name
 
         state_var = MdpStateVar(name = state_var_name,

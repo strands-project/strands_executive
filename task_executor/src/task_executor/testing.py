@@ -1,11 +1,10 @@
-#!/usr/bin/env python
-PKG = 'task_executor'
-NAME = 'scheduled_exe_tester'
+from __future__ import with_statement 
 
 import rospy
 import unittest
 import rostest
 import random
+import threading
 
 import actionlib
 from strands_executive_msgs.msg import Task
@@ -33,35 +32,50 @@ class FakeActionServer(object):
         # print 'called with goal %s'%goal
         rospy.sleep(self.action_sleep)
 
-        task_description = self.master.task_descriptions.pop(0)
-        self.tester.assertEquals(task_description[0], self.master.node_id)
-        self.tester.assertEquals(task_description[1], self.action_string)
-        self.tester.assertEquals(task_description[2], goal.some_goal_string)
-        self.tester.assertEquals(task_description[3], goal.test_pose)
-        self.server.set_succeeded()
+        # print 'after sleep'
+        with self.master.state_lock:
+
+            for i in range(len(self.master.task_descriptions)):
+                task_description = self.master.task_descriptions[i]
+
+                # print task_description[0], task_description[1], task_description[2], task_description[3]
+                # print self.master.node_id , self.action_string , goal.some_goal_string , goal.test_pose 
+                # task_description[0] == self.master.node_id and 
+                if task_description[1] == self.action_string and task_description[2] == goal.some_goal_string and task_description[3] == goal.test_pose: 
+                    print 'done task ', self.action_string, goal.some_goal_string
+                    del self.master.task_descriptions[i]
+                    self.server.set_succeeded()
+                    return
+
+        self.server.set_aborted()
 
 
 
-class FIFOTester(object):
+
+class TaskTester(object):
     def __init__(self, action_types, action_prefix, task_descriptions, action_sleep, tester):        
         self.tester = tester
         self.action_sleep = action_sleep
-        self.node_id = ''
+        # self.node_id = ''
         self.task_descriptions = task_descriptions
         self.action_servers = [FakeActionServer(action_prefix + str(n), action_sleep, self, tester) for n in range(action_types)]
-        
+        self.state_lock = threading.Lock()
     
     def wait_for_completion(self, wait_duration):
         # give everything time to complete
-        rospy.sleep(wait_duration)
-        self.tester.assertEquals(self.task_descriptions, [])
+        start = rospy.get_rostime()
+        end = start + wait_duration
+        while not rospy.is_shutdown() and rospy.get_rostime() < end:
+            with self.state_lock:
+                if len(self.task_descriptions) == 0:
+                    return 
+            rospy.sleep(1)
 
 
-class TestEntry(unittest.TestCase):
-# class TestEntry(object):
-    def __init__(self, *args):         
+class TestEntry(object):
+    def __init__(self, name, *args):         
         super(TestEntry, self).__init__(*args)    
-        rospy.init_node(NAME)
+        rospy.init_node(name)
         self.node_names = []
         rospy.Subscriber('topological_map', TopologicalMap, self.map_callback)
 
@@ -76,10 +90,10 @@ class TestEntry(unittest.TestCase):
             rospy.sleep(1)
         return self.node_names
 
-    def test_fifo_task_executor(self):   
+    def run_test(self, task_descriptions_fn):   
         waypoints = self.get_nodes()
         action_types = 5
-        test_tasks = 5
+        test_tasks = 20
         action_sleep = rospy.Duration.from_sec(2)
         action_prefix = 'test_task_'
 
@@ -91,7 +105,7 @@ class TestEntry(unittest.TestCase):
         start_delay = rospy.Duration(8)
 
         task_start = rospy.get_rostime() + start_delay
-        task_window_size = action_sleep + action_sleep + rospy.Duration(200)
+        task_window_size = action_sleep + action_sleep + rospy.Duration(10000)
 
         for n in range(test_tasks):
             string = 'oh what a lovely number %s is' % n
@@ -103,18 +117,18 @@ class TestEntry(unittest.TestCase):
             task_start += action_sleep
         assert test_tasks == len(task_descriptions)
 
-        executor = FIFOTester(action_types, action_prefix, task_descriptions, action_sleep, self)    
+        task_tester = TaskTester(action_types, action_prefix, task_descriptions, action_sleep, self)    
 
         # get task services
-        add_task_srv_name = '/task_executor/add_tasks'
-        set_exe_stat_srv_name = '/task_executor/set_execution_status'
+        add_task_srv_name = 'task_executor/add_tasks'
+        set_exe_stat_srv_name = 'task_executor/set_execution_status'
         rospy.loginfo("Waiting for task_executor service...")
         rospy.wait_for_service(add_task_srv_name)
         rospy.wait_for_service(set_exe_stat_srv_name)
         rospy.loginfo("Done")        
         add_tasks_srv = rospy.ServiceProxy(add_task_srv_name, AddTasks)
         set_execution_status = rospy.ServiceProxy(set_exe_stat_srv_name, SetExecutionStatus)
-        
+
         try:
                 
             tasks = []
@@ -130,26 +144,21 @@ class TestEntry(unittest.TestCase):
                 task.end_before = task_description[7]
                 task.max_duration = action_sleep + action_sleep 
                 tasks.append(task)
+                # print task
 
-            add_tasks_srv(tasks)
+            add_tasks_srv(tasks)    
             
             # Start the task executor running
             set_execution_status(True)
 
-            wait_duration = start_delay
+            max_wait_duration = start_delay
+            max_travel = rospy.Duration(90)
             for n in range(test_tasks):
-                wait_duration += action_sleep + action_sleep + action_sleep
+                max_wait_duration += (action_sleep + max_travel)
 
-            executor.wait_for_completion(wait_duration)
+            task_tester.wait_for_completion(max_wait_duration)
+            if task_descriptions_fn is not None:
+                task_descriptions_fn(task_tester.task_descriptions)
 
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
-
-        
-
-if __name__ == '__main__':
-    rostest.rosrun(PKG, NAME, TestEntry, sys.argv)
-    # rospy.init_node('test_travel_time_estimator')
-    # executor = TestEntry()        
-    # executor.test_fifo_task_executor()
-
