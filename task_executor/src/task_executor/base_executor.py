@@ -86,6 +86,7 @@ class BaseTaskExecutor(object):
         # start with some faked but likely one in case of problems
         self.current_node = 'WayPoint1'
         self.closest_node = 'WayPoint1'
+        self.received_a_node = False
         rospy.Subscriber('/current_node', String, self.update_topological_location)
         rospy.Subscriber('/closest_node', String, self.update_topological_closest_node)
         self.active_task = None
@@ -103,11 +104,11 @@ class BaseTaskExecutor(object):
 
     def update_topological_location(self, node_name):
         self.current_node = node_name.data
-
+        self.received_a_node = True
     
     def update_topological_closest_node(self,node_name):
         self.closest_node=node_name.data
-
+        self.received_a_node = True
 
     def advertise_services(self):  
         """
@@ -132,7 +133,12 @@ class BaseTaskExecutor(object):
 
 
     def get_topological_node(self):
-        if self.current_node == 'none':
+
+        # wait for that first update. this will block until either current or closest is set
+        while not self.received_a_node and not rospy.is_shutdown():
+            rospy.sleep(0.1)
+
+        if self.current_node is None or self.current_node == 'none':
             return self.closest_node
         else:
             return self.current_node
