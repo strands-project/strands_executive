@@ -1111,7 +1111,7 @@
       node: WayPoint21
       recovery_behaviours_config: ''
       top_vel: 0.55
-    - action: doorPassing
+    - action: door_wait_and_pass
       edge_id: WayPoint22_WayPoint23
       inflation_radius: 0.0
       map_2d: tsc2015
@@ -1157,7 +1157,7 @@
     pointset: tsc2015
   node:
     edges:
-    - action: doorPassing
+    - action: door_wait_and_pass
       edge_id: WayPoint23_WayPoint22
       inflation_radius: 0.0
       map_2d: tsc2015
@@ -2046,7 +2046,7 @@
       node: WayPoint35
       recovery_behaviours_config: ''
       top_vel: 0.55
-    - action: doorPassing
+    - action: door_wait_and_pass
       edge_id: WayPoint36_WayPoint37
       inflation_radius: 0.0
       map_2d: tsc2015
@@ -2092,7 +2092,7 @@
     pointset: tsc2015
   node:
     edges:
-    - action: doorPassing
+    - action: door_wait_and_pass
       edge_id: WayPoint37_WayPoint36
       inflation_radius: 0.0
       map_2d: tsc2015
@@ -2152,7 +2152,7 @@
       node: WayPoint37
       recovery_behaviours_config: ''
       top_vel: 0.55
-    - action: doorPassing
+    - action: door_wait_and_pass
       edge_id: WayPoint38_WayPoint39
       inflation_radius: 0.0
       map_2d: tsc2015
@@ -2198,7 +2198,7 @@
     pointset: tsc2015
   node:
     edges:
-    - action: doorPassing
+    - action: door_wait_and_pass
       edge_id: WayPoint39_WayPoint38
       inflation_radius: 0.0
       map_2d: tsc2015
@@ -2392,7 +2392,7 @@
       node: WayPoint40
       recovery_behaviours_config: ''
       top_vel: 0.55
-    - action: doorPassing
+    - action: door_wait_and_pass
       edge_id: WayPoint41_WayPoint48
       inflation_radius: 0.0
       map_2d: tsc2015
@@ -2784,7 +2784,7 @@
     pointset: tsc2015
   node:
     edges:
-    - action: doorPassing
+    - action: door_wait_and_pass
       edge_id: WayPoint48_WayPoint41
       inflation_radius: 0.0
       map_2d: tsc2015
