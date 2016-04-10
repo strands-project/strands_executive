@@ -101,7 +101,7 @@ class TestEntry(object):
             rospy.sleep(1)
         return self.node_names
 
-    def run_test(self, task_descriptions_fn, test_tasks = 20, time_critical_tasks = 0, time_diffs_fn = None):   
+    def run_test(self, task_descriptions_fn, test_tasks = 20, time_critical_tasks = 0, time_diffs_fn = None, pause_delay = rospy.Duration(10), pause_count = 0):   
         waypoints = self.get_nodes()
         action_types = 5
         action_sleep = rospy.Duration.from_sec(2)
@@ -181,6 +181,15 @@ class TestEntry(object):
             max_travel = rospy.Duration(90)
             for n in range(test_tasks):
                 max_wait_duration += (action_sleep + max_travel)
+
+            for pause in range(pause_count):
+                rospy.sleep(pause_delay)
+                print 'pause %s/%s' % (pause + 1, pause_count)
+                set_execution_status(False)
+                for i in range(10):
+                    print 10 - i
+                    rospy.sleep(1)
+                set_execution_status(True)
 
             task_tester.wait_for_completion(max_wait_duration)
 

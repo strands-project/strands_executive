@@ -28,20 +28,23 @@ class BaseTaskExecutor(object):
         pass
 
     def pause_execution(self):
-        """ Called when overall execution should pause """
+        """ Called when overall execution should pause. This is called *before* self.executing is set to False. """
         pass
 
-    def task_complete(self, task):
-        """ Called when the given task has completed execution """
-        pass
 
-    def task_succeeded(self, task):
-        """ Called when the given task has completed execution successfully """
-        self.task_complete(task)
+    # These are no longer called by the base class
 
-    def task_failed(self, task):
-        """ Called when the given task has completed execution but failed """
-        self.task_complete(task)
+    # def task_complete(self, task):
+    #     """ Called when the given task has completed execution """
+    #     pass
+
+    # def task_succeeded(self, task):
+    #     """ Called when the given task has completed execution successfully """
+    #     self.task_complete(task)
+
+    # def task_failed(self, task):
+    #     """ Called when the given task has completed execution but failed """
+    #     self.task_complete(task)
 
 
     def task_demanded(self, demanded_task, currently_active_task):
@@ -299,6 +302,7 @@ class BaseTaskExecutor(object):
 
             req.task.task_id = self.task_counter        
             self.task_counter += 1
+
             # give the task some sensible defaults
             req.task.start_after = rospy.get_rostime() - rospy.Duration(10)
             req.task.end_before = rospy.get_rostime() + (req.task.max_duration * 20)
@@ -316,6 +320,7 @@ class BaseTaskExecutor(object):
             self.task_demanded(req.task, self.active_task)                        
 
             if not self.executing:
+                self.executing = true
                 self.start_execution()
 
             self.log_task_event(req.task, TaskEvent.DEMANDED, rospy.get_rostime())                
@@ -449,8 +454,8 @@ class BaseTaskExecutor(object):
 
     def is_task_interruptible(self, task):
         if task is None:
-            rospy.logwarn('is_task_interruptible passed a None')
-            return False
+            rospy.logwarn('is_task_interruptible passed a None, returning True')
+            return True
 
         try:
             srv_name = task.action + '_is_interruptible'

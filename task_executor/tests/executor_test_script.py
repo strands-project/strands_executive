@@ -21,9 +21,14 @@ class TestWrapper(unittest.TestCase):
         self.assertEquals(task_descriptions, [])
 
 
-    def test_lots_of_tasks(self):       
-        te = TestEntry('executor_tests')        
-        te.run_test(self.list_empty)
+    # def test_lots_of_tasks(self):       
+    #     te = TestEntry('lots_of_tasks')        
+    #     te.run_test(self.list_empty)
+
+    def test_execution_pause(self):
+        # testing pause / restart
+        te = TestEntry('execution_pause')        
+        te.run_test(self.list_empty, test_tasks = 5, pause_count = 3)    
     
 
 if __name__ == '__main__':
