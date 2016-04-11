@@ -93,16 +93,15 @@ class ActionExecutor(object):
                     
                 if not action_finished:
                     action_client.cancel_all_goals()
+                    action_client.wait_for_result(rospy.Duration(3)) #give some time for action to cancel
                     
                 if self.cancelled:
                     self.cancelled=False
-                    return None
-                
+
                 status=action_client.get_state()    
                 result=action_client.get_result()
                 print GoalStatus.to_string(status)
                 print result
-                
                 
             except Exception, e:
                 rospy.logwarn('Caught exception when trying to execute the action: %s' % e)
