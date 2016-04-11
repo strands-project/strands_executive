@@ -130,15 +130,18 @@ class MdpPolicyExecutor(object):
     def get_next_policy_state(self, current_waypoint):
         waypoint_val=self.current_extended_mdp.get_waypoint_var_val(current_waypoint)
         current_state_def=self.current_nav_policy_state_defs[self.current_flat_state]
+        
         #waypoint didnt change
         if waypoint_val==current_state_def["waypoint"]:
             return
+        
         #waypoint change is on the MDP transition model
         for (flat_state, flat_state_def) in self.current_nav_policy_state_defs.items():
             print(flat_state_def)
             if flat_state_def["waypoint"]==waypoint_val:
                 self.current_flat_state=flat_state
                 return
+
         rospy.logwarn("Error getting MDP next state: There is no transition modelling the state evolution. Looking for state in full state list...")
         new_state_def=deepcopy(current_state_def)
         new_state_def["waypoint"]=waypoint_val
@@ -172,6 +175,7 @@ class MdpPolicyExecutor(object):
         rospy.loginfo("The specification is: " + specification)
         self.generate_policy_mdp(specification)
         if self.policy_mdp is None:
+            print 'ABORTING HERE'
             self.mdp_as.set_aborted()
             return
         self.current_flat_state=self.policy_mdp.initial_flat_state
@@ -183,8 +187,14 @@ class MdpPolicyExecutor(object):
             if next_action in self.current_extended_mdp.nav_actions:
                 current_nav_policy=self.generate_current_nav_policy()
                 status=self.execute_nav_policy(current_nav_policy)
-                rospy.loginfo("Topological navigation execute policy action server exited with status: " + GoalStatus.to_string(status))
+                rospy.loginfo("Topological navigation execute policy action server exited with status: " + GoalStatus.to_string(status))                
                 if status!=GoalStatus.SUCCEEDED:
+
+                    # If mdp exec was preempted, this may cause the top nav to be preempted
+                    # Therefore we need to make sure that the cancellation flag is switched off 
+                    # as it won't reach line 218 where it is otherwise reset.
+                    self.cancelled=False
+
                     if status==GoalStatus.ABORTED or self.current_flat_state is None:
                         self.mdp_as.set_aborted()
                     elif status==GoalStatus.PREEMPTED:
@@ -206,6 +216,7 @@ class MdpPolicyExecutor(object):
         
         if self.cancelled:
             self.cancelled=False
+            rospy.loginfo("Policy execution preempted.")
             self.mdp_as.set_preempted()
         else:
             rospy.loginfo("Policy execution successful.")
@@ -230,8 +241,9 @@ if __name__ == '__main__':
     while not rospy.has_param("/topological_map_name") and not rospy.is_shutdown():
         rospy.sleep(0.1)
 
-    top_map_name=rospy.get_param("/topological_map_name")
-    mdp_executor =  MdpPolicyExecutor(top_map_name)
-    mdp_executor.main()
-    
+    if not rospy.is_shutdown():
+        top_map_name=rospy.get_param("/topological_map_name")
+        mdp_executor =  MdpPolicyExecutor(top_map_name)
+        mdp_executor.main()
+        
     

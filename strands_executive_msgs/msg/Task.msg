@@ -12,6 +12,8 @@ string TIME_TYPE="____time____"
 string DURATION_TYPE="____duration____"
 # Constant for bool type
 string BOOL_TYPE="____bool____"
+# Constant for string type
+string STRING_TYPE="____str____"
 
 # This holds the id of the task. This will be assigned by the framework, and doesn't need to be provided.
 uint64 task_id

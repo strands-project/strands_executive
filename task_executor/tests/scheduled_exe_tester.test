@@ -4,10 +4,12 @@
   	<arg name="test_mode" default="true" />
   </include>
 
-  <include file="$(find topological_utils)/launch/dummy_topological_navigation.launch" />
+  <include file="$(find topological_utils)/launch/dummy_topological_navigation.launch"> 
+  	<arg name="yaml_map" default="$(find task_executor)/tests/tsc2015.yaml" />
+  </include>		
 
   <include file="$(find task_executor)/launch/task-scheduler-top.launch" />
   
-  <test test-name="scheduled_exe_tester" pkg="task_executor" type="scheduled_exe_tester.py" time-limit="360" />
+  <test test-name="executor_test" pkg="task_executor" type="executor_test_script.py" time-limit="3600" />
 
 </launch>
