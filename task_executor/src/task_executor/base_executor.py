@@ -318,9 +318,9 @@ class BaseTaskExecutor(object):
 
             # and inform implementation to let it take action
             self.task_demanded(req.task, self.active_task)                        
-
+            
             if not self.executing:
-                self.executing = true
+                self.executing = True
                 self.start_execution()
 
             self.log_task_event(req.task, TaskEvent.DEMANDED, rospy.get_rostime())                

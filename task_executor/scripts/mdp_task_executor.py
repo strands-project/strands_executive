@@ -173,6 +173,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
             # anything greater than preempted means that the goal is done.
             # todo: handle more detailed logging based on different statuses
+            rospy.loginfo('%s received feedback %s' % (feedback.executed_action, GoalStatus.to_string(feedback.execution_status)))
             if feedback.execution_status >= GoalStatus.PREEMPTED:
                 self.remove_active_task(feedback.executed_action)
 
@@ -225,6 +226,14 @@ class MDPTaskExecutor(BaseTaskExecutor):
             else:
                 break
 
+    def _mdp_task_to_goal(self, mdp_task):
+        mdp_spec = MdpDomainSpec()
+        mdp_spec.vars.append(mdp_task.state_var)
+        mdp_spec.actions.append(mdp_task.action)                    
+        mdp_spec.ltl_task = '(F %s=1)'% mdp_task.state_var.name                
+        return ExecutePolicyExtendedGoal(spec = mdp_spec)
+             
+
 
     def next_execution_batch(self):
         """
@@ -256,16 +265,11 @@ class MDPTaskExecutor(BaseTaskExecutor):
             # if we're close to a time critical task, then do that
             if len(self.time_critical_tasks) > 0 and rostime_close(now, next_time_critical_task.task.execution_time, delta = wiggle_room):                               
                
-                self.active_batch = [next_time_critical_task]
-                self.time_critical_tasks = SortedCollection(self.time_critical_tasks[1:], key=(lambda t: t.task.execution_time))
-                            
-                mdp_spec = MdpDomainSpec()
-                mdp_spec.vars.append(next_time_critical_task.state_var)
-                mdp_spec.actions.append(next_time_critical_task.action)                    
-                mdp_spec.ltl_task = '(F %s=1)'% next_time_critical_task.state_var.name                
-                mdp_goal = ExecutePolicyExtendedGoal(spec = mdp_spec)
+                new_active_batch = [next_time_critical_task]
+                self.time_critical_tasks = SortedCollection(self.time_critical_tasks[1:], key=(lambda t: t.task.execution_time))                            
+                mdp_goal = self._mdp_task_to_goal(next_time_critical_task)
                 rospy.loginfo('executing time-critical task: %s' % mdp_goal.spec.ltl_task)
-                self.mdp_exec_queue.put(mdp_goal)
+                self.mdp_exec_queue.put((mdp_goal, new_active_batch))
 
             # else see what we can squeeze into available time
             elif self.recheck_normal_tasks:
@@ -314,12 +318,12 @@ class MDPTaskExecutor(BaseTaskExecutor):
                     # if we found tasks to fit into the time available
                     if batch_size > 0:
 
-                        self.active_batch = self.normal_tasks[:batch_size]
+                        new_active_batch = self.normal_tasks[:batch_size]
                         self.normal_tasks = SortedCollection(self.normal_tasks[batch_size:], key=(lambda t: t.task.end_before))                
                         
                         mdp_goal = ExecutePolicyExtendedGoal(spec = last_successful_spec)
                         rospy.loginfo('Executing normal batch: %s' % mdp_goal.spec.ltl_task)
-                        self.mdp_exec_queue.put(mdp_goal)
+                        self.mdp_exec_queue.put((mdp_goal, new_active_batch))
                     
                     # if we couldn't fit a batch in, but there are normal tasks available (we checked above)
                     else:
@@ -346,41 +350,68 @@ class MDPTaskExecutor(BaseTaskExecutor):
         """
         while not rospy.is_shutdown():
 
-            if self.executing:            
-                try:
-                    mdp_goal = self.mdp_exec_queue.get(timeout = 1)
+            try:
+                # keep looping until paused or an Empty is thrown
+                while self.executing and not rospy.is_shutdown():
 
-                    print 'got a goal from queue'
+                    (mdp_goal, new_active_batch) = self.mdp_exec_queue.get(timeout = 1)
 
-                    # execution status could have changed during the poll of the queue
-                    if self.executing:            
+                    sent_goal = False
+                    
+                    with self.state_lock:
+                        # always set active batch, but we can correct it later if we don't actually send the goal
+                        self.active_batch = deepcopy(new_active_batch)
 
-                        print 'and executing'
+                        # execution status could have changed during the poll of the queue
+                        if self.executing:            
 
-                        with self.state_lock:
                             self.mdp_exec_client = actionlib.SimpleActionClient('mdp_plan_exec/execute_policy_extended', ExecutePolicyExtendedAction)
-                            self.mdp_exec_client.wait_for_server()
-                            self.mdp_exec_client.send_goal(mdp_goal, feedback_cb = self.mdp_exec_feedback)
+                            self.mdp_exec_client.wait_for_server()                                
+                            # last chance!
+                            if self.executing:            
+                                self.mdp_exec_client.send_goal(mdp_goal, feedback_cb = self.mdp_exec_feedback)
+                                sent_goal = True
+                            else:
+                                self.mdp_exec_client = None
+
+
+                    if sent_goal:
 
                         self.mdp_exec_client.wait_for_result()
-                        print 'wait completed'
-                        print 'state'
-                        print self.mdp_exec_client.get_state()
-                        print 'result'
-                        print self.mdp_exec_client.get_result()
-
-
+                        
                         with self.state_lock:
+
+                            final_status = self.mdp_exec_client.get_state()
+                            remaining_active = len(self.active_batch)
+
+                            if final_status == GoalStatus.SUCCEEDED:
+                                rospy.loginfo('Policy execution succeeded')                                
+                                if remaining_active > 0:
+                                    rospy.logwarn('Active batch still contained %s task(s) after successful execution' % remaining_active)
+                                    self.active_batch = []
+                            elif final_status == GoalStatus.PREEMPTED:                                
+                                rospy.loginfo('Policy execution was preempted, returning %s tasks to task lists' % remaining_active)
+                                self.deactivate_active_batch()
+                            else:                                
+                                rospy.loginfo('Policy execution exited with status %s, dropping remaining active tasks' % GoalStatus.to_string(final_status))
+                                # todo log drops
+                                self.active_batch = []
+                                                
                             # make sure this can't be used now execution is complete
                             self.mdp_exec_client = None
                             # whatever happened or was executed, we should now recheck the available normal tasks
                             self.recheck_normal_tasks = True
-                except Empty, e:
-                    pass
+                    else:
+                        with self.state_lock:
+                            rospy.loginfo('Active batch not executed, returning %s tasks to task lists' % len(self.active_batch))
+                            self.deactivate_active_batch()
 
-                # state of execution could have changed since the last check
-                if self.executing:            
-                    self.next_execution_batch()
+            except Empty, e:
+                pass
+
+            # state of execution could have changed since the last check                
+            if self.executing:            
+                self.next_execution_batch()
             else:
                 rospy.sleep(1)
             
@@ -456,43 +487,65 @@ class MDPTaskExecutor(BaseTaskExecutor):
         """ Called when overall execution should  (re)start """
         rospy.loginfo('(Re-)starting execution')        
 
+    def deactivate_active_batch(self):
+        """
+        Takes the tasks from the active batch and returns them to the approach lists for later consideration
+        """
+        active_count = len(self.active_batch)
+
+        # for each task remaining in the active batch, put it back into the right list
+        for mdp_task in self.active_batch:                    
+            if mdp_task.task.start_after == mdp_task.task.end_before:                        
+                self.time_critical_tasks.insert(mdp_task)
+            else:
+                self.normal_tasks.insert(mdp_task)                                                
+
+        # empty the active batch. this might mean some feedback misses the update
+        # the consequence is that the task was completed but we preempted before receiving the update, 
+        # this means the task will be executed again, but there's no easy way around this
+        self.active_batch = []
+
+        return active_count
+
+        
+
     def pause_execution(self):
         """ Called when overall execution should pause. This is called *before* self.executing is set to False. """
         with self.state_lock:            
-
-            # this is done by the super class *after* pause_execution completes, but we need to make sure that it is done before this lock is released to make sure execution does not continue after policy execution preemption
-            self.executing = False
-
-            # keep count for later reporting
-            active_count = len(self.active_batch)
-
-            # for each task remaining in the active batch, put it back into the right list
-            for mdp_task in self.active_batch:                    
-                if mdp_task.task.start_after == mdp_task.task.end_before:                        
-                    self.time_critical_tasks.insert(mdp_task)
-                else:
-                    self.normal_tasks.insert(mdp_task)                                                
-
-            # empty the active batch. this might mean some feedback misses the update
-            # the consequence is that the task was completed but we preempted before receiving the update, 
-            # this means the task will be executed again, but there's no easy way around this
-            self.active_batch = []
-
-            # If the client is not None then there is execution going on. the active batch could be empty if we've just caught the tail end of execution
-            # 
-            # Also there could be tasks in the active batch without an action client existing. as the client is created slightly later
-            if self.mdp_exec_client is not None:
-
-                # preempt the action server
-                self.mdp_exec_client.cancel_all_goals()
-                rospy.loginfo('Cancelling policy execution')
-
-            rospy.loginfo('Execution paused with %s tasks in the active batch' % active_count)
+            self._pause_execution_internal()
+           
+    def _pause_execution_internal(self):
+        """
+        Does the work of pausing execution, without the lock.
+        """
+        # this is done by the super class *after* pause_execution completes, but we need to make sure that it is done before this lock is released to make sure execution does not continue after policy execution preemption
+        self.executing = False
+        
+        # If the client is not None then there is execution going on. the active batch could be empty if we've just caught the tail end of execution
+        # 
+        # Also there could be tasks in the active batch without an action client existing. as the client is created slightly later
+        if self.mdp_exec_client is not None:
+            # preempt the action server
+            self.mdp_exec_client.cancel_all_goals()
+            rospy.loginfo('Cancelling policy execution')
+        else:
+            rospy.loginfo('No policy execution active when pausing')
 
 
     def task_demanded(self, demanded_task, currently_active_task):
         """ Called when a task is demanded. self.active_task is the demanded task (and is being executed) and previously_active_task was the task that was being executed (which could be None) """
-        pass
+       
+        with self.state_lock:            
+            prior_execution_state = self.executing
+            # this cleans up the current execution, but does not block until execution is finished.
+            self._pause_execution_internal()
+            # convert the demanded task into an mdp task for policy execution 
+            demanded_mdp_task = self._convert_task_to_mdp_action(demanded_task)
+            # and queue it up for execution
+            mdp_goal = self._mdp_task_to_goal(demanded_mdp_task)
+            self.mdp_exec_queue.put((mdp_goal, [demanded_mdp_task]))
+            rospy.loginfo('Queued up demanded task: %s' % (demanded_mdp_task.action.name))
+            self.executing = prior_execution_state 
 
     def cancel_active_task(self):
         """ 
