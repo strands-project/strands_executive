@@ -15,7 +15,7 @@ from mongodb_store.message_store import MessageStoreProxy
 from geometry_msgs.msg import Pose, Point, Quaternion
 from strands_executive_msgs import task_utils
 from strands_executive_msgs.msg import Task
-from strands_executive_msgs.srv import AddTasks, SetExecutionStatus
+from strands_executive_msgs.srv import AddTasks, SetExecutionStatus, DemandTask
 from topological_navigation.msg import GotoNodeAction
 from strands_navigation_msgs.msg import TopologicalMap
 
@@ -101,7 +101,7 @@ class TestEntry(object):
             rospy.sleep(1)
         return self.node_names
 
-    def run_test(self, task_descriptions_fn, test_tasks = 20, time_critical_tasks = 0, time_diffs_fn = None, pause_delay = rospy.Duration(10), pause_count = 0):   
+    def run_test(self, task_descriptions_fn, test_tasks = 20, time_critical_tasks = 0, time_diffs_fn = None, pause_delay = rospy.Duration(10), pause_count = 0, demanded_tasks = 0):   
         waypoints = self.get_nodes()
         action_types = 5
         action_sleep = rospy.Duration.from_sec(2)
@@ -114,7 +114,9 @@ class TestEntry(object):
 
         start_delay = rospy.Duration(8)
 
-        task_start = rospy.get_rostime() + start_delay
+        now = rospy.get_rostime()
+
+        task_start = now + start_delay
         task_window_size = action_sleep + action_sleep + rospy.Duration(10000)
 
         for n in range(test_tasks):
@@ -128,8 +130,8 @@ class TestEntry(object):
         assert test_tasks == len(task_descriptions)
 
         
-        time_critical_step = rospy.Duration(360) 
-        time_critical_start = rospy.get_rostime() + start_delay + rospy.Duration(120) 
+        time_critical_step = rospy.Duration(1500) 
+        time_critical_start = now + start_delay + rospy.Duration(2000) 
 
         for n in range(test_tasks, test_tasks + time_critical_tasks):            
             string = 'Please run me at %s is' % time_critical_start.to_sec()
@@ -139,17 +141,36 @@ class TestEntry(object):
                 string,
                 pose, n, time_critical_start.to_sec(), time_critical_start, time_critical_start]]
             time_critical_start += time_critical_step
+
+        to_demand = []
+        # demand_start = now + start_delay + rospy.Duration(120) 
+        demand_start = now + start_delay + rospy.Duration(0) 
+        demand_step = rospy.Duration(60)
+
+        for n in range(test_tasks + time_critical_tasks, test_tasks + time_critical_tasks + demanded_tasks):            
+            string = 'Demand me at %s' % demand_start.to_sec()
+            pose = Pose(Point(n, 1, 2), Quaternion(3, 4,  5, 6))        
+            to_demand += [[random.choice(waypoints), 
+                action_prefix + str(randrange(action_types)),
+                string,
+                pose, n, demand_start.to_sec(), demand_start, demand_start]]
+              
+            demand_start += demand_step
+
  
-        task_tester = TaskTester(action_types, action_prefix, task_descriptions, action_sleep, self)    
+        task_tester = TaskTester(action_types, action_prefix, task_descriptions + to_demand, action_sleep, self)    
 
         # get task services
         add_task_srv_name = 'task_executor/add_tasks'
+        demand_task_srv_name = 'task_executor/demand_task'
         set_exe_stat_srv_name = 'task_executor/set_execution_status'
         rospy.loginfo("Waiting for task_executor service...")
         rospy.wait_for_service(add_task_srv_name)
         rospy.wait_for_service(set_exe_stat_srv_name)
+        rospy.wait_for_service(demand_task_srv_name)
         rospy.loginfo("Done")        
         add_tasks_srv = rospy.ServiceProxy(add_task_srv_name, AddTasks)
+        demand_task_srv = rospy.ServiceProxy(demand_task_srv_name, DemandTask)
         set_execution_status = rospy.ServiceProxy(set_exe_stat_srv_name, SetExecutionStatus)
 
         try:
@@ -169,6 +190,22 @@ class TestEntry(object):
                 tasks.append(task)
                 # print task
 
+            tasks_to_demand = []
+            for task_description in to_demand:    
+                # create the task from the description
+                task = Task(start_node_id=task_description[0], action=task_description[1])        
+                # add some dummy arguments
+                task_utils.add_string_argument(task, task_description[2])
+                task_utils.add_object_id_argument(task, msg_store.insert(task_description[3]), Pose)
+                task_utils.add_int_argument(task, task_description[4])
+                task_utils.add_float_argument(task, task_description[5])
+                task.start_after = task_description[6]
+                task.end_before = task_description[7]
+                task.max_duration = action_sleep + action_sleep 
+                tasks_to_demand.append(task)
+                # print task
+
+
             add_tasks_srv(tasks)    
             
             # Start the task executor running
@@ -176,7 +213,10 @@ class TestEntry(object):
 
             max_wait_duration = start_delay 
             if time_critical_tasks > 0:
-                max_wait_duration += time_critical_start - rospy.get_rostime()
+                max_wait_duration += time_critical_start - now
+
+            if demanded_tasks > 0:
+                max_wait_duration += demand_start - now
 
             max_travel = rospy.Duration(90)
             for n in range(test_tasks):
@@ -190,6 +230,15 @@ class TestEntry(object):
                     print 10 - i
                     rospy.sleep(1)
                 set_execution_status(True)
+
+            for demand in tasks_to_demand:
+                while now < demand.start_after and not rospy.is_shutdown():
+                    rospy.sleep(1)
+                    # print 'wait'
+                    now = rospy.get_rostime()
+
+                print demand_task_srv(demand)
+
 
             task_tester.wait_for_completion(max_wait_duration)
 
