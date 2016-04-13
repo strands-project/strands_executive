@@ -106,10 +106,10 @@ class MDPTaskExecutor(BaseTaskExecutor):
             returns a task, state var, action triple
         """
 
-        # print task
-
-
         action_name = 'n'+ str(task.task_id) + '_' + task.action + '_at_' + task.start_node_id  
+        # make sure there is nothing to make PRISM cry
+        action_name = action_name.replace('/','_')
+
         state_var_name = 'executed_' + action_name
 
         state_var = MdpStateVar(name = state_var_name,
