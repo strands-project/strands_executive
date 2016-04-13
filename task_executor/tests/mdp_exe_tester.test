@@ -10,16 +10,16 @@
 
   <include file="$(find task_executor)/launch/mdp-executor.launch" />
   
-  <test test-name="lots_of_tasks" pkg="task_executor" type="executor_test_script.py" time-limit="7200">
+<!--   <test test-name="lots_of_tasks" pkg="task_executor" type="executor_test_script.py" time-limit="7200">
   	<param name="test" value="0"/>
   </test>
-
+ -->
   <test test-name="start_stop" pkg="task_executor" type="executor_test_script.py" time-limit="3600">
   	<param name="test" value="1"/>
   </test>
 
-  <test test-name="with_time_critical" pkg="task_executor" type="executor_test_script.py" time-limit="3600">
+<!--   <test test-name="with_time_critical" pkg="task_executor" type="executor_test_script.py" time-limit="3600">
     <param name="test" value="2"/>
   </test>
-
+ -->
 </launch>

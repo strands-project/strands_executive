@@ -237,6 +237,7 @@ class TestEntry(object):
                     # print 'wait'
                     now = rospy.get_rostime()
 
+                print 'demanding'
                 print demand_task_srv(demand)
 
 
