@@ -68,7 +68,7 @@ def sort_results_by_logged_time(results):
     
 
 
-def task_event_string(te):
+def task_event_string(te):    
     if te == TaskEvent.ADDED:
         return 'ADDED'
     elif te == TaskEvent.DEMANDED:
@@ -107,6 +107,8 @@ def task_event_string(te):
         return 'ROUTINE_STARTED'    
     elif te == TaskEvent.ROUTINE_STOPPED:
         return 'ROUTINE_STOPPED'    
+    elif te == TaskEvent.TASK_STOPPED:
+        return 'TASK_STOPPED'    
 
 
 def format_event(task_event):

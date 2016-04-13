@@ -23,7 +23,11 @@ uint8 TASK_FINISHED=14
 # These three are more modern
 uint8 TASK_FAILED=15
 uint8 TASK_SUCCEEDED=16
+# TASK_PREEMPTED is what happens when the task action server is pre-empted, i.e. the execution of the task server must have started 
 uint8 TASK_PREEMPTED=17
+# TASK_STOPPED is what happens when the task action server is never started, but navigation has started for the task. This is only used on the mdp executor where a task with this status was included in the execution batch but never actually run. This means the task was retained for later execution
+uint8 TASK_STOPPED=18
+
 
 # Used for the routine
 uint8 ROUTINE_STARTED=30
