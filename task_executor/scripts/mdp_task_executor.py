@@ -84,7 +84,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
         # and the max number of tasks to fit into this window due to MDP scaling issues
         self.batch_limit = 4
 
-        self.time_critical_expectation_thread = Thread(target=self.process_time_critical)
+        self.time_critical_expectation_thread = Thread(target=self._process_time_critical)
         self.time_critical_expectation_thread.start()
 
         self.mdp_exec_thread = Thread(target=self.mdp_exec)    
@@ -178,18 +178,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
             # string ending_waypoint
             # string next_action
 
-            # print("Got Feedback: " + str(feedback))
-
-            # uint8 PENDING=0
-            # uint8 ACTIVE=1
-            # uint8 PREEMPTED=2
-            # uint8 SUCCEEDED=3
-            # uint8 ABORTED=4
-            # uint8 REJECTED=5
-            # uint8 PREEMPTING=6
-            # uint8 RECALLING=7
-            # uint8 RECALLED=8
-            # uint8 LOST=9
+            print("Got Feedback: " + str(feedback))
 
             # anything greater than preempted means that the goal is done.
             # todo: handle more detailed logging based on different statuses
@@ -492,7 +481,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
         # makes publishing thread check for exit
         self.republish_schedule()
 
-    def process_time_critical(self):
+    def _process_time_critical(self):
         """
         Poll queue of new time-critical tasks and then add navigation duration to them.
         """
@@ -511,18 +500,21 @@ class MDPTaskExecutor(BaseTaskExecutor):
                     with self.state_lock:
                         rospy.loginfo('Processing new time-critical task: %s' % mdp_task.action.name)                
 
-                        # rospy.loginfo('Time critical tasks at start of process_time_critical:')
+                        # rospy.loginfo('Time critical tasks at start of _process_time_critical:')
                         # for m in self.time_critical_tasks:
                         #     rospy.loginfo(m.task.task_id)
                         #     rospy.loginfo(m.action.name)
 
                         request = GetGuaranteesForCoSafeTaskRequest()
+                        request.epoch = mdp_task.task.start_after
                         request.spec.ltl_task = '(F "%s")' % mdp_task.task.start_node_id
                         response = mdp_estimates(request)
 
                         # response gives expected time from all waypoints
                         # as we can't assume we're just doing it from where we are
                         # check from here plus the 
+
+                        # todo: keep the full estimate around so it can be used more correctly in planning
 
                         potential_start_points = set([self.get_topological_node()]) 
                     
@@ -552,15 +544,16 @@ class MDPTaskExecutor(BaseTaskExecutor):
                         
                         self.republish_schedule()
 
-                        # rospy.loginfo('Time critical tasks at end of process_time_critical:')
+                        # rospy.loginfo('Time critical tasks at end of _process_time_critical:')
                         # for m in self.time_critical_tasks:
                         #     rospy.loginfo(m.task.task_id)
                         #     rospy.loginfo(m.action.name)
 
+                    self.new_time_critical_tasks.task_done()
                 except Empty, e:
                     pass
             except Exception, e:
-                rospy.logwarn('Caught exception in process_time_critical loop: %s' % e)
+                rospy.logwarn('Caught exception in _process_time_critical loop: %s' % e)
 
 
         
@@ -600,6 +593,16 @@ class MDPTaskExecutor(BaseTaskExecutor):
         with self.state_lock:            
             self._pause_execution_internal()
            
+        # wait for active batch to be empty before return
+        while not rospy.is_shutdown():
+            with self.state_lock:
+                if self.active_batch == []:
+                    return
+                
+            # print 'waiting for active batch to become empty'
+            rospy.sleep(0.5)
+
+
     def _pause_execution_internal(self):
         """
         Does the work of pausing execution, without the lock.
@@ -650,17 +653,41 @@ class MDPTaskExecutor(BaseTaskExecutor):
         """
         if self.executing:
             self.pause_execution()
-            self.executing = True
+            with self.state_lock: 
+                self.executing = True
 
     def cancel_task(self, task_id):
         """ Called when a request is received to cancel a task. The currently executing one is checked elsewhere. """
+        rospy.logwarn('Cancelling individual tasks is not yet implemented')
         return False
 
     def clear_schedule(self):
         """ Called to clear all tasks from schedule, with the exception of the currently executing one. """
-        pass
+        with self.state_lock:
+            prior_execution_state = self.executing
+
+
+        # this cleans up the current execution and sets self.executing to false
+        self.pause_execution()            
+
+        # (try to) make sure the queues are empty (there's a chance that between the join and next state_lock that something could be added).
+        self.new_time_critical_tasks.join()
+        self.mdp_exec_queue.join()
+
+        with self.state_lock:           
+            now = rospy.get_rostime() 
+            self.log_task_events((m.task for m in self.normal_tasks), TaskEvent.DROPPED, now, description = 'Schedule was cleared')        
+            self.normal_tasks.clear()
+            self.log_task_events((m.task for m in self.time_critical_tasks), TaskEvent.DROPPED, now, description = 'Schedule was cleared')        
+            self.time_critical_tasks.clear()
+            self.executing = prior_execution_state 
+        rospy.loginfo('All tasks cleared')
+
 
     def republish_schedule(self):
+        """
+        Notify schedule-publishing thread to update and publish schedule
+        """
         self.update_schedule_condition.acquire()
         self.update_schedule_condition.notify()
         self.update_schedule_condition.release()
@@ -681,8 +708,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                     active_batch = deepcopy(self.active_batch)
                     normal_tasks = deepcopy(self.normal_tasks)
                     time_critical_tasks = deepcopy(self.time_critical_tasks)
-
-                print 'publishing here'
+                
 
                 now = rospy.get_rostime()
                 # todo: fill this value better
