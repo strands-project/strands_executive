@@ -30,7 +30,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         # topic on which current schedule is broadcast
         self.schedule_publisher = rospy.Publisher('/current_schedule', ExecutionStatus, queue_size=1)
 
-	#Lenka why this is here?
+    #Lenka why this is here?
         # defaults for setting the ends of tasks
         self.default_duration = rospy.Duration.from_sec(60 * 60 * 4)
         
@@ -137,8 +137,8 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
             self.execution_schedule.current_task = None
 
 
-    def task_demanded(self, demanded_task, currently_active_task):
-        """ Called when a task is demanded. self.active_task is the demanded task (and is being executed) and previously_active_task was the task that was being executed (which could be None) """
+    def task_demanded(self, demanded_task, currently_active_tasks):
+        """ Called when a task is demanded. self.active_tasks contains the demanded task (and is being executed) and previously_active_task was the task that was being executed (which could be None) """
 
         if demanded_task.end_node_id == '':
             demanded_task.end_node_id = demanded_task.start_node_id 
@@ -167,8 +167,8 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
             success, added = self.try_schedule(previously_scheduled)
             if success:
                 rospy.loginfo('Was able to reinstate %s/%s tasks after demand' % (len(added), len(previously_scheduled)))
-                if currently_active_task != None:
-                    success, added = self.try_schedule([currently_active_task])
+                if len(currently_active_tasks) > 0:
+                    success, added = self.try_schedule(currently_active_tasks)
                     if success and len(added) > 0:
                         rospy.loginfo('Was also able to reinstate previously active task after demand')
                     else:
@@ -384,8 +384,9 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         throw_index =amount_tasks - throw_num 
 
 
-        if(self.active_task is not None):
-          if(low_prio.priority<= self.active_task.priority): #we want to throw away tasks
+        if len(self.active_tasks) > 0:
+          # for the scheduled_task_execution active_tasks will contain at most 1 task
+          if(low_prio.priority<= self.active_tasks[0].priority): #we want to throw away tasks
             rospy.loginfo('Schedule not found, trying to discard %s tasks with priority %s', str(throw_num), str(low_prio.priority))
             #if there are more low priority task, only amount% will be throwen away...
 
@@ -397,7 +398,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
             return sub_additional, throwen_away, True
           else: #task which should be throwen away has higher priority then active task
-            if(self.active_task is not None) and (not self.is_task_interruptible(self.active_task)): #we cant preemt, thus returninf True and throwing away task
+            if len(self.active_tasks) > 0 and not self.is_task_interruptible(self.active_tasks[0]): #we cant preemt, thus returninf True and throwing away task
               rospy.loginfo('Active task cannot be preempted.')
               rospy.loginfo('Schedule not found, trying to discard %s tasks with priority higher prio %s', str(throw_num), str(low_prio.priority))
               
@@ -551,37 +552,6 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
                   #to_schedule.extend(to_old_schedule)
                   to_schedule.extend(sub_additional)
                   additional_tasks = sub_additional #rewrite original set of added tasks
-
-                  
-                  #this is older piece of code before method drop was modified
-                  #This part tries to priorities important task which would be throwen away
-                  #if((len(sub_additional)==0) and (len(throwen_away)>0)): #we throw away all tasks
-
-                  #  old_tasks = self.execution_schedule.get_schedulable_tasks()
-                  #  for taskD in throwen_away:
-                  #    for taskO in old_tasks:
-                  #      if taskD.task_id == taskO.task_id: #droped task is in old task, we need to remove it
-                  #        self.execution_schedule.remove_task_with_id(taskO.task_id)
-
-                  #  throwen_away.sort(key=attrgetter('priority'),reverse=True) # highest priority first
-                  #  last = throwen_away[0] #get last task
-                  #  if(self.active_task is not None):
-                  #    if(last.priority > self.active_task.priority): #if task going to be throwen away has higher priority than currently executed, 
-                  #      #we want to preempt currently executed and execute new one, practically, create on demand task instead
-
-                  #      if self.active_task is not None and not self.is_task_interruptible(self.active_task):
-                  #        rospy.loginfo('EXECUTOR: Couldnt preemt previous task in order to propagate higher priority.')
-                  #        return False, []
-                  #      else:
-                  #        rospy.loginfo('Task % is going to be propagated as on demand' % last.task_id)
-                  #        last.execution_time = last.start_after #set the first possible time for tasks
-                  #        # stop anything else
-                  #        if self.active_task is not None:
-                  #          self.pause_execution() #takes care about canceling active task and waiting
-                  #          # and inform implementation to let it take action
-                  #          self.task_demanded(last, self.active_task)                                            
-                  #          self.start_execution()
-                  #          return True, last
 
                   sched_result = self.call_scheduler(to_schedule, lower_bound, current_id) 
   
