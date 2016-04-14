@@ -363,9 +363,10 @@ class AbstractTaskExecutor(BaseTaskExecutor):
             if not self.join_smach_thread(preempt_timeout_secs):
                 rospy.logerr('Task action or navigation did not preempt after %s seconds. State at end was %s' % (preempt_timeout_secs, self.task_sm.get_active_states()))
                 # manually notify completeness in this case
-                completed = self.active_task
-                self.active_task = None                
-                self.task_failed(completed)        
+                if len(self.active_tasks) > 0:
+                    completed = self.active_tasks[0]
+                    self.active_task = []                
+                    self.task_failed(completed)        
             else:                
                 rospy.loginfo('And relax')
             

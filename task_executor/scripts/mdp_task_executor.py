@@ -72,7 +72,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
     
         self.state_lock = threading.Lock()
         self.mdp_exec_client = None
-        self.active_batch = []
+        self.set_active_batch([])
         # only ever allow one batch in the execution queue. If this restriction is removed then demanding won't work immediately
         self.mdp_exec_queue = Queue(maxsize = 1)
 
@@ -178,7 +178,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
             # string ending_waypoint
             # string next_action
 
-            print("Got Feedback: " + str(feedback))
+            # print("Got Feedback: " + str(feedback))
 
             # anything greater than preempted means that the goal is done.
             # todo: handle more detailed logging based on different statuses
@@ -195,6 +195,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
             mdp_task = self.active_batch[i]
             if mdp_task.action.name == action_name:                
                 del self.active_batch[i]
+                del self.active_tasks[i]
                 log_string = 'Removing completed active task: %s. %s remaining in active batch' % (action_name, len(self.active_batch))
                 rospy.loginfo(log_string)
                 self.log_task_event(mdp_task.task, task_status, rospy.get_rostime(), description = log_string)        
@@ -407,7 +408,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
                         with self.state_lock:
                             # always set active batch, but we can correct it later if we don't actually send the goal
-                            self.active_batch = deepcopy(new_active_batch)
+                            self.set_active_batch(deepcopy(new_active_batch))
 
                             # execution status could have changed while acquiring the lock
                             if self.executing:            
@@ -454,7 +455,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                                     rospy.loginfo(log_string)
                                     self.log_task_events((m.task for m in self.active_batch), TaskEvent.DROPPED, rospy.get_rostime(), description = log_string)        
                                     # todo: is dropping really necessary here? the tasks themselves were not aborted, just policy execution
-                                    self.active_batch = []
+                                    self.set_active_batch([])
                                                     
                                 # make sure this can't be used now execution is complete
                                 self.mdp_exec_client = None
@@ -480,6 +481,14 @@ class MDPTaskExecutor(BaseTaskExecutor):
         
         # makes publishing thread check for exit
         self.republish_schedule()
+
+
+    def set_active_batch(self, batch):
+        """
+        Set the active batch of tasks. Also updates self.active_tasks in the base class
+        """
+        self.active_batch = batch
+        self.active_tasks = [m.task for m in self.active_batch]
 
     def _process_time_critical(self):
         """
@@ -578,7 +587,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
         # empty the active batch. this might mean some feedback misses the update
         # the consequence is that the task was completed but we preempted before receiving the update, 
         # this means the task will be executed again, but there's no easy way around this
-        self.active_batch = []
+        self.set_active_batch([])
 
         return active_count
 
