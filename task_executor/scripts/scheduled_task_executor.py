@@ -184,10 +184,10 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
                     if success and len(added) > 0:
                         rospy.loginfo('Was also able to reinstate previously active task after demand')
                     else:
-                        self.drop_tasks([currently_active_task])
+                        self.drop_tasks([currently_active_task], description = "Dropped because it couldn't be reinstated after a demanded task")
                         rospy.loginfo('Was not able to reinstate previously active task after demand (but other tasks ok)')
             else:
-                self.drop_tasks(previously_scheduled)
+                self.drop_tasks(previously_scheduled, description = "Dropped because it couldn't be reinstated after a demanded task")
                 rospy.loginfo('Was NOT able to reinstate tasks after demand')
 
 
@@ -446,7 +446,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         
         if len(bounded_tasks) < len(additional_tasks):
           rospy.logwarn('Dropped %s additional tasks which are no longer executable' % (len(additional_tasks) - len(bounded_tasks)))
-          self.drop_tasks(dropped_tasks)
+          self.drop_tasks(dropped_tasks, description = "Dropped because it is now not possible to be executed in the time available")
         additional_tasks = bounded_tasks
       
     
@@ -459,7 +459,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         
         if len(bounded_tasks) < len(schedulable_tasks):
           rospy.logwarn('Dropped %s existing tasks which are no longer executable' % (len(schedulable_tasks) - len(bounded_tasks)))
-          self.drop_tasks(dropped_tasks)
+          self.drop_tasks(dropped_tasks, description = "Dropped because it is now not possible to be executed in the time available")
           # have to remove these from schedule too, although this assumes successful scheduling
           # TODO: what if scheduling is not successful?
           self.execution_schedule.remove_tasks(dropped_tasks)
@@ -632,14 +632,14 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
                   self.execution_schedule.set_schedule(to_schedule)
 
                   rospy.loginfo('Added %s tasks into the schedule to get total of %s' % (len(new_tasks), self.execution_schedule.get_execution_queue_length()))
-                  self.drop_tasks(all_throwen)
+                  self.drop_tasks(all_throwen, description = "Dropped because it was not possible to find a schedule given the constraints of all tasks. This was dropped because it was randomly selected from the lowest priority set.")
 
                   return True, new_tasks
                 else:  #there are no old tasks 
                       
                   self.execution_schedule.add_new_tasks(to_schedule)                
                   self.execution_schedule.set_schedule(to_schedule)
-                  self.drop_tasks(all_throwen)                
+                  self.drop_tasks(all_throwen, description = "Dropped because it was not possible to find a schedule given the constraints of all tasks. This was dropped because it was randomly selected from the lowest priority set.")                
 
                   rospy.loginfo('Added %s tasks into the schedule to get total of %s' % (len(to_schedule), self.execution_schedule.get_execution_queue_length()))
                   return True, to_schedule  

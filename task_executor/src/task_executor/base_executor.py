@@ -455,14 +455,14 @@ class BaseTaskExecutor(object):
             return True
 
 
-    def drop_tasks(self, tasks):
+    def drop_tasks(self, tasks, description = ""):
         """
         Called when tasks are dropped from the executor
         """
         if(len(tasks) > 0):
             for task in tasks:
                 self.task_dropped_publisher.publish(task)
-            self.log_task_events(tasks, TaskEvent.DROPPED, rospy.get_rostime())                
+            self.log_task_events(tasks, TaskEvent.DROPPED, rospy.get_rostime(), description = description)                
 
     
 
