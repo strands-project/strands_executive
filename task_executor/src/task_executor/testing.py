@@ -117,7 +117,7 @@ class TestEntry(object):
         now = rospy.get_rostime()
 
         task_start = now + start_delay
-        task_window_size = action_sleep + action_sleep + rospy.Duration(10000)
+        task_window_size = action_sleep + action_sleep + rospy.Duration(100000)
 
         for n in range(test_tasks):
             string = 'oh what a lovely number %s is' % n
