@@ -32,20 +32,6 @@ class BaseTaskExecutor(object):
         pass
 
 
-    # These are no longer called by the base class
-
-    # def task_complete(self, task):
-    #     """ Called when the given task has completed execution """
-    #     pass
-
-    # def task_succeeded(self, task):
-    #     """ Called when the given task has completed execution successfully """
-    #     self.task_complete(task)
-
-    # def task_failed(self, task):
-    #     """ Called when the given task has completed execution but failed """
-    #     self.task_complete(task)
-
 
     def task_demanded(self, demanded_task, currently_active_tasks):
         """ Called when a task is demanded. self.active_tasks is the demanded task (and is being executed) and currently_active_tasks are the task that were being executed (which could be empty) """
@@ -62,6 +48,8 @@ class BaseTaskExecutor(object):
     def clear_schedule(self):
         """ Called to clear all tasks from schedule, with the exception of the currently executing one. """
         pass
+
+
 
 
     # "Constants" to determine which nav service to use

@@ -45,6 +45,9 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
         self.advertise_services()
 
+
+
+
     def start_execution(self):
         """ Called when overall execution should  (re)start """
         
@@ -118,6 +121,14 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         """ Called when the given task has completed execution """
         # pass signal to schedule
         self.execution_schedule.task_complete(task) 
+
+    def task_succeeded(self, task):
+        """ Called when the given task has completed execution successfully """
+        self.task_complete(task)
+
+    def task_failed(self, task):
+        """ Called when the given task has completed execution but failed """
+        self.task_complete(task)
 
 
     def wait_for_task_to_complete(self):
@@ -632,31 +643,39 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         loopSecs = 5
         
         while not rospy.is_shutdown() and self.running:           
-            # print "scheduling thread %s" % rospy.is_shutdown()      
+
+            # all encompassing try/catch to make sure this loop does not go down        
             try:
-                unscheduled = []
-                # block until at least one task is available
-                unscheduled.append(self.unscheduled_tasks.get(True, loopSecs))
-                # now check for any remaining tasks in the queue
+
+                # print "scheduling thread %s" % rospy.is_shutdown()      
                 try:
-                    while True:
-                        unscheduled.append(self.unscheduled_tasks.get(False))
+                    unscheduled = []
+                    # block until at least one task is available
+                    unscheduled.append(self.unscheduled_tasks.get(True, loopSecs))
+                    # now check for any remaining tasks in the queue
+                    try:
+                        while True:
+                            unscheduled.append(self.unscheduled_tasks.get(False))
+                    except Empty, e:
+                        pass
+                    
+                    if self.running: #Lenka note: is this if needed? as while loop has same condition?
+                        rospy.loginfo('Got a further %s tasks to schedule' % len(unscheduled))
+                        self.try_schedule(unscheduled)                
+                    else:
+                        rospy.loginfo('Putting %s tasks to schedule later' % len(unscheduled))
+                        for task in unscheduled:
+                            self.unscheduled_tasks.put(task)
+
                 except Empty, e:
+                    # rospy.logdebug('No new tasks to schedule')
                     pass
-                
-                if self.running: #Lenka note: is this if needed? as while loop has same condition?
-                    rospy.loginfo('Got a further %s tasks to schedule' % len(unscheduled))
-                    self.try_schedule(unscheduled)                
-                else:
-                    rospy.loginfo('Putting %s tasks to schedule later' % len(unscheduled))
-                    for task in unscheduled:
-                        self.unscheduled_tasks.put(task)
 
-            except Empty, e:
-                # rospy.logdebug('No new tasks to schedule')
-                pass
+                self.publish_schedule()
 
-            self.publish_schedule()
+            except Exception, e:
+                rospy.logwarn('Caught exception in schedule_tasks loop: %s' % e)
+                rospy.sleep(1)
 
 
     def execute_tasks(self):
@@ -664,16 +683,22 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         
         while not rospy.is_shutdown() and self.running:           
 
-            # print "executing thread %s" % rospy.is_shutdown()
-            if(self.execution_schedule.wait_for_execution_change(wait_time)):
-                if self.running:
-                    next_task = self.execution_schedule.get_current_task()
-                    if next_task is not None:
-                        rospy.loginfo('Next task to execute: %s' % next_task.task_id)
-                        self.execute_task(next_task)                
-                    else:
-                        rospy.logwarn('Next task was None')
+            # all encompassing try/catch to make sure this loop does not go down
+            try:
+                
+                # print "executing thread %s" % rospy.is_shutdown()
+                if(self.execution_schedule.wait_for_execution_change(wait_time)):
+                    if self.running:
+                        next_task = self.execution_schedule.get_current_task()
+                        if next_task is not None:
+                            rospy.loginfo('Next task to execute: %s' % next_task.task_id)
+                            self.execute_task(next_task)                
+                        else:
+                            rospy.logwarn('Next task was None')
 
+            except Exception, e:
+                rospy.logwarn('Caught exception in execute_tasks loop: %s' % e)
+                rospy.sleep(1)
 
 
 
