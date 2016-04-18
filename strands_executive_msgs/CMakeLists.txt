@@ -46,7 +46,7 @@ add_service_files(
   AddDeleteSpecialWaypoint.srv
   GetSpecialWaypoints.srv
   IsTaskInterruptible.srv
-  GetActiveTask.srv
+  GetActiveTasks.srv
   GetGuaranteesForCoSafeTask.srv
 )
 
