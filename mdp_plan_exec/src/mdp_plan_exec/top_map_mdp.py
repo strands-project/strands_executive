@@ -99,14 +99,18 @@ class TopMapMdp(Mdp):
     def set_mdp_action_durations(self, file_name, epoch=None):
         if epoch is None:
             epoch=rospy.Time.now()
-        predictions=self.get_edge_estimates(epoch)
-        if len(predictions.edge_ids) != self.n_actions:
-            rospy.logwarn("Did not receive travel time estimations for all edges, the total navigatio expected values will not be correct")
-        for (edge, prob, duration) in zip(predictions.edge_ids, predictions.probs, predictions.durations):
-            index=self.actions.index(edge)
-            transition=self.transitions[index]
-            self.transitions[index].prob_post_conds=[(prob, dict(transition.prob_post_conds[0][1])), (1-prob, dict(transition.pre_conds))]
-            self.transitions[index].rewards["time"]=duration.to_sec()       
+        try:
+            predictions=self.get_edge_estimates(epoch)
+            if len(predictions.edge_ids) != self.n_actions:
+                rospy.logwarn("Did not receive travel time estimations for all edges, the total navigation expected values will not be correct")
+            for (edge, prob, duration) in zip(predictions.edge_ids, predictions.probs, predictions.durations):
+                index=self.actions.index(edge)
+                transition=self.transitions[index]
+                self.transitions[index].prob_post_conds=[(prob, dict(transition.prob_post_conds[0][1])), (1-prob, dict(transition.pre_conds))]
+                self.transitions[index].rewards["time"]=duration.to_sec()
+        except rospy.ServiceException, e:
+            rospy.logwarn("Error calling edge transversal times prediction service: " + str(e))
+            rospy.logwarn("The total navigation expected values will not be for the requested epoch.")
         self.write_prism_model(file_name)
         
 
