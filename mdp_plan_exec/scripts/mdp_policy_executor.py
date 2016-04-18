@@ -83,11 +83,10 @@ class MdpPolicyExecutor(object):
                 rospy.logerr("Execute policy target  " + goal.target_id  + "  is not a node in the topological map. Aborting")
                 return None
             if goal.target_id in self.special_waypoints.forbidden_waypoints:
-                rospy.logwarn("The goal is a forbidden waypoint. Aborting")
-                return None
+                rospy.logwarn("The goal is a forbidden waypoint.  Generating the navigation policy ignoring forbidden waypoints to be able to reach it.")
             elif self.current_waypoint in self.special_waypoints.forbidden_waypoints:
                 rospy.logwarn("The current position is forbidden. Generating the navigation policy ignoring forbidden waypoints to get us out of here.")
-            if self.special_waypoints.forbidden_waypoints==[] or self.current_waypoint in self.special_waypoints.forbidden_waypoints:
+            if self.special_waypoints.forbidden_waypoints==[] or self.current_waypoint in self.special_waypoints.forbidden_waypoints or goal.target_id in self.special_waypoints.forbidden_waypoints:
                 return 'R{"time"}min=? [ (F "' + goal.target_id + '") ]'
             else:
                 return 'R{"time"}min=? [ (' + self.special_waypoints.forbidden_waypoints_ltl_string + ' U "' + goal.target_id + '") ]'
