@@ -11,11 +11,7 @@ class PrismJavaTalker(object):
     def __init__(self,port,dir_name,file_name):
         HOST = "localhost"
         PORT = port
-        #prism_dir='/opt/prism-robots/prism'
-        #prism_dir='/home/strands/bruno_ws/prism-robots/prism'
-        # prism_dir='/home/bruno/devel_ws/prism-robots/prism'
-        prism_dir='/Users/nah/code/prism-robots/prism'
-        os.chdir(prism_dir)
+        os.chdir('/opt/prism-robots/prism')
         os.environ['PRISM_MAINCLASS'] = 'prism.PrismPythonTalker'
         self.java_server=subprocess.Popen(["bin/prism",str(PORT),dir_name, file_name])
         rospy.sleep(1)
@@ -34,30 +30,19 @@ class PrismJavaTalker(object):
         self.lock.release()
         return data
 
-    def get_policy(self,specification, partial_sat=False):
-        if partial_sat:
-            command='partial_sat_plan\n'
-        else:
-            command='plan\n'
+    def get_policy(self,specification):
+        command='plan\n'
         command=command+specification+'\n'
         self.lock.acquire()
         self.sock.sendall(command)
         data = self.sock.recv(1024)
         self.lock.release()
-        if partial_sat:
-            rospy.loginfo("PAXPROB; EXPETECT TIME: " + data)
-        else:    
-            rospy.loginfo("Expected time from current node: " +  data)
+        rospy.loginfo("Expected time from current node: " +  data)
         return data
     
-    
-    
-    def get_state_vector(self,specification, is_partial=False):
+    def get_state_vector(self,specification):
         state_vector=[]
-        if is_partial:
-            command='partial_sat_get_vector\n'
-        else:
-            command='get_vector\n'
+        command='get_vector\n'
         command=command+specification+'\n'
         self.lock.acquire()
         self.sock.sendall(command)
@@ -78,6 +63,7 @@ class PrismJavaTalker(object):
                 rospy.logwarn("socket error while getting state vector")
                 self.sock.sendall("error\n")
         self.lock.release()
+        rospy.loginfo("Expected times to target state: " + str(state_vector))
         return state_vector       
         
     def shutdown(self,remove_dir=True):

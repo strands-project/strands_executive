@@ -5,9 +5,10 @@ from copy import deepcopy
 from mdp import Mdp
 
 
+        
 
 class PolicyMdp(Mdp):
-    def __init__(self, original_mdp, dfa_txt, product_sta, product_lab, policy_tra):
+    def __init__(self, original_mdp, dfa_txt, product_sta, product_lab, policy_tra, probs_vect, progs_vect, exp_times_vect):
         Mdp.__init__(self)
         self.original_mdp=original_mdp
         self.n_state_vars=original_mdp.n_state_vars+1
@@ -45,9 +46,25 @@ class PolicyMdp(Mdp):
         self.transitions=[] #not being set for efficiency. The flat representations above are easier to build and to use for execution. only needed for exporting of the policy
         self.set_policy_flat(policy_tra)
         
+        self.guarantees_probs=self.read_vect(probs_vect)
+        self.guarantees_progs=self.read_vect(progs_vect)
+        self.guarantees_times=self.read_vect(exp_times_vect)
+        
+        #print "AHAH", self.guarantees_probs
     
     
     ######Parsing methods#######
+    def read_vect(self, file_name):
+        res={}
+        i=0
+        f=open(file_name, 'r')
+        for line in f:
+            res[i]=float(line)
+            i+=1
+        f.close()
+        return res
+        
+    
     def set_policy_flat(self,file_name):
         f = open(file_name , 'r')
 
@@ -130,6 +147,11 @@ class PolicyMdp(Mdp):
     ######Parsing methods#######
 
 
+    def get_guarantees_at_initial_state(self):
+        return (self.guarantees_probs[self.initial_flat_state], 
+                self.guarantees_progs[self.initial_flat_state], 
+                rospy.Duration(self.guarantees_times[self.initial_flat_state]))
+
 
     def simulate_random(self):
         current_flat_state = self.initial_flat_state
@@ -143,5 +165,5 @@ class PolicyMdp(Mdp):
                 return
             
 
-
+   
     

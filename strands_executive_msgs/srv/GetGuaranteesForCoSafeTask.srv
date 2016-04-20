@@ -1,7 +1,7 @@
+string initial_waypoint
 strands_executive_msgs/MdpDomainSpec spec
 time epoch
 ---
-string[] initial_waypoints
-float64[] probabilities
-float64[] prog_rewards
-duration[] expected_times
+float64 probability
+float64 prog_reward
+duration expected_time

@@ -7,7 +7,7 @@ import rospy
 
 from mdp_plan_exec.top_map_mdp import TopMapMdp
 from mdp_plan_exec.policy_mdp import PolicyMdp
-from mdp_plan_exec.prism_java_talker import PrismJavaTalker
+from mdp_plan_exec.partial_sat_prism_java_talker import PartialSatPrismJavaTalker
 from mdp_plan_exec.action_executor import ActionExecutor
 
 from std_msgs.msg import String
@@ -42,7 +42,7 @@ class MdpPolicyExecutor(object):
         except OSError as ex:
             print 'error creating PRISM directory:',  ex
         self.file_name=top_map+".mdp"
-        self.prism_policy_generator=PrismJavaTalker(8088,self.directory, self.file_name)
+        self.prism_policy_generator=PartialSatPrismJavaTalker(8088,self.directory, self.file_name)
         
                
         self.current_waypoint=None
@@ -74,7 +74,7 @@ class MdpPolicyExecutor(object):
         print(self.closest_waypoint)
         self.current_extended_mdp.set_initial_state_from_waypoint(self.closest_waypoint)
         self.current_extended_mdp.set_mdp_action_durations(self.directory+self.file_name,rospy.Time.now())
-        expected_time=float(self.prism_policy_generator.get_policy(specification, partial_sat=True))
+        expected_time=float(self.prism_policy_generator.call_prism(specification))
         #feedback=ExecutePolicyFeedback(expected_time=expected_time)
         #self.mdp_nav_as.publish_feedback(feedback)
         #if feedback.expected_time==float("inf"):
@@ -82,7 +82,15 @@ class MdpPolicyExecutor(object):
             rospy.logwarn("The goal is unattainable. Aborting...")
             self.policy_mdp=None
         else:
-            self.policy_mdp=PolicyMdp(self.current_extended_mdp,self.directory + '/prod.aut',self.directory + '/prod.sta',self.directory + '/prod.lab', self.directory+'adv.tra')
+            self.policy_mdp=PolicyMdp(self.current_extended_mdp,
+                                      self.directory + 'prod.aut',
+                                      self.directory + 'prod.sta',
+                                      self.directory + 'prod.lab',
+                                      self.directory + 'adv.tra',
+                                      self.directory + 'guarantees1.vect',
+                                      self.directory + 'guarantees2.vect',
+                                      self.directory + 'guarantees3.vect'
+                                      )
             self.current_policy_flat_state=self.policy_mdp.initial_flat_state
             
 
