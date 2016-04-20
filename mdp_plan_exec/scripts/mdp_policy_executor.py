@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 import os
 import sys
+from copy import deepcopy
 import rospy
 
 from mdp_plan_exec.top_map_mdp import TopMapMdp
@@ -15,6 +16,14 @@ from strands_navigation_msgs.msg import NavRoute, ExecutePolicyModeAction, Execu
 from strands_executive_msgs.msg import ExecutePolicyAction, ExecutePolicyFeedback, ExecutePolicyGoal
 from strands_executive_msgs.srv import GetSpecialWaypoints
 
+def set_forbidden_waypoints_ltl_string(wp_list, ignore_wp):
+    forbidden_waypoints_ltl_string=''       
+    for wp in wp_list:
+        if wp not in ignore_wp:
+            forbidden_waypoints_ltl_string+= '"' + wp + '" & !'        
+    if not forbidden_waypoints_ltl_string=='':
+        forbidden_waypoints_ltl_string='(!' + forbidden_waypoints_ltl_string[:-4] + ')'
+    return forbidden_waypoints_ltl_string
    
 class MdpPolicyExecutor(object):
     def __init__(self,top_map): 
@@ -78,18 +87,22 @@ class MdpPolicyExecutor(object):
 
     def generate_prism_specification(self, goal):
         self.special_waypoints=self.special_waypoints_srv()
+        self.forbidden_wps_to_ignore=[]
         if goal.task_type==ExecutePolicyGoal.GOTO_WAYPOINT:
             if not self.top_map_mdp.target_in_topological_map(goal.target_id):
                 rospy.logerr("Execute policy target  " + goal.target_id  + "  is not a node in the topological map. Aborting")
-                return None
+                return None           
             if goal.target_id in self.special_waypoints.forbidden_waypoints:
                 rospy.logwarn("The goal is a forbidden waypoint.  Generating the navigation policy ignoring forbidden waypoints to be able to reach it.")
-            elif self.current_waypoint in self.special_waypoints.forbidden_waypoints:
+                self.forbidden_wps_to_ignore.append(goal.target_id)
+            if self.current_waypoint in self.special_waypoints.forbidden_waypoints:
                 rospy.logwarn("The current position is forbidden. Generating the navigation policy ignoring forbidden waypoints to get us out of here.")
-            if self.special_waypoints.forbidden_waypoints==[] or self.current_waypoint in self.special_waypoints.forbidden_waypoints or goal.target_id in self.special_waypoints.forbidden_waypoints:
-                return 'R{"time"}min=? [ (F "' + goal.target_id + '") ]'
+                self.forbidden_wps_to_ignore.append(self.current_waypoint)
+            untill=set_forbidden_waypoints_ltl_string(self.special_waypoints.forbidden_waypoints,self.forbidden_wps_to_ignore)
+            if untill != '':
+                return 'R{"time"}min=? [ (' +  untill + ' U "' + goal.target_id + '") ]'
             else:
-                return 'R{"time"}min=? [ (' + self.special_waypoints.forbidden_waypoints_ltl_string + ' U "' + goal.target_id + '") ]'
+                return 'R{"time"}min=? [ (F "' + goal.target_id + '") ]'
         elif goal.task_type==ExecutePolicyGoal.LEAVE_FORBIDDEN_AREA:
             if self.special_waypoints.forbidden_waypoints==[]:
                 rospy.logwarn("No forbidden waypoints defined. Nothing to leave.")
@@ -164,19 +177,32 @@ class MdpPolicyExecutor(object):
                     rospy.logwarn("Unexpected outcome from the topological navigaton execute policy action server. Setting as aborted")
                     self.mdp_nav_as.set_aborted()
                 return
+            if self.current_waypoint!= goal.target_id and self.current_waypoint in self.special_waypoints.forbidden_waypoints:
+                specification=self.generate_prism_specification(goal)
+                if specification is None:
+                    self.mdp_nav_as.set_aborted()
+                    return
+                rospy.loginfo("The specification is: " + specification)
+                self.generate_prod_mdp(specification)
+                if self.product_mdp is None:
+                    self.mdp_nav_as.set_aborted()
+                    return
+                self.current_prod_state=dict(self.product_mdp.initial_state)
+                
         rospy.loginfo("Policy execution successful.")
         self.mdp_nav_as.set_succeeded()
 
 
     def preempt_policy_execution_cb(self):     
         self.top_nav_policy_exec.cancel_all_goals()
+        self.current_prod_state=None
     
     def top_nav_feedback_cb(self,feedback):
         rospy.loginfo("Reached waypoint " + feedback.route_status)
-        if not self.leaving_forbidden_area and feedback.route_status in self.special_waypoints.forbidden_waypoints:
-            rospy.logwarn("At forbidden waypoint!! Aborting")
-            self.current_prod_state=None
-            self.top_nav_policy_exec.cancel_all_goals()
+        if not self.leaving_forbidden_area and feedback.route_status not in self.forbidden_wps_to_ignore and feedback.route_status in self.special_waypoints.forbidden_waypoints:
+            rospy.logwarn("At forbidden waypoint!! Ignoring!")
+            #self.current_prod_state=None
+            #self.top_nav_policy_exec.cancel_all_goals()
         else:
             self.get_next_prod_state(feedback.route_status)
         
