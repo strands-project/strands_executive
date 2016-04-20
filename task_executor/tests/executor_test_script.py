@@ -20,6 +20,8 @@ class TestWrapper(unittest.TestCase):
     def list_empty(self, task_descriptions):
         self.assertEquals(task_descriptions, [])
 
+    def check_time_diffs(self, time_diffs):
+        pass
 
     def test_execution(self):
         te = TestEntry('execution_test')        
@@ -28,7 +30,10 @@ class TestWrapper(unittest.TestCase):
             te.run_test(self.list_empty)
         elif test == 1:
             te.run_test(self.list_empty, test_tasks = 5, pause_count = 3)    
-    
+        elif test == 2:
+            te.run_test(self.list_empty, test_tasks = 10, time_critical_tasks = 3, time_diffs_fn = self.check_time_diffs)
+        elif test == 3:
+            te.run_test(self.list_empty, time_critical_tasks = 5, demanded_tasks = 3, test_tasks = 5)            
 
 if __name__ == '__main__':
     rostest.rosrun('task_executor', 'executor_tests', TestWrapper, sys.argv)

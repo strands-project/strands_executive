@@ -59,7 +59,7 @@ class TaskFailed(ExecutorState):
     def execute(self, userdata):
         rospy.logwarn('Task failed')
         completed = userdata.task
-        self.executor.active_task = None
+        self.executor.active_tasks = []
         self.executor.log_task_event(userdata.task, TaskEvent.TASK_FAILED, rospy.get_rostime())        
         self.executor.task_failed(completed)
         rospy.loginfo('Execution of task %s failed' % userdata.task.task_id)
@@ -73,7 +73,7 @@ class TaskSucceeded(ExecutorState):
         now = rospy.get_rostime()
         # do bookkeeping before causing update
         completed = userdata.task
-        self.executor.active_task = None
+        self.executor.active_tasks = []
         self.executor.log_task_event(userdata.task, TaskEvent.TASK_SUCCEEDED, rospy.get_rostime())
 
         self.executor.task_succeeded(completed)
@@ -89,9 +89,9 @@ class TaskCancelled(ExecutorState):
         rospy.loginfo('Execution of task %s was cancelled' % userdata.task.task_id)
         self.executor.log_task_event(userdata.task, TaskEvent.TASK_PREEMPTED, rospy.get_rostime())
         # it could be that a delayed cancellation signal causes this to get called out of turn, so check that this is the correct cancellation
-        if self.executor.active_task is not None and self.executor.active_task.task_id == userdata.task.task_id:
+        if len(self.executor.active_tasks) > 0 and self.executor.active_tasks[0].task_id == userdata.task.task_id:
             completed = userdata.task
-            self.executor.active_task = None            
+            self.executor.active_tasks = []            
             self.executor.task_failed(completed)        
         return 'preempted'
 
@@ -363,9 +363,10 @@ class AbstractTaskExecutor(BaseTaskExecutor):
             if not self.join_smach_thread(preempt_timeout_secs):
                 rospy.logerr('Task action or navigation did not preempt after %s seconds. State at end was %s' % (preempt_timeout_secs, self.task_sm.get_active_states()))
                 # manually notify completeness in this case
-                completed = self.active_task
-                self.active_task = None                
-                self.task_failed(completed)        
+                if len(self.active_tasks) > 0:
+                    completed = self.active_tasks[0]
+                    self.active_task = []                
+                    self.task_failed(completed)        
             else:                
                 rospy.loginfo('And relax')
             

@@ -206,8 +206,13 @@ class MdpPolicyExecutor(object):
 
 if __name__ == '__main__':
     rospy.init_node('mdp_policy_executor')
-    top_map_name=rospy.get_param("/topological_map_name")
-    mdp_executor =  MdpPolicyExecutor(top_map_name)
-    mdp_executor.main()
+    
+    while not rospy.has_param("/topological_map_name") and not rospy.is_shutdown():
+        rospy.sleep(0.1)
+
+    if not rospy.is_shutdown():
+        top_map_name=rospy.get_param("/topological_map_name")
+        mdp_executor =  MdpPolicyExecutor(top_map_name)
+        mdp_executor.main()
     
     

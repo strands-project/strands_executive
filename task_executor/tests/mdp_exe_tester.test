@@ -18,5 +18,12 @@
   	<param name="test" value="1"/>
   </test>
 
+  <test test-name="with_time_critical" pkg="task_executor" type="executor_test_script.py" time-limit="3600">
+    <param name="test" value="2"/>
+  </test>
+
+  <test test-name="with_on_demand" pkg="task_executor" type="executor_test_script.py" time-limit="3600">
+    <param name="test" value="3"/>
+  </test>
 
 </launch>
