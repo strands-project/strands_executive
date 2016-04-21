@@ -2,11 +2,12 @@ strands_executive_msgs/MdpDomainSpec spec
 ---
 
 ---
-float64 success_prob
-float64 expected_time
-float64 expected_prog
-string starting_waypoint #only this is filled atm
-string executed_action #only this is filled atm
-uint8 execution_status #only this is filled atm. interpert using actionlib_msgs/GoalStatus
-string ending_waypoint
+float64 probability
+float64 prog_reward
+duration expected_time
+string current_waypoint
+string executed_action
+uint8 execution_status # interpert using actionlib_msgs/GoalStatus
 string next_action
+string[] final_waypoints #to be filled
+float64[] final_waypoints_probabilities #to be filled

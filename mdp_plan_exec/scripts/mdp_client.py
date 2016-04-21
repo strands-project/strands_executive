@@ -89,7 +89,7 @@ def feedback_cb(feedback):
 if __name__ == '__main__':
     rospy.init_node('mdp_client_test')
     
-    n_waypoints=4
+    n_waypoints=5
     
     mdp_ac=actionlib.SimpleActionClient("/mdp_plan_exec/execute_policy_extended", ExecutePolicyExtendedAction)
     
@@ -110,9 +110,13 @@ if __name__ == '__main__':
         spec.actions.append(action)
         ltl_task+='(F executed_metric_map_at_' + waypoint_name + '=1) & '
     spec.ltl_task=ltl_task[:-3]
-    ##spec.ltl_task='(F executed_metric_map_at_WayPoint10=1) & (F executed_metric_map_at_WayPoint5=1) & (F executed_metric_map_at_WayPoint7=1) & (F executed_metric_map_at_WayPoint1=1)'
+    #spec.ltl_task='(F executed_metric_map_at_WayPoint10=1) & (F executed_metric_map_at_WayPoint5=1) & (F executed_metric_map_at_WayPoint7=1) & (F executed_metric_map_at_WayPoint1=1)'
+    
+    #spec.ltl_task='(F ("WayPoint3" & (X "WayPoint4"))) & ((!"WayPoint3") U executed_metric_map_at_WayPoint1=1) & (F executed_metric_map_at_WayPoint2=1) & (F executed_metric_map_at_WayPoint3=1) & (F executed_metric_map_at_WayPoint4=1)'
+    spec.ltl_task='(F executed_metric_map_at_WayPoint2=1) & (F executed_metric_map_at_WayPoint3=1) & (F executed_metric_map_at_WayPoint4=1)'
     
     request.spec=spec
+    request.initial_waypoint="WayPoint4"
     service_response=mdp_estimates(request)
     print(service_response)
     
