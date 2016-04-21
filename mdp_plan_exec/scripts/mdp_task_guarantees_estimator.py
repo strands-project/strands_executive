@@ -55,7 +55,7 @@ class MdpTaskGuaranteesEstimator(object):
                                           self.directory+'guarantees1.vect',
                                           self.directory+'guarantees2.vect',
                                           self.directory+'guarantees3.vect')
-                (response.probability, response.prog_reward, response.expected_time)=self.policy_mdp.get_guarantees_at_initial_state()
+                (response.probability, response.prog_reward, response.expected_time)=self.policy_mdp.get_guarantees_at_flat_state(self.policy_mdp.initial_flat_state)
                 return response
             else:
                 rospy.logwarn("Error calling PRISM, guarantees extimator service returning empty response")

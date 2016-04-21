@@ -147,10 +147,10 @@ class PolicyMdp(Mdp):
     ######Parsing methods#######
 
 
-    def get_guarantees_at_initial_state(self):
-        return (self.guarantees_probs[self.initial_flat_state], 
-                self.guarantees_progs[self.initial_flat_state], 
-                rospy.Duration(self.guarantees_times[self.initial_flat_state]))
+    def get_guarantees_at_flat_state(self, flat_state):
+        return (self.guarantees_probs[flat_state], 
+                self.guarantees_progs[flat_state], 
+                rospy.Duration(self.guarantees_times[flat_state]))
 
 
     def simulate_random(self):

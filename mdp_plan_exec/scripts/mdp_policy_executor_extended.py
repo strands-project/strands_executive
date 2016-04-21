@@ -69,6 +69,12 @@ class MdpPolicyExecutor(object):
     def generate_prism_specification(self, ltl_spec):       
         return 'partial(R{"time"}min=? [ (' + ltl_spec + ') ])'
     
+    def get_current_action(self):
+        if self.policy_mdp.flat_state_policy.has_key(self.current_flat_state):
+            return self.policy_mdp.flat_state_policy[self.current_flat_state]
+        else:
+            return ''
+    
     def generate_policy_mdp(self,specification):
         #update initial state
         print(self.closest_waypoint)
@@ -133,9 +139,10 @@ class MdpPolicyExecutor(object):
     
     def top_nav_feedback_cb(self,feedback):
         rospy.loginfo("Reached waypoint " + feedback.route_status)
-        self.get_next_policy_state(feedback.route_status)
+        self.get_next_nav_policy_state(feedback.route_status)
         
-    def get_next_policy_state(self, current_waypoint):
+    def get_next_nav_policy_state(self, current_waypoint):
+        executed_action=self.get_current_action()
         waypoint_val=self.current_extended_mdp.get_waypoint_var_val(current_waypoint)
         current_state_def=self.current_nav_policy_state_defs[self.current_flat_state]
         
@@ -143,25 +150,42 @@ class MdpPolicyExecutor(object):
         if waypoint_val==current_state_def["waypoint"]:
             return
         
+        found_next_state=False
+        
         #waypoint change is on the MDP transition model
         for (flat_state, flat_state_def) in self.current_nav_policy_state_defs.items():
-            print(flat_state_def)
+            print(flat_state_def)           
             if flat_state_def["waypoint"]==waypoint_val:
                 self.current_flat_state=flat_state
-                return
-
-        rospy.logwarn("Error getting MDP next state: There is no transition modelling the state evolution. Looking for state in full state list...")
-        new_state_def=deepcopy(current_state_def)
-        new_state_def["waypoint"]=waypoint_val
-        for (flat_state, flat_state_def) in self.policy_mdp.flat_state_defs.items():
-            if self.current_extended_mdp.check_cond_sat(new_state_def, flat_state_def):
-                rospy.loginfo("Found state " + str(flat_state_def) + ". Updating.")
-                self.current_flat_state=flat_state
-                self.regenerate_policy=True #Assumes full policy export. In case we stop exporting full policy, change this so that replan is triggered when the new state doesnt have an action associated to it.
-                return 
-        rospy.logerr("Couldn't update state. Aborting...")
-        self.current_flat_state=None
-        self.top_nav_policy_exec.cancel_all_goals()
+                found_next_state=True
+                break
+                
+        if not found_next_state: 
+            rospy.logwarn("Error getting MDP next state: There is no transition modelling the state evolution. Looking for state in full state list...")
+            new_state_def=deepcopy(current_state_def)
+            new_state_def["waypoint"]=waypoint_val
+            for (flat_state, flat_state_def) in self.policy_mdp.flat_state_defs.items():
+                if self.current_extended_mdp.check_cond_sat(new_state_def, flat_state_def):
+                    rospy.loginfo("Found state " + str(flat_state_def) + ". Updating.")
+                    self.current_flat_state=flat_state
+                    found_next_state=True
+                    self.regenerate_policy=True #Assumes full policy export. In case we stop exporting full policy, change this so that replan is triggered when the new state doesnt have an action associated to it.
+                    break
+            
+        if found_next_state:    
+            next_action=self.get_current_action()
+            (probability, prog_reward, expected_time)=self.policy_mdp.get_guarantees_at_flat_state(self.current_flat_state)
+            self.mdp_as.publish_feedback(ExecutePolicyExtendedFeedback(probability=probability,
+                                                                            expected_time=expected_time,
+                                                                            prog_reward=prog_reward,
+                                                                            current_waypoint=self.current_waypoint,
+                                                                            executed_action=executed_action,
+                                                                            execution_status=GoalStatus.SUCCEEDED,
+                                                                            next_action=next_action))
+        else:
+            rospy.logerr("Couldn't update state. Aborting...")
+            self.current_flat_state=None
+            self.top_nav_policy_exec.cancel_all_goals()
        
     def get_mdp_state_update_from_action_outcome(self, state_update):
         #current_state_def=self.current_nav_policy_state_defs[self.current_flat_state]
@@ -191,7 +215,7 @@ class MdpPolicyExecutor(object):
         current_nav_policy=self.generate_current_nav_policy()
         status=self.execute_nav_policy(current_nav_policy)
         while self.policy_mdp.flat_state_policy.has_key(self.current_flat_state) and not self.cancelled:
-            next_action=self.policy_mdp.flat_state_policy[self.current_flat_state]
+            next_action=self.get_current_action()
             if next_action in self.current_extended_mdp.nav_actions:
                 current_nav_policy=self.generate_current_nav_policy()
                 status=self.execute_nav_policy(current_nav_policy)
@@ -213,13 +237,20 @@ class MdpPolicyExecutor(object):
                     return
             else:
                 print("EXECUTE ACTION")
-                starting_waypoint=self.current_waypoint
                 (status, state_update)=self.action_executor.execute_action(self.current_extended_mdp.action_descriptions[next_action])
+                executed_action=next_action
+                print(executed_action)
                 if not self.cancelled:
-                    self.mdp_as.publish_feedback(ExecutePolicyExtendedFeedback(starting_waypoint=starting_waypoint,
-                                                                               executed_action=self.current_extended_mdp.action_descriptions[next_action].name,
-                                                                               execution_status=status))
                     self.get_mdp_state_update_from_action_outcome(state_update)
+                    next_action=self.get_current_action()
+                    (probability, prog_reward, expected_time)=self.policy_mdp.get_guarantees_at_flat_state(self.current_flat_state)
+                    self.mdp_as.publish_feedback(ExecutePolicyExtendedFeedback(probability=probability,
+                                                                               expected_time=expected_time,
+                                                                               prog_reward=prog_reward,
+                                                                               current_waypoint=self.current_waypoint,
+                                                                               executed_action=executed_action,
+                                                                               execution_status=status,
+                                                                               next_action=next_action))
         
         
         if self.cancelled:
