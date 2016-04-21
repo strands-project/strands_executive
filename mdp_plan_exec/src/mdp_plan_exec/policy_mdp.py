@@ -88,31 +88,28 @@ class PolicyMdp(Mdp):
         
     
     def set_init_and_acc_states(self, labels_file):
-        if True: #TODO REMOVER ISTO QD O EXPORTTARGET TIVERT BOM
-            self.initial_state=deepcopy(self.original_mdp.initial_state)
-            self.initial_state["_da"]=self.aut_initial_state
-            for i in range(0, self.n_flat_states):
-                if self.check_cond_sat(self.flat_state_defs[i], self.initial_state):
-                    print("FOUND INIT STATE")
-                    self.initial_flat_state=i
-                    break
-        else:
-            f=open(labels_file, 'r')
-            line=f.readline()        
-            init_index=int(line.split('="init"')[0])
-            acc_index=int(line.split('="target"')[0])  
-            for line in f:
-                line=line.split(':')
-                state_index=int(line[0])
-                labels=line[1].split(' ')
-                del labels[0]
-                for label in labels:
-                    if int(label)==init_index:
-                        self.initial_state=dict(self.flat_state_defs[state_index])
-                        self.initial_flat_state=init_index
-                    if int(label)==acc_index:
-                        self.acc_flat_states.add(int(label))
-            f.close()
+        f=open(labels_file, 'r')
+        line=f.readline()        
+        label_names=line.split(' ')
+        for label in label_names:
+            label_pair=label.split('=')
+            if label_pair[1].strip('\n')=='"init"':
+                init_index=int(label_pair[0])
+            if label_pair[1].strip('\n')=='"target"':
+                acc_index=int(label_pair[0])
+
+        for line in f:
+            line=line.split(':')
+            state_index=int(line[0])
+            labels=line[1].split(' ')
+            del labels[0]
+            for label in labels:
+                if int(label)==init_index:
+                    self.initial_state=dict(self.flat_state_defs[state_index])
+                    self.initial_flat_state=init_index
+                if int(label)==acc_index:
+                    self.acc_flat_states.add(int(label))
+        f.close()
         
     
     def read_prod_state_file(self, states_file):
