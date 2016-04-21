@@ -245,13 +245,11 @@ class BaseTaskExecutor(object):
         """
         Adds a task into the task execution framework.
         """
-        self.service_lock.acquire()
-        req.task.task_id = self.task_counter
-        self.task_counter += 1
-        self.add_tasks([req.task])
-        self.log_task_event(req.task, TaskEvent.ADDED, rospy.get_rostime())                
-        self.service_lock.release()
-        return req.task.task_id
+        task_ids = self.add_tasks_ros_srv(AddTasksRequest(tasks=[req.task]))
+        if len(task_ids) > 0:
+            return task_ids[0]
+        else:
+            return None
     add_task_ros_srv.type=AddTask
 
     def get_active_tasks_ros_srv(self, req):
@@ -266,11 +264,24 @@ class BaseTaskExecutor(object):
         Adds a task into the task execution framework.
         """
         self.service_lock.acquire()
+        now = rospy.get_rostime()
         task_ids = []
         for task in req.tasks:
             task.task_id = self.task_counter
             task_ids.append(task.task_id)
             self.task_counter += 1
+            
+            if task.max_duration.secs == 0:
+                rospy.logwarn('Task %s did not have max_duration set' % (task.action))
+                task.max_duration = rospy.Duration(5 * 60)
+
+            if task.start_after.secs == 0:
+                rospy.logwarn('Task %s did not have start_after set' % (task.action))                
+                task.start_after = now
+
+            if task.end_before.secs == 0:
+                rospy.logwarn('Task %s did not have end_before set' % (task.action))                
+                task.end_before = task.start_after + (task.max_duration * 5)
 
         self.add_tasks(req.tasks)        
         self.log_task_events(req.tasks, TaskEvent.ADDED, rospy.get_rostime())                
