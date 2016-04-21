@@ -78,22 +78,26 @@ class ActionExecutor(object):
                 argument_list = self.get_arguments(action_msg.arguments)
                 goal = goal_clz(*argument_list) 
                 
-                
+                poll_wait = rospy.Duration(1)
+
                 max_action_duration=self.get_max_action_duration(action_msg.outcomes)
                 wiggle_room=30
                 action_client=actionlib.SimpleActionClient(action_msg.action_server, action_clz)
-                action_client.wait_for_server(rospy.Duration(1))
+                action_client.wait_for_server(poll_wait)
                 action_client.send_goal(goal)
                 
-                action_finished = action_client.wait_for_result(rospy.Duration(0.1))
+                action_finished = False
                 timer=0
                 while (not action_finished) and (timer < max_action_duration + wiggle_room) and (not self.cancelled):
-                    timer+=0.1
-                    action_finished = action_client.wait_for_result(rospy.Duration(0.1))
+                    timer += poll_wait.to_sec()
+                    action_finished = action_client.wait_for_result(poll_wait)
                     
                 if not action_finished:
+                    rospy.logwarn('Action %s exceeded maximum duration, preempting' % action_msg.name)
                     action_client.cancel_all_goals()
-                    action_client.wait_for_result(rospy.Duration(3)) #give some time for action to cancel
+                    action_finished = action_client.wait_for_result(rospy.Duration(60)) #give some time for action to cancel
+                    if not action_finished:
+                        rospy.logwarn('Action %s did not respond to preemption, carrying on regardless. This could have dangerous side effects.' % action_msg.name)
                     
                 if self.cancelled:
                     self.cancelled=False
