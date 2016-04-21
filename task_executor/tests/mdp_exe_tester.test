@@ -26,4 +26,8 @@
     <param name="test" value="3"/>
   </test>
 
+  <test test-name="single_task_timeout" pkg="task_executor" type="executor_test_script.py" time-limit="3600">
+    <param name="test" value="4"/>
+  </test>
+
 </launch>
