@@ -79,10 +79,11 @@ class MDPTaskExecutor(BaseTaskExecutor):
         # Whether or not the normal tasks need to be checked
         self.recheck_normal_tasks = False
 
-        # how much time should we try to fill with tasks
+        # how much time should we try to fill with tasks. this is the default and will be extended if necessary
         self.execution_window = rospy.Duration(1200)
+        
         # and the max number of tasks to fit into this window due to MDP scaling issues
-        self.batch_limit = 4
+        self.batch_limit = 6
 
         self.time_critical_expectation_thread = Thread(target=self._process_time_critical)
         self.time_critical_expectation_thread.start()
@@ -301,33 +302,77 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
     def _choose_new_active_batch(self, task_check_limit, now, execution_window):
         """
+        Choose the tasks to execute next. 
+
+
+
         task_check_limit says how far along the normal task list to go to look at possible tasks
         """
         # evaluated_at_least_one_task, new_active_batch, new_active_spec, new_active_guarantees = self._choose_new_active_batch()
         
-        evaluated_at_least_one_task = False
-
         mdp_estimates = rospy.ServiceProxy('mdp_plan_exec/get_guarantees_for_co_safe_task', GetGuaranteesForCoSafeTask)
         mdp_estimates.wait_for_service()
         last_successful_spec = None
         
-        new_active_batch = []
-        
 
-        # limit the tasks inspected by the batch limit... we are skipping tasks, so just using the batch limit isn't enough
+        possibles = []
+
+        # first collect the tasks which we can possibly consider
         for mdp_task in self.normal_tasks[:task_check_limit]:     
 
             # stop when we hit the limit 
-            if len(new_active_batch) == self.batch_limit:
+            if len(possibles) == self.batch_limit:
                 break
 
             # only consider tasks which we are allowed to execute from now
             if mdp_task.task.start_after < now:
+                possibles.append(mdp_task)
 
-                # todo: consider probabilities too 
-                # todo: if just using time, try some smarter combinations or orderings, as there might be a single policy that works from here
-                
-                evaluated_at_least_one_task = True
+
+        possibles_with_guarantees_in_time = []
+        possibles_with_guarantees = []
+
+        # now for each single task, get indpendent guarantees
+        for mdp_task in possibles:
+
+            (mdp_spec, guarantees) = self._get_guarantees_for_batch([mdp_task], estimates_service = mdp_estimates)
+            # only keep tasks that are achievable on their own
+            if guarantees.expected_time <= execution_window:                        
+                possibles_with_guarantees_in_time.append((mdp_task, mdp_spec, guarantees))
+            # keep all guarantees anyway, as we might need to report one if we can't find a task to execute
+            possibles_with_guarantees.append((mdp_task, mdp_spec, guarantees))
+
+
+
+        # sort the list of possibles by probability of success, with highest prob at start
+        possibles_with_guarantees_in_time  = sorted(possibles_with_guarantees_in_time, key=lambda x: x[2].probability, reverse=True)  
+
+        for possible in possibles_with_guarantees_in_time:
+            rospy.loginfo('%s will take %.2f secs with prob %.4f' % (possible[0].action.name, possible[2].expected_time.to_sec(), possible[2].probability)) 
+
+        # if at least one task fits into the executable time window
+        if len(possibles_with_guarantees_in_time) > 0:
+
+            # print '1'
+
+            # keep the most probable
+            new_active_batch = [possibles_with_guarantees_in_time[0][0]]
+            last_successful_spec = (possibles_with_guarantees_in_time[0][1], possibles_with_guarantees_in_time[0][2])
+
+            # print '2'
+            # greedily combine with the rest
+            possibles_with_guarantees_in_time = possibles_with_guarantees_in_time[1:]            
+
+            # print '3'
+
+            # limit the tasks inspected by the batch limit... we are skipping tasks, so just using the batch limit isn't enough
+            for possible in possibles_with_guarantees_in_time:
+
+                mdp_task = possible[0]
+                # print '4'
+                # stop when we hit the limit 
+                if len(new_active_batch) == self.batch_limit:
+                    break                
 
                 mdp_tasks_to_check = copy(new_active_batch)
                 mdp_tasks_to_check.append(mdp_task)   
@@ -340,10 +385,18 @@ class MDPTaskExecutor(BaseTaskExecutor):
                     last_successful_spec = (mdp_spec, guarantees)
                     new_active_batch.append(mdp_task)
 
-        if len(new_active_batch) > 0:
-            return evaluated_at_least_one_task, new_active_batch, last_successful_spec[0], last_successful_spec[1]
-        else:
-            return evaluated_at_least_one_task, new_active_batch, None, None
+            return True, new_active_batch, last_successful_spec[0], last_successful_spec[1]
+
+        # if we get here then at least one task can be executed now, but doesn't fit into the execution window on its own
+        elif len(possibles_with_guarantees) > 0:
+            return True, [], possibles_with_guarantees[0][1], possibles_with_guarantees[0][2]
+        # if we get here either there are no tasks or none have passed start_after
+        else:            
+            return False, [], None, None
+
+
+
+
 
     def _next_execution_batch(self):
         """
