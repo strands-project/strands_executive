@@ -545,6 +545,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                         request = GetGuaranteesForCoSafeTaskRequest()
                         request.epoch = mdp_task.task.start_after
                         request.spec.ltl_task = '(F "%s")' % mdp_task.task.start_node_id
+                        request.epoch = mdp_task.task.start_after
                         response = mdp_estimates(request)
 
                         # response gives expected time from all waypoints
@@ -746,7 +747,6 @@ class MDPTaskExecutor(BaseTaskExecutor):
                     active_batch = deepcopy(self.active_batch)
                     normal_tasks = deepcopy(self.normal_tasks)
                     time_critical_tasks = deepcopy(self.time_critical_tasks)
-                
 
                 now = rospy.get_rostime()
                 # todo: fill this value better
