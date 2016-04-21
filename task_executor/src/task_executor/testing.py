@@ -7,7 +7,7 @@ import random
 import threading
 
 import actionlib
-from strands_executive_msgs.msg import Task
+from strands_executive_msgs.msg import Task, TaskEvent
 from task_executor.msg import *
 from Queue import Queue
 from random import randrange
@@ -18,6 +18,7 @@ from strands_executive_msgs.msg import Task
 from strands_executive_msgs.srv import AddTasks, SetExecutionStatus, DemandTask
 from topological_navigation.msg import GotoNodeAction
 from strands_navigation_msgs.msg import TopologicalMap
+from task_executor import task_query
 
 class FakeActionServer(object):
     def __init__(self, action_string, action_sleep, master, tester):
@@ -89,8 +90,8 @@ class TestEntry(object):
         rospy.init_node(name)
         self.node_names = []
         rospy.Subscriber('topological_map', TopologicalMap, self.map_callback)
-
-    
+        self.statuses = []
+        
     def map_callback(self, msg):        
         print 'got map'
         self.node_names = [node.name for node in msg.nodes]
@@ -100,6 +101,62 @@ class TestEntry(object):
             print 'no nodes'
             rospy.sleep(1)
         return self.node_names
+
+    def task_status(self, data):
+        print task_query.format_event(data)
+        self.statuses.append(data)
+
+    def bad_timings(self, task_status_fn = None):   
+        waypoints = self.get_nodes()
+
+        # get task services
+        add_task_srv_name = 'task_executor/add_tasks'
+        demand_task_srv_name = 'task_executor/demand_task'
+        set_exe_stat_srv_name = 'task_executor/set_execution_status'
+        rospy.loginfo("Waiting for task_executor service...")
+        rospy.wait_for_service(add_task_srv_name)
+        rospy.wait_for_service(set_exe_stat_srv_name)
+        rospy.wait_for_service(demand_task_srv_name)
+        rospy.loginfo("Done")        
+        add_tasks_srv = rospy.ServiceProxy(add_task_srv_name, AddTasks)
+        demand_task_srv = rospy.ServiceProxy(demand_task_srv_name, DemandTask)
+        set_execution_status = rospy.ServiceProxy(set_exe_stat_srv_name, SetExecutionStatus)
+
+        start_delay = rospy.Duration(3)
+
+        now = rospy.get_rostime()
+
+        # creates a wait task that waits for a lot longer than it should
+        wait_duration_secs = 100
+        wait_task = Task(action='wait_action',start_node_id=random.choice(waypoints))
+        wait_task.max_duration = rospy.Duration(wait_duration_secs/10)
+        wait_task.start_after = now + start_delay
+        wait_task.end_before = wait_task.start_after + wait_task.max_duration + wait_task.max_duration
+        task_utils.add_time_argument(wait_task, rospy.Time())
+        task_utils.add_duration_argument(wait_task, rospy.Duration(wait_duration_secs))
+
+        rospy.Subscriber('task_executor/events', TaskEvent, self.task_status)
+
+        tasks = [wait_task]
+
+        try:
+
+            add_tasks_srv(tasks)    
+            
+            # Start the task executor running
+            set_execution_status(True)
+
+            wait_until = wait_task.end_before + rospy.Duration(60)
+            while now < wait_until and not rospy.is_shutdown():
+                rospy.sleep(1)
+                now = rospy.get_rostime()
+            
+            if task_status_fn is not None:
+                task_status_fn(self.statuses)
+ 
+        except rospy.ServiceException, e:
+            print "Service call failed: %s"%e
+
 
     def run_test(self, task_descriptions_fn, test_tasks = 20, time_critical_tasks = 0, time_diffs_fn = None, pause_delay = rospy.Duration(10), pause_count = 0, demanded_tasks = 0):   
         waypoints = self.get_nodes()
