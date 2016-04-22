@@ -187,8 +187,8 @@ class TestEntry(object):
         assert test_tasks == len(task_descriptions)
 
         
-        time_critical_step = rospy.Duration(1500) 
-        time_critical_start = now + start_delay + rospy.Duration(2000) 
+        time_critical_step = rospy.Duration(600) 
+        time_critical_start = now + start_delay + rospy.Duration(1200) 
 
         for n in range(test_tasks, test_tasks + time_critical_tasks):            
             string = 'Please run me at %s is' % time_critical_start.to_sec()
