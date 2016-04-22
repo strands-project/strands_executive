@@ -12,9 +12,8 @@ from mongodb_store_msgs.msg import StringPair
 
 
 class TopMapMdp(Mdp):
-    def __init__(self,top_map_name, explicit_doors=False, forget_doors=False):
+    def __init__(self,top_map_name, explicit_doors=False, forget_doors=False, model_fatal_fails=False):
         Mdp.__init__(self)
-        forget_doors=True
         got_service=False
         while not got_service:
             try:
@@ -35,6 +34,7 @@ class TopMapMdp(Mdp):
                 return
         self.mongo=MessageStoreProxy()
         
+        self.model_fatal_fails=model_fatal_fails
         self.top_map_name=top_map_name
         self.get_top_map_srv=rospy.ServiceProxy("/topological_map_publisher/get_topological_map", GetTopologicalMap)
         self.get_edge_estimates=rospy.ServiceProxy("/topological_prediction/predict_edges", PredictEdgeState)        
@@ -47,7 +47,6 @@ class TopMapMdp(Mdp):
         self.door_timeout=240
         self.door_transitions=[]
         self.create_top_map_mdp_structure()
-        
         self.action_descriptions={}
         
         #DOOR MODELLING
@@ -70,7 +69,10 @@ class TopMapMdp(Mdp):
         self.state_vars=['waypoint']
         self.initial_state={'waypoint':0}
         n_waypoints=len(self.top_map.nodes)
-        self.state_vars_range={'waypoint':(0,n_waypoints-1)}
+        if self.model_fatal_fails:
+            self.state_vars_range={'waypoint':(-1,n_waypoints-1)}
+        else:
+            self.state_vars_range={'waypoint':(0,n_waypoints-1)}
                 
         self.n_props=n_waypoints
         self.props=[]
@@ -172,7 +174,14 @@ class TopMapMdp(Mdp):
         for (edge, prob, duration) in zip(predictions.edge_ids, predictions.probs, predictions.durations):
             for transition in self.transitions:
                 if edge == transition.action_name:
-                    transition.prob_post_conds=[(prob, dict(transition.prob_post_conds[0][1])), (1-prob, dict(transition.pre_conds))]
+                    if prob < 1:
+                        good_outcome=dict(transition.prob_post_conds[0][1])
+                        if self.model_fatal_fails:
+                            fatal_outcome=deepcopy(transition.pre_conds)
+                            fatal_outcome['waypoint']=-1
+                            transition.prob_post_conds=[(prob, good_outcome), (1-prob, fatal_outcome)]
+                        else:
+                            transition.prob_post_conds=[(prob, good_outcome), (1-prob, dict(transition.pre_conds))]
                     transition.rewards["time"]=duration.to_sec()       
         self.write_prism_model(file_name, set_initial_state)
         

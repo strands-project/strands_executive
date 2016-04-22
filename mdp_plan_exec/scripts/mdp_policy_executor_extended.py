@@ -31,7 +31,7 @@ class MdpPolicyExecutor(object):
             if rospy.is_shutdown():
                 return
         
-        self.top_map_mdp=TopMapMdp(top_map, explicit_doors=True)
+        self.top_map_mdp=TopMapMdp(top_map, explicit_doors=True, forget_doors=True, model_fatal_fails=True)
         self.current_extended_mdp=None
         self.policy_mdp=None
         self.current_nav_policy_state_defs={}
@@ -174,14 +174,11 @@ class MdpPolicyExecutor(object):
             
         if found_next_state:    
             next_action=self.get_current_action()
-            (probability, prog_reward, expected_time)=self.policy_mdp.get_guarantees_at_flat_state(self.current_flat_state)
-            self.mdp_as.publish_feedback(ExecutePolicyExtendedFeedback(probability=probability,
-                                                                            expected_time=expected_time,
-                                                                            prog_reward=prog_reward,
-                                                                            current_waypoint=self.current_waypoint,
-                                                                            executed_action=executed_action,
-                                                                            execution_status=GoalStatus.SUCCEEDED,
-                                                                            next_action=next_action))
+            if self.policy_mdp.flat_state_defs[self.current_flat_state]['waypoint']==-1:
+                outcome=GoalStatus.ABORTED
+            else:
+                outcome=GoalStatus.SUCCEEDED
+            self.publish_feedback(executed_action, outcome, next_action)
         else:
             rospy.logerr("Couldn't update state. Aborting...")
             self.current_flat_state=None
@@ -211,6 +208,7 @@ class MdpPolicyExecutor(object):
             self.mdp_as.set_aborted()
             return
         self.current_flat_state=self.policy_mdp.initial_flat_state
+        self.publish_feedback(None, None, self.get_current_action())
         
         current_nav_policy=self.generate_current_nav_policy()
         status=self.execute_nav_policy(current_nav_policy)
@@ -243,14 +241,8 @@ class MdpPolicyExecutor(object):
                 if not self.cancelled:
                     self.get_mdp_state_update_from_action_outcome(state_update)
                     next_action=self.get_current_action()
-                    (probability, prog_reward, expected_time)=self.policy_mdp.get_guarantees_at_flat_state(self.current_flat_state)
-                    self.mdp_as.publish_feedback(ExecutePolicyExtendedFeedback(probability=probability,
-                                                                               expected_time=expected_time,
-                                                                               prog_reward=prog_reward,
-                                                                               current_waypoint=self.current_waypoint,
-                                                                               executed_action=executed_action,
-                                                                               execution_status=status,
-                                                                               next_action=next_action))
+                    self.publish_feedback(executed_action, status, next_action)
+
         
         
         if self.cancelled:
@@ -261,6 +253,15 @@ class MdpPolicyExecutor(object):
             rospy.loginfo("Policy execution successful.")
             self.mdp_as.set_succeeded()
 
+    def publish_feedback(self, executed_action, status, next_action):
+        (probability, prog_reward, expected_time)=self.policy_mdp.get_guarantees_at_flat_state(self.current_flat_state)
+        self.mdp_as.publish_feedback(ExecutePolicyExtendedFeedback(probability=probability,
+                                                                expected_time=expected_time,
+                                                                prog_reward=prog_reward,
+                                                                current_waypoint=self.current_waypoint,
+                                                                executed_action=executed_action,
+                                                                execution_status=status,
+                                                                next_action=next_action))
 
     def preempt_policy_execution_cb(self):     
         self.top_nav_policy_exec.cancel_all_goals()
