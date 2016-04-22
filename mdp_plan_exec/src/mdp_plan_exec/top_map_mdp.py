@@ -185,7 +185,7 @@ class TopMapMdp(Mdp):
                             else:
                                 transition.prob_post_conds=[(prob, good_outcome), (1-prob, dict(transition.pre_conds))]
                         transition.rewards["time"]=duration.to_sec()
-         except rospy.ServiceException, e:
+        except rospy.ServiceException, e:
             rospy.logwarn("Error calling edge transversal times prediction service: " + str(e))
             rospy.logwarn("The total navigation expected values will not be for the requested epoch.")                
         self.write_prism_model(file_name, set_initial_state)
