@@ -11,12 +11,12 @@ class PartialSatPrismJavaTalker(object):
     def __init__(self,port,dir_name,file_name):
         HOST = "localhost"
         PORT = port
-        #prism_dir='/opt/prism-robots/prism'
+        prism_dir='/opt/prism-robots/prism'
         #prism_dir='/home/strands/bruno_ws/prism-robots/prism'
-        prism_dir='/home/bruno/devel_ws/prism-robots/prism'
+        #prism_dir='/home/bruno/devel_ws/prism-robots/prism'
         #prism_dir='/Users/nah/code/prism-robots/prism'
         os.chdir(prism_dir)
-        os.environ['PRISM_MAINCLASS'] = 'prism.PrismPythonTalker'
+        os.environ['PRISM_MAINCLASS'] = 'prism.PartialSatPrismPythonTalker'
         self.java_server=subprocess.Popen(["bin/prism",str(PORT),dir_name, file_name])
         rospy.sleep(1)
         
