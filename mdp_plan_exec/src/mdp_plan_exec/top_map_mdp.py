@@ -164,8 +164,9 @@ class TopMapMdp(Mdp):
             if node.name==waypoint:
                 return self.mongo.insert(PoseStamped(pose=node.pose))
             
+
     
-    def set_mdp_action_durations(self, file_name, epoch=None):
+    def set_mdp_action_durations(self, file_name, epoch=None, set_initial_state=True):
         if epoch is None:
             epoch=rospy.Time.now()
         try:
