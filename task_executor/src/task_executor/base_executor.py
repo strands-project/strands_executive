@@ -87,7 +87,6 @@ class BaseTaskExecutor(object):
         self.expected_time_lock = threading.RLock()
 
         self.task_event_publisher = rospy.Publisher('task_executor/events', TaskEvent, queue_size=20)
-        self.task_dropped_publisher = rospy.Publisher('task_executor/dropped', Task, queue_size=20)
 
 
     def get_active_task_completion_time(self):
@@ -492,8 +491,6 @@ class BaseTaskExecutor(object):
         Called when tasks are dropped from the executor
         """
         if(len(tasks) > 0):
-            for task in tasks:
-                self.task_dropped_publisher.publish(task)
             self.log_task_events(tasks, TaskEvent.DROPPED, rospy.get_rostime(), description = description)                
 
     
