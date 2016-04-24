@@ -49,8 +49,13 @@ class MdpTravelTimeEstimator(object):
 
 if __name__ == '__main__':
     rospy.init_node('mdp_travel_time_estimator')
-    top_map_name=rospy.get_param("/topological_map_name")
-    mdp_estimator =  MdpTravelTimeEstimator(top_map_name)
-    mdp_estimator.main()
+    
+    while not rospy.has_param("/topological_map_name") and not rospy.is_shutdown():
+        rospy.sleep(0.1)
+
+    if not rospy.is_shutdown():
+        top_map_name=rospy.get_param("/topological_map_name")
+        mdp_estimator =  MdpTravelTimeEstimator(top_map_name)
+        mdp_estimator.main()
     
     

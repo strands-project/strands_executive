@@ -3,13 +3,11 @@ class MdpTransitionDef(object):
                 action_name=None,
                 pre_conds=None,
                 prob_post_conds=None,
-                rewards=None,
-                exec_count=None):
+                rewards=None):
         self.action_name=action_name
         self.pre_conds=pre_conds
         self.prob_post_conds=prob_post_conds
         self.rewards=rewards
-        self.exec_count=exec_count
         
 class MdpPropDef(object):
     def __init__(self,
@@ -51,14 +49,17 @@ class Mdp(object):
         return conds_string[:-3]
     
        
-    def write_prism_model(self,file_name):
+    def write_prism_model(self,file_name, set_initial_state=True):
         f=open(file_name,'w')
         f.write('mdp\n \n')
         f.write('module M \n \n')
         
         for state_var in self.state_vars:
             state_var_range=self.state_vars_range[state_var]
-            f.write(state_var + ':[' + str(state_var_range[0]) + '..' + str(state_var_range[1]) + '] init ' + str(self.initial_state[state_var]) + ';\n')
+            if set_initial_state:
+                f.write(state_var + ':[' + str(state_var_range[0]) + '..' + str(state_var_range[1]) + '] init ' + str(self.initial_state[state_var]) + ';\n')
+            else:
+                f.write(state_var + ':[' + str(state_var_range[0]) + '..' + str(state_var_range[1]) + ']' + ';\n') 
         f.write('\n')
         
         for transition in self.transitions:
@@ -78,6 +79,9 @@ class Mdp(object):
                 if reward in transition.rewards and transition.rewards[reward]!=0:
                     f.write('   [' + transition.action_name + '] ' + self.cond_to_prism_string(transition.pre_conds) + ':' + str(transition.rewards[reward]) + ';\n')    
             f.write('endrewards\n')
+        
+        if not set_initial_state:
+            f.write('\n init true endinit')
         
         f.close()
         

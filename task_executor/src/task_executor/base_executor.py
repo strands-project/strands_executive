@@ -17,7 +17,7 @@ from std_msgs.msg import String
 import threading
 
 class BaseTaskExecutor(object):
-    # These can be implemented by sub classes to provide hooks into the execution system
+    # These should be implemented by sub classes to provide hooks into the execution system
 
     def add_tasks(self, tasks):
         """ Called with new tasks for the executor """
@@ -28,33 +28,28 @@ class BaseTaskExecutor(object):
         pass
 
     def pause_execution(self):
-        """ Called when overall execution should pause """
+        """ Called when overall execution should pause. This is called *before* self.executing is set to False. """
         pass
 
-    def task_complete(self, task):
-        """ Called when the given task has completed execution """
-        pass
-
-    def task_succeeded(self, task):
-        """ Called when the given task has completed execution successfully """
-        self.task_complete(task)
-
-    def task_failed(self, task):
-        """ Called when the given task has completed execution but failed """
-        self.task_complete(task)
 
 
-    def task_demanded(self, demanded_task, currently_active_task):
-        """ Called when a task is demanded. self.active_task is the demanded task (and is being executed) and previously_active_task was the task that was being executed (which could be None) """
+    def task_demanded(self, demanded_task, currently_active_tasks):
+        """ Called when a task is demanded. self.active_tasks is the demanded task (and is being executed) and currently_active_tasks are the task that were being executed (which could be empty) """
         pass
 
     def cancel_task(self, task_id):
         """ Called when a request is received to cancel a task. The currently executing one is checked elsewhere. """
         return False
 
+    def cancel_active_task(self):
+        """ Called to cancel the task which is currently executing """
+        pass
+
     def clear_schedule(self):
         """ Called to clear all tasks from schedule, with the exception of the currently executing one. """
         pass
+
+
 
 
     # "Constants" to determine which nav service to use
@@ -82,9 +77,10 @@ class BaseTaskExecutor(object):
         # start with some faked but likely one in case of problems
         self.current_node = 'WayPoint1'
         self.closest_node = 'WayPoint1'
+        self.received_a_node = False
         rospy.Subscriber('/current_node', String, self.update_topological_location)
         rospy.Subscriber('/closest_node', String, self.update_topological_closest_node)
-        self.active_task = None
+        self.active_tasks = []
         self.active_task_completes_by = rospy.get_rostime()
         self.logging_lock = threading.Lock()
         self.service_lock = threading.Lock()
@@ -99,11 +95,11 @@ class BaseTaskExecutor(object):
 
     def update_topological_location(self, node_name):
         self.current_node = node_name.data
-
+        self.received_a_node = True
     
     def update_topological_closest_node(self,node_name):
         self.closest_node=node_name.data
-
+        self.received_a_node = True
 
     def advertise_services(self):  
         """
@@ -128,7 +124,12 @@ class BaseTaskExecutor(object):
 
 
     def get_topological_node(self):
-        if self.current_node == 'none':
+
+        # wait for that first update. this will block until either current or closest is set
+        while not self.received_a_node and not rospy.is_shutdown():
+            rospy.sleep(0.1)
+
+        if self.current_node is None or self.current_node == 'none':
             return self.closest_node
         else:
             return self.current_node
@@ -244,32 +245,43 @@ class BaseTaskExecutor(object):
         """
         Adds a task into the task execution framework.
         """
-        self.service_lock.acquire()
-        req.task.task_id = self.task_counter
-        self.task_counter += 1
-        self.add_tasks([req.task])
-        self.log_task_event(req.task, TaskEvent.ADDED, rospy.get_rostime())                
-        self.service_lock.release()
-        return req.task.task_id
+        task_ids = self.add_tasks_ros_srv(AddTasksRequest(tasks=[req.task]))
+        if len(task_ids) > 0:
+            return task_ids[0]
+        else:
+            return None
     add_task_ros_srv.type=AddTask
 
-    def get_active_task_ros_srv(self, req):
+    def get_active_tasks_ros_srv(self, req):
         """
         Gets the currently executing task.
         """
-        return [self.active_task]
-    get_active_task_ros_srv.type=GetActiveTask
+        return [self.active_tasks]
+    get_active_tasks_ros_srv.type=GetActiveTasks
 
     def add_tasks_ros_srv(self, req):
         """
         Adds a task into the task execution framework.
         """
         self.service_lock.acquire()
+        now = rospy.get_rostime()
         task_ids = []
         for task in req.tasks:
             task.task_id = self.task_counter
             task_ids.append(task.task_id)
             self.task_counter += 1
+            
+            if task.max_duration.secs == 0:
+                rospy.logwarn('Task %s did not have max_duration set' % (task.action))
+                task.max_duration = rospy.Duration(5 * 60)
+
+            if task.start_after.secs == 0:
+                rospy.logwarn('Task %s did not have start_after set' % (task.action))                
+                task.start_after = now
+
+            if task.end_before.secs == 0:
+                rospy.logwarn('Task %s did not have end_before set' % (task.action))                
+                task.end_before = task.start_after + (task.max_duration * 5)
 
         self.add_tasks(req.tasks)        
         self.log_task_events(req.tasks, TaskEvent.ADDED, rospy.get_rostime())                
@@ -284,11 +296,12 @@ class BaseTaskExecutor(object):
         try:            
             self.service_lock.acquire()
 
-            if self.active_task is not None and not self.is_task_interruptible(self.active_task):
+            if not self.are_tasks_interruptible(self.active_tasks):
                 return [False, 0, self.active_task_completes_by - rospy.get_rostime()]
 
             req.task.task_id = self.task_counter        
             self.task_counter += 1
+
             # give the task some sensible defaults
             req.task.start_after = rospy.get_rostime() - rospy.Duration(10)
             req.task.end_before = rospy.get_rostime() + (req.task.max_duration * 20)
@@ -297,15 +310,16 @@ class BaseTaskExecutor(object):
 
 
             # stop anything else
-            if self.active_task is not None:
+            if len(self.active_tasks) > 0:
                 self.pause_execution()
                 self.executing = False
                 self.cancel_active_task()
 
             # and inform implementation to let it take action
-            self.task_demanded(req.task, self.active_task)                        
-
+            self.task_demanded(req.task, self.active_tasks)                        
+            
             if not self.executing:
+                self.executing = True
                 self.start_execution()
 
             self.log_task_event(req.task, TaskEvent.DEMANDED, rospy.get_rostime())                
@@ -316,24 +330,35 @@ class BaseTaskExecutor(object):
 
     demand_task_ros_srv.type=DemandTask
 
+
+    def is_in_active_tasks(self, task_id):
+        for task in self.active_tasks:
+            if task.task_id == task_id:
+                return True
+        return False
+
     def cancel_task_ros_srv(self, req):
         """ Cancel the speficially requested task """        
 
         self.service_lock.acquire()
         
         cancelled = False
-        if self.active_task is not None and self.active_task.task_id == req.task_id:        
-            self.log_task_event(self.active_task, TaskEvent.CANCELLED_MANUALLY, rospy.get_rostime())   
+        if self.is_in_active_tasks(req.task_id):        
+            self.log_task_events(self.active_tasks, TaskEvent.CANCELLED_MANUALLY, rospy.get_rostime())   
             self.cancel_active_task()
             cancelled = True
         else:
-            self.log_task_event(Task(task_id=req.task_id), TaskEvent.CANCELLED_MANUALLY, rospy.get_rostime())   
             cancelled = self.cancel_task(req.task_id)
+            if cancelled:
+                self.log_task_event(Task(task_id=req.task_id), TaskEvent.CANCELLED_MANUALLY, rospy.get_rostime())           
         
         self.service_lock.release() 
 
         return cancelled
+
     cancel_task_ros_srv.type = CancelTask
+
+
 
     def clear_schedule_ros_srv(self, req):
         """ Remove all scheduled tasks and active task """
@@ -342,7 +367,7 @@ class BaseTaskExecutor(object):
 
         self.clear_schedule()
 
-        if self.active_task is not None:        
+        if len(self.active_tasks) > 0:        
             self.cancel_active_task()
 
         self.service_lock.release()
@@ -370,7 +395,7 @@ class BaseTaskExecutor(object):
             previous = self.executing
             
 
-            if self.is_task_interruptible(self.active_task):
+            if self.are_tasks_interruptible(self.active_tasks):
                 self.pause_execution()
                 self.executing = False
                 success = True            
@@ -397,13 +422,13 @@ class BaseTaskExecutor(object):
 
     def prepare_task(self, task):
 
-        self.active_task = task       
+        self.active_tasks = [task]       
 
         now = rospy.get_rostime()
 
         expected_nav_duration = rospy.Duration(0)
-        if self.active_task.start_node_id != '':                    
-            expected_nav_duration = self.expected_navigation_duration_now(self.active_task.start_node_id)
+        if self.active_tasks[0].start_node_id != '':                    
+            expected_nav_duration = self.expected_navigation_duration_now(self.active_tasks[0].start_node_id)
             rospy.loginfo('expected_nav_duration:  %s' % expected_nav_duration.to_sec())
 
         total_task_duration = expected_nav_duration + task.max_duration
@@ -414,7 +439,7 @@ class BaseTaskExecutor(object):
 
 
     def instantiate_from_string_pair(self, string_pair):
-        if len(string_pair.first) == 0:
+        if string_pair.first == Task.STRING_TYPE:
             return string_pair.second
         elif string_pair.first == Task.INT_TYPE:
             return int(string_pair.second)
@@ -437,10 +462,17 @@ class BaseTaskExecutor(object):
         return map(self.instantiate_from_string_pair, argument_list)
 
 
+    def are_tasks_interruptible(self, tasks):
+        for task in tasks:
+            if not self.is_task_interruptible(task):
+                return False
+
+        return True
+
     def is_task_interruptible(self, task):
         if task is None:
-            rospy.logwarn('is_task_interruptible passed a None')
-            return False
+            rospy.logwarn('is_task_interruptible passed a None, returning True')
+            return True
 
         try:
             srv_name = task.action + '_is_interruptible'

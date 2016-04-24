@@ -86,8 +86,9 @@ class MdpPolicyExecutor(object):
                 rospy.logwarn("The goal is a forbidden waypoint. Aborting")
                 return None
             elif self.current_waypoint in self.special_waypoints.forbidden_waypoints:
-                rospy.logwarn("The current position is forbidden. Generating the navigation policy ignoring forbidden waypoints to get us out of here.")
-            if self.special_waypoints.forbidden_waypoints==[] or self.current_waypoint in self.special_waypoints.forbidden_waypoints:
+                rospy.logwarn("The current position is forbidden. Aborting")
+                return None
+            if self.special_waypoints.forbidden_waypoints==[]:
                 return 'R{"time"}min=? [ (F "' + goal.target_id + '") ]'
             else:
                 return 'R{"time"}min=? [ (' + self.special_waypoints.forbidden_waypoints_ltl_string + ' U "' + goal.target_id + '") ]'
@@ -206,8 +207,13 @@ class MdpPolicyExecutor(object):
 
 if __name__ == '__main__':
     rospy.init_node('mdp_policy_executor')
-    top_map_name=rospy.get_param("/topological_map_name")
-    mdp_executor =  MdpPolicyExecutor(top_map_name)
-    mdp_executor.main()
+    
+    while not rospy.has_param("/topological_map_name") and not rospy.is_shutdown():
+        rospy.sleep(0.1)
+
+    if not rospy.is_shutdown():
+        top_map_name=rospy.get_param("/topological_map_name")
+        mdp_executor =  MdpPolicyExecutor(top_map_name)
+        mdp_executor.main()
     
     

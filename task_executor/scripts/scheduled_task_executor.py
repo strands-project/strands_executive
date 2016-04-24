@@ -57,6 +57,9 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
         self.advertise_services()
 
+
+
+
     def start_execution(self):
         """ Called when overall execution should  (re)start """
         
@@ -131,6 +134,14 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         # pass signal to schedule
         self.execution_schedule.task_complete(task) 
 
+    def task_succeeded(self, task):
+        """ Called when the given task has completed execution successfully """
+        self.task_complete(task)
+
+    def task_failed(self, task):
+        """ Called when the given task has completed execution but failed """
+        self.task_complete(task)
+
 
     def wait_for_task_to_complete(self):
         """ Useful for cases where you don't know what the effect of cancellation will be   """
@@ -149,8 +160,8 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
             self.execution_schedule.current_task = None
 
 
-    def task_demanded(self, demanded_task, currently_active_task):
-        """ Called when a task is demanded. self.active_task is the demanded task (and is being executed) and previously_active_task was the task that was being executed (which could be None) """
+    def task_demanded(self, demanded_task, currently_active_tasks):
+        """ Called when a task is demanded. self.active_tasks contains the demanded task (and is being executed) and previously_active_task was the task that was being executed (which could be None) """
 
         if demanded_task.end_node_id == '':
             demanded_task.end_node_id = demanded_task.start_node_id 
@@ -179,8 +190,8 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
             success, added = self.try_schedule(previously_scheduled)
             if success:
                 rospy.loginfo('Was able to reinstate %s/%s tasks after demand' % (len(added), len(previously_scheduled)))
-                if currently_active_task != None:
-                    success, added = self.try_schedule([currently_active_task])
+                if len(currently_active_tasks) > 0:
+                    success, added = self.try_schedule(currently_active_tasks)
                     if success and len(added) > 0:
                         rospy.loginfo('Was also able to reinstate previously active task after demand')
                     else:
@@ -398,8 +409,9 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         throw_index =amount_tasks - throw_num 
 
 
-        if(self.active_task is not None):
-          if(low_prio.priority<= self.active_task.priority): #we want to throw away tasks
+        if len(self.active_tasks) > 0:
+          # for the scheduled_task_execution active_tasks will contain at most 1 task
+          if(low_prio.priority<= self.active_tasks[0].priority): #we want to throw away tasks
             rospy.loginfo('Schedule not found, trying to discard %s tasks with priority %s', str(throw_num), str(low_prio.priority))
             #if there are more low priority task, only amount% will be throwen away...
 
@@ -411,7 +423,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
             return sub_additional, throwen_away, True
           else: #task which should be throwen away has higher priority then active task
-            if(self.active_task is not None) and (not self.is_task_interruptible(self.active_task)): #we cant preemt, thus returninf True and throwing away task
+            if len(self.active_tasks) > 0 and not self.is_task_interruptible(self.active_tasks[0]): #we cant preemt, thus returninf True and throwing away task
               rospy.loginfo('Active task cannot be preempted.')
               rospy.loginfo('Schedule not found, trying to discard %s tasks with priority higher prio %s', str(throw_num), str(low_prio.priority))
               
@@ -571,7 +583,6 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
                   #to_schedule.extend(to_old_schedule)
                   to_schedule.extend(sub_additional)
                   additional_tasks = sub_additional #rewrite original set of added tasks
-            
                   sched_result = self.call_scheduler(to_schedule, lower_bound, current_id) 
   
 
@@ -657,7 +668,6 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
             # all encompassing try/catch to make sure this loop does not go down        
             try:
-
 
                 # print "scheduling thread %s" % rospy.is_shutdown()      
                 try:
