@@ -63,12 +63,12 @@ class MDPTaskExecutor(BaseTaskExecutor):
         # init superclasses
         super( MDPTaskExecutor, self ).__init__()
 
-        self.new_time_critical_tasks = Queue()
-
         # collection of MDPTasks sorted by deadline
         self.normal_tasks = SortedCollection(key=(lambda t: t.task.end_before))
         self.time_critical_tasks = SortedCollection(key=(lambda t: t.task.execution_time))
 
+        # how late can tasks be expected to be before they're dropped at planning time
+        self.allowable_lateness = rospy.Duration(300)
     
         self.state_lock = threading.Lock()
         self.mdp_exec_client = None
@@ -79,14 +79,13 @@ class MDPTaskExecutor(BaseTaskExecutor):
         # Whether or not the normal tasks need to be checked
         self.recheck_normal_tasks = False
 
-        # how much time should we try to fill with tasks
+        # how much time should we try to fill with tasks. this is the default and will be extended if necessary
         self.execution_window = rospy.Duration(1200)
+        
         # and the max number of tasks to fit into this window due to MDP scaling issues
-        self.batch_limit = 4
+        self.batch_limit = 6
 
-        self.time_critical_expectation_thread = Thread(target=self._process_time_critical)
-        self.time_critical_expectation_thread.start()
-
+        self.expected_completion_time = rospy.Time()
         self.mdp_exec_thread = Thread(target=self.mdp_exec)    
         self.mdp_exec_thread.start()
         
@@ -140,17 +139,14 @@ class MDPTaskExecutor(BaseTaskExecutor):
         with self.state_lock:
             
             for task in tasks:
-                # print task
+
                 mdp_task = self._convert_task_to_mdp_action(task)
                 if task.start_after == task.end_before:
-                    # queue up the time critical tasks for processing
-                    self.new_time_critical_tasks.put(mdp_task)
+                    self.time_critical_tasks.insert(mdp_task)
                 else:
                     self.normal_tasks.insert(mdp_task)
-                    self.recheck_normal_tasks = True
-
-        if self.recheck_normal_tasks:
-            self.republish_schedule()
+                    
+        self.recheck_normal_tasks = True
 
 
     def goal_status_to_task_status(self, goal_status):
@@ -171,19 +167,11 @@ class MDPTaskExecutor(BaseTaskExecutor):
         Called during execution with feedback from policy execution.
         """
         with self.state_lock:
-            # float64 success_prob
-            # float64 expected_time
-            # float64 expected_prog
-            # string starting_waypoint #only this is filled atm
-            # string executed_action #only this is filled atm
-            # uint8 execution_status #only this is filled atm. interpert using actionlib_msgs/GoalStatus
-            # string ending_waypoint
-            # string next_action
 
             # print("Got Feedback: " + str(feedback))
-
                         
             rospy.loginfo('%s received feedback %s' % (feedback.executed_action, GoalStatus.to_string(feedback.execution_status)))
+            self.expected_completion_time = self._expected_duration_to_completion_time(feedback.expected_time)
             
             # if feedback.execution_status >= GoalStatus.PREEMPTED:
             # we don't need to check this status as we only recieve this feedback in the terminal states of the mdp, so this action is done regarless
@@ -192,7 +180,15 @@ class MDPTaskExecutor(BaseTaskExecutor):
             # todo: show we allow these to be re-added to execution queue? currently preemption signals that a task has been permanently removed
             # todo: if added back to normal tasks it will almost certainly be re-executed immediately as it's at the current location, causing a loop
 
-            self.remove_active_task(feedback.executed_action, self.goal_status_to_task_status(feedback.execution_status))
+            now = rospy.get_rostime()
+            if self.remove_active_task(feedback.executed_action, self.goal_status_to_task_status(feedback.execution_status)):
+                # update the time critical tasks based on current location
+                self._update_time_critical_tasks(now)
+                # check whether we're due to start a time-critical task that we'd otherwise miss
+                if self._should_start_next_time_critical_task(now) and self.mdp_exec_client is not None:
+                    rospy.logwarn('We should be executing a time-critical task now, so cancelling execution')
+                    self.mdp_exec_client.cancel_all_goals()
+
         self.republish_schedule()
 
     def remove_active_task(self, action_name, task_status):
@@ -207,10 +203,11 @@ class MDPTaskExecutor(BaseTaskExecutor):
                 log_string = 'Removing completed active task: %s. %s remaining in active batch' % (action_name, len(self.active_batch))
                 rospy.loginfo(log_string)
                 self.log_task_event(mdp_task.task, task_status, rospy.get_rostime(), description = log_string)        
-                return
+                return True
         rospy.logwarn('Could not find %s in active batch'  % action_name)
+        return False
 
-    def check_for_late_normal_tasks(self, now, wiggle_room):
+    def _check_for_late_normal_tasks(self, now):
         """ 
         Removes any normal tasks which are too late to start execution            
         """       
@@ -221,7 +218,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
             next_normal_task = self.normal_tasks[0]
             # todo: this ignores the navigation time for this task, making task dropping more permissive than it should be. this is ok for now.
             until_next_normal_task = next_normal_task.task.end_before - now
-            if until_next_normal_task < (ZERO - wiggle_room):
+            if until_next_normal_task < (ZERO - self.allowable_lateness):
                 log_string = 'Dropping normal task %s as %s not enough time for execution' % (next_normal_task.action.name, until_next_normal_task.to_sec())
                 rospy.loginfo(log_string)
                 self.normal_tasks = SortedCollection(self.normal_tasks[1:], key=(lambda t: t.task.end_before))                
@@ -233,7 +230,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
         return dropped
 
 
-    def check_for_late_time_critical_tasks(self, now, wiggle_room):
+    def _check_for_late_time_critical_tasks(self, now):
         """ 
         Removes any time-critical tasks which are too late to start execution            
         """
@@ -243,7 +240,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
             next_time_critical_task = self.time_critical_tasks[0]
             until_next_critical_task = next_time_critical_task.task.execution_time - now
 
-            if until_next_critical_task < (ZERO - wiggle_room):
+            if until_next_critical_task < (ZERO - self.allowable_lateness):
                 log_string = 'Dropping time-critical task %s as %s not enough time for execution' % (next_time_critical_task.action.name, until_next_critical_task.to_sec())
                 rospy.loginfo(log_string)
                 self.time_critical_tasks = SortedCollection(self.time_critical_tasks[1:], key=(lambda t: t.task.execution_time))
@@ -279,55 +276,96 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
             
 
-    def _drop_out_of_time_tasks(self, now, wiggle_room):
+    def _drop_out_of_time_tasks(self, now):
         """
         Drop any normal or time-critical task when their time windows have been exceeded.
         """
-        dropped = self.check_for_late_time_critical_tasks(now, wiggle_room)
-        dropped = dropped or self.check_for_late_normal_tasks(now, wiggle_room)                                            
+        dropped = self._check_for_late_time_critical_tasks(now)
+        dropped = dropped or self._check_for_late_normal_tasks(now)                                            
 
         if dropped:
             self.republish_schedule()
 
-    def _get_guarantees_for_batch(self, task_batch, estimates_service = None):
-        if estimates_service == None:
+    def _get_guarantees_for_batch(self, task_batch, estimates_service = None, initial_waypoint = None):
+
+        if initial_waypoint is None:
+            initial_waypoint = self.get_topological_node()
+
+        if estimates_service is None:
             estimates_service = rospy.ServiceProxy('mdp_plan_exec/get_guarantees_for_co_safe_task', GetGuaranteesForCoSafeTask)
             estimates_service.wait_for_service()
 
         spec = self._mdp_tasks_to_spec(task_batch)
-        request = GetGuaranteesForCoSafeTaskRequest(spec = spec, initial_waypoint = self.get_topological_node()) 
+        request = GetGuaranteesForCoSafeTaskRequest(spec = spec, initial_waypoint = initial_waypoint) 
         service_response = estimates_service(request)
         return (spec, service_response)
 
     def _choose_new_active_batch(self, task_check_limit, now, execution_window):
         """
+        Choose the tasks to execute next. 
+
+
+
         task_check_limit says how far along the normal task list to go to look at possible tasks
         """
         # evaluated_at_least_one_task, new_active_batch, new_active_spec, new_active_guarantees = self._choose_new_active_batch()
         
-        evaluated_at_least_one_task = False
-
         mdp_estimates = rospy.ServiceProxy('mdp_plan_exec/get_guarantees_for_co_safe_task', GetGuaranteesForCoSafeTask)
         mdp_estimates.wait_for_service()
         last_successful_spec = None
         
-        new_active_batch = []
-        
 
-        # limit the tasks inspected by the batch limit... we are skipping tasks, so just using the batch limit isn't enough
+        possibles = []
+
+        # first collect the tasks which we can possibly consider
         for mdp_task in self.normal_tasks[:task_check_limit]:     
 
             # stop when we hit the limit 
-            if len(new_active_batch) == self.batch_limit:
+            if len(possibles) == self.batch_limit:
                 break
 
             # only consider tasks which we are allowed to execute from now
             if mdp_task.task.start_after < now:
+                possibles.append(mdp_task)
 
-                # todo: consider probabilities too 
-                # todo: if just using time, try some smarter combinations or orderings, as there might be a single policy that works from here
-                
-                evaluated_at_least_one_task = True
+
+        possibles_with_guarantees_in_time = []
+        possibles_with_guarantees = []
+
+        # now for each single task, get indpendent guarantees
+        for mdp_task in possibles:
+
+            (mdp_spec, guarantees) = self._get_guarantees_for_batch([mdp_task], estimates_service = mdp_estimates)
+            # only keep tasks that are achievable on their own
+            if guarantees.expected_time <= execution_window:                        
+                possibles_with_guarantees_in_time.append((mdp_task, mdp_spec, guarantees))
+            # keep all guarantees anyway, as we might need to report one if we can't find a task to execute
+            possibles_with_guarantees.append((mdp_task, mdp_spec, guarantees))
+
+
+
+        # sort the list of possibles by probability of success, with highest prob at start
+        possibles_with_guarantees_in_time  = sorted(possibles_with_guarantees_in_time, key=lambda x: x[2].probability, reverse=True)  
+
+        for possible in possibles_with_guarantees_in_time:
+            rospy.loginfo('%s will take %.2f secs with prob %.4f' % (possible[0].action.name, possible[2].expected_time.to_sec(), possible[2].probability)) 
+
+        # if at least one task fits into the executable time window
+        if len(possibles_with_guarantees_in_time) > 0:
+
+            # keep the most probable
+            new_active_batch = [possibles_with_guarantees_in_time[0][0]]
+            last_successful_spec = (possibles_with_guarantees_in_time[0][1], possibles_with_guarantees_in_time[0][2])
+
+            # greedily combine with the rest
+            possibles_with_guarantees_in_time = possibles_with_guarantees_in_time[1:]            
+
+            # limit the tasks inspected by the batch limit... we are skipping tasks, so just using the batch limit isn't enough
+            for possible in possibles_with_guarantees_in_time:
+
+                mdp_task = possible[0]
+                if len(new_active_batch) == self.batch_limit:
+                    break                
 
                 mdp_tasks_to_check = copy(new_active_batch)
                 mdp_tasks_to_check.append(mdp_task)   
@@ -340,10 +378,51 @@ class MDPTaskExecutor(BaseTaskExecutor):
                     last_successful_spec = (mdp_spec, guarantees)
                     new_active_batch.append(mdp_task)
 
-        if len(new_active_batch) > 0:
-            return evaluated_at_least_one_task, new_active_batch, last_successful_spec[0], last_successful_spec[1]
+            return True, new_active_batch, last_successful_spec[0], last_successful_spec[1]
+
+        # if we get here then at least one task can be executed now, but doesn't fit into the execution window on its own
+        elif len(possibles_with_guarantees) > 0:
+            return True, [], possibles_with_guarantees[0][1], possibles_with_guarantees[0][2]
+        # if we get here either there are no tasks or none have passed start_after
+        else:            
+            return False, [], None, None
+
+
+    def _update_time_critical_tasks(self, now):
+        """
+        Update the execution time of each time critical task based on current location.
+        """
+
+        # todo: we don't need to always check, only when location has changed... but let's optimise later
+
+        # how far in the future to update tasks
+        only_check_in_the_next = self.execution_window * 2
+        check_before = now + only_check_in_the_next
+
+        estimates_service = rospy.ServiceProxy('mdp_plan_exec/get_guarantees_for_co_safe_task', GetGuaranteesForCoSafeTask)
+        estimates_service.wait_for_service()
+
+        new_time_critical_tasks = SortedCollection(key=(lambda t: t.task.execution_time))
+
+        for mdp_task in self.time_critical_tasks:
+            if mdp_task.task.execution_time.secs == 0 or mdp_task.task.start_after < check_before:
+                spec, guarantees = self._get_guarantees_for_batch([mdp_task], estimates_service = estimates_service)
+                expected_navigation_time = guarantees.expected_time - mdp_task.task.max_duration
+                mdp_task.task.execution_time = mdp_task.task.start_after - expected_navigation_time
+            new_time_critical_tasks.insert(mdp_task)
+
+        self.time_critical_tasks = new_time_critical_tasks
+
+        # for mdp_task in self.time_critical_tasks:
+        #     print mdp_task.action.name, 'at', rostime_to_python(mdp_task.task.execution_time), 'for', rostime_to_python(mdp_task.task.start_after)
+
+
+    def _should_start_next_time_critical_task(self, now):
+        if len(self.time_critical_tasks) > 0:
+            # if we're over the start time, it's good to go... lateness is handled in _check_for_late_time_critical_tasks
+            return now > self.time_critical_tasks[0].task.execution_time
         else:
-            return evaluated_at_least_one_task, new_active_batch, None, None
+            return False
 
     def _next_execution_batch(self):
         """
@@ -355,10 +434,10 @@ class MDPTaskExecutor(BaseTaskExecutor):
            
             now = rospy.get_rostime()
 
-            # how late or early can a time-critical task be
-            wiggle_room = rospy.Duration(180)
-
-            self._drop_out_of_time_tasks(now, wiggle_room)
+            # todo: this ignores what happens when the robot is moving, so need to check during execution too.
+            self._update_time_critical_tasks(now)
+        
+            self._drop_out_of_time_tasks(now)
 
             execution_window = self.execution_window
 
@@ -367,28 +446,24 @@ class MDPTaskExecutor(BaseTaskExecutor):
                 next_time_critical_task = self.time_critical_tasks[0]
                 until_next_critical_task = next_time_critical_task.task.execution_time - now
     
-                # Don't print out all the time
-                # this works well when it's looping waiting for the next tc task, but not for one-off calls
-                if until_next_critical_task.secs % 20 == 0:
-                    rospy.loginfo('Time until next critical task %s' % until_next_critical_task.to_sec())
+                rospy.loginfo('Time until next time-critical task: %.2f secs' % until_next_critical_task.to_sec())
 
                 if until_next_critical_task < execution_window:
                     execution_window = until_next_critical_task
 
-
             # if we're close to a time critical task, then do that
-            if len(self.time_critical_tasks) > 0 and rostime_close(now, next_time_critical_task.task.execution_time, delta = wiggle_room):                               
+            if self._should_start_next_time_critical_task(now):
                
                 new_active_batch = [next_time_critical_task]
                 self.time_critical_tasks = SortedCollection(self.time_critical_tasks[1:], key=(lambda t: t.task.execution_time))                            
                 mdp_goal = self._mdp_single_task_to_goal(next_time_critical_task)
-                rospy.loginfo('executing time-critical task: %s' % mdp_goal.spec.ltl_task)
+                rospy.loginfo('Executing time-critical task: %s. Start time was %s for execution at %s. Time is now %s' % (mdp_goal.spec.ltl_task, rostime_to_python(next_time_critical_task.task.execution_time), rostime_to_python(next_time_critical_task.task.start_after), rostime_to_python(now)))
                 self.mdp_exec_queue.put((mdp_goal, new_active_batch, self._get_guarantees_for_batch(new_active_batch)[1]))
 
             # else see what we can squeeze into available time
             elif self.recheck_normal_tasks:
 
-                rospy.loginfo('Checking for normal tasks to fit into available time: %s' % execution_window.to_sec())
+                rospy.loginfo('Checking for normal tasks to fit into available time: %.2f secs' % execution_window.to_sec())
 
                 # create mdp task batch to fit into available time
                 # 
@@ -433,23 +508,30 @@ class MDPTaskExecutor(BaseTaskExecutor):
                             # todo: we could also try some optimisation to fit in a task other than the first available normal one                    
             else:
                 rospy.logdebug('No need to recheck normal tasks')
+
+            self.republish_schedule()
     
-    def _guarantees_to_completion_time(self, guarantees):
+    def _expected_duration_to_completion_time(self, expected_time):
         """
         Take a guarantees struct and determine when the execution should complete by
         """
-        return rospy.get_rostime() + guarantees.expected_time + rospy.Duration(60)
+        return rospy.get_rostime() + expected_time + rospy.Duration(60)
 
-    def _wait_for_policy_execution(self, expected_completion_time):
+    def _wait_for_policy_execution(self):
         """
         Wait until policy execution is complete or until we reach expected_completion_time at which point policy execution is preempted.
         """
 
         poll_time = rospy.Duration(1)
         log_count = 0
+
         while not self.mdp_exec_client.wait_for_result(poll_time) and not rospy.is_shutdown():
-            now = rospy.get_rostime()
-            remaining_secs = (expected_completion_time - now).to_sec()
+
+            # locking here as the feedback callback can change self.expected_completion_time
+            with self.state_lock:
+                now = rospy.get_rostime()
+                remaining_secs = (self.expected_completion_time - now).to_sec()
+
             if remaining_secs < 0:
                 rospy.logwarn('Policy execution did not complete in expected time, preempting')
                 self.mdp_exec_client.cancel_all_goals()
@@ -484,7 +566,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                     # keep looping until paused or an Empty is thrown
                     while self.executing and not rospy.is_shutdown():
 
-                        (mdp_goal, new_active_batch, guarantees) = self.mdp_exec_queue.get(timeout = 1)
+                        (mdp_goal, new_active_batch, guarantees) = self.mdp_exec_queue.get(timeout = 10)
 
                         sent_goal = False
 
@@ -502,7 +584,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                                     self.log_task_events((m.task for m in self.active_batch), TaskEvent.TASK_STARTED, rospy.get_rostime(), description = mdp_goal.spec.ltl_task)        
                                     self.mdp_exec_client.send_goal(mdp_goal, feedback_cb = self.mdp_exec_feedback)
                                     # this is when we expect navigation to complete by
-                                    expected_completion_time = self._guarantees_to_completion_time(guarantees)
+                                    self.expected_completion_time = self._expected_duration_to_completion_time(guarantees.expected_time)
                                     rospy.loginfo('Sent goal for %s' % mdp_goal.spec.ltl_task)
                                     self.republish_schedule()
                                     sent_goal = True
@@ -515,7 +597,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
                         if sent_goal:
 
-                            final_status = self._wait_for_policy_execution(expected_completion_time)
+                            final_status = self._wait_for_policy_execution()
 
                             with self.state_lock:
                                  
@@ -577,83 +659,6 @@ class MDPTaskExecutor(BaseTaskExecutor):
         """
         self.active_batch = batch
         self.active_tasks = [m.task for m in self.active_batch]
-
-    def _process_time_critical(self):
-        """
-        Poll queue of new time-critical tasks and then add navigation duration to them.
-        """
-
-        while not rospy.is_shutdown():
-           
-            # all encompassing try/catch to make sure this loop does not go down
-            try:
-                 
-                try:
-                    mdp_task = self.new_time_critical_tasks.get(timeout = 1)
-
-                    rospy.wait_for_service('mdp_plan_exec/get_guarantees_for_co_safe_task')
-                    mdp_estimates = rospy.ServiceProxy('mdp_plan_exec/get_guarantees_for_co_safe_task', GetGuaranteesForCoSafeTask)
-
-                    with self.state_lock:
-                        rospy.loginfo('Processing new time-critical task: %s' % mdp_task.action.name)                
-
-                        # rospy.loginfo('Time critical tasks at start of _process_time_critical:')
-                        # for m in self.time_critical_tasks:
-                        #     rospy.loginfo(m.task.task_id)
-                        #     rospy.loginfo(m.action.name)
-
-                        request = GetGuaranteesForCoSafeTaskRequest()
-                        request.epoch = mdp_task.task.start_after
-                        request.spec.ltl_task = '(F "%s")' % mdp_task.task.start_node_id
-                        request.epoch = mdp_task.task.start_after
-                        response = mdp_estimates(request)
-
-                        # response gives expected time from all waypoints
-                        # as we can't assume we're just doing it from where we are
-                        # check from here plus the 
-
-                        # todo: keep the full estimate around so it can be used more correctly in planning
-
-                        potential_start_points = set([self.get_topological_node()]) 
-                    
-                        tasks_to_start_from = [m.task for m in self.normal_tasks]
-                        tasks_to_start_from += [m.task for m in self.active_batch]
-
-                        for task in tasks_to_start_from:
-                            if len(task.end_node_id) == 0:
-                                if len(task.start_node_id) != 0:
-                                    potential_start_points.add(task.start_node_id)
-                            else:
-                                potential_start_points.add(task.end_node_id)
-
-                        # print 'checking from ', potential_start_points
-                        duration_total = rospy.Duration(0)
-                        for wp in potential_start_points:
-                            duration_total += response.expected_times[response.initial_waypoints.index(wp)]
-                        
-                        expected_nav_time = duration_total / len(potential_start_points)
-                        print '"expected" nav time: ', expected_nav_time.to_sec()
-
-                        mdp_task.task.execution_time = mdp_task.task.start_after - expected_nav_time
-
-                        self.time_critical_tasks.insert(mdp_task)
-
-                        rospy.loginfo('%s time-critical tasks' % len(self.time_critical_tasks))
-                        
-                        self.republish_schedule()
-
-                        # rospy.loginfo('Time critical tasks at end of _process_time_critical:')
-                        # for m in self.time_critical_tasks:
-                        #     rospy.loginfo(m.task.task_id)
-                        #     rospy.loginfo(m.action.name)
-
-                    self.new_time_critical_tasks.task_done()
-                except Empty, e:
-                    pass
-            except Exception, e:
-                rospy.logwarn('Caught exception in _process_time_critical loop: %s' % e)
-                rospy.sleep(1)
-
 
         
 
@@ -770,7 +775,6 @@ class MDPTaskExecutor(BaseTaskExecutor):
         self.pause_execution()            
 
         # (try to) make sure the queues are empty (there's a chance that between the join and next state_lock that something could be added).
-        self.new_time_critical_tasks.join()
         self.mdp_exec_queue.join()
 
         with self.state_lock:           
