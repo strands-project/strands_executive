@@ -8,7 +8,7 @@
   	<arg name="yaml_map" default="$(find task_executor)/tests/tsc2015.yaml" />
   </include>		
 
-  <include file="$(find task_executor)/launch/task-scheduler.launch" />
+  <include file="$(find task_executor)/launch/mdp-executor.launch" />
   
   <test test-name="lots_of_tasks" pkg="task_executor" type="executor_test_script.py" time-limit="7200">
   	<param name="test" value="0"/>
@@ -18,8 +18,16 @@
   	<param name="test" value="1"/>
   </test>
 
+  <test test-name="with_time_critical" pkg="task_executor" type="executor_test_script.py" time-limit="3600">
+    <param name="test" value="2"/>
+  </test>
+
   <test test-name="with_on_demand" pkg="task_executor" type="executor_test_script.py" time-limit="3600">
     <param name="test" value="3"/>
+  </test>
+
+  <test test-name="single_task_timeout" pkg="task_executor" type="executor_test_script.py" time-limit="3600">
+    <param name="test" value="4"/>
   </test>
 
 </launch>

@@ -22,6 +22,12 @@ add_message_files(
   TaskEvent.msg
   DurationList.msg
   DurationMatrix.msg
+  MdpAction.msg
+  MdpActionOutcome.msg
+  MdpStateVar.msg
+  StringIntPair.msg
+  StringTriple.msg
+  MdpDomainSpec.msg
 )
 
 # Generate services in the 'srv' folder
@@ -40,7 +46,8 @@ add_service_files(
   AddDeleteSpecialWaypoint.srv
   GetSpecialWaypoints.srv
   IsTaskInterruptible.srv
-  GetActiveTask.srv
+  GetActiveTasks.srv
+  GetGuaranteesForCoSafeTask.srv
 )
 
 
@@ -49,6 +56,7 @@ find_package(catkin REQUIRED genmsg actionlib_msgs)
 add_action_files(
   FILES
   ExecutePolicy.action
+  ExecutePolicyExtended.action
 )
 
 # Generate added messages and services with any dependencies listed here

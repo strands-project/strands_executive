@@ -1,0 +1,7 @@
+string initial_waypoint
+strands_executive_msgs/MdpDomainSpec spec
+time epoch
+---
+float64 probability
+float64 prog_reward
+duration expected_time

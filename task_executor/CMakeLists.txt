@@ -125,9 +125,10 @@ install(
 
 if (CATKIN_ENABLE_TESTING)
   find_package(catkin REQUIRED COMPONENTS rostest)
-  # add_rostest(tests/fifo_tester.test)
+  # test the executor using the scheduler
   add_rostest(tests/scheduled_exe_tester.test)
-  add_rostest(tests/time_tester.test)
+  # test the executor using mdp planning
+  add_rostest(tests/mdp_exe_tester.test)
 endif()
 
 
