@@ -17,7 +17,7 @@ class PartialSatPrismJavaTalker(object):
         #prism_dir='/Users/nah/code/prism-robots/prism'
         os.chdir(prism_dir)
         os.environ['PRISM_MAINCLASS'] = 'prism.PartialSatPrismPythonTalker'
-        self.java_server=subprocess.Popen(["bin/prism",str(PORT),dir_name, file_name])
+        self.java_server=subprocess.Popen(["bin/prism", str(PORT),dir_name, file_name,  '-javamaxmem', '4g'])
         rospy.sleep(1)
         
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
