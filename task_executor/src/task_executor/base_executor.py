@@ -89,7 +89,6 @@ class BaseTaskExecutor(object):
         self.task_event_publisher = rospy.Publisher('task_executor/events', TaskEvent, queue_size=20)
 
 
-
     def get_active_task_completion_time(self):
         return self.active_task_completes_by
 
@@ -487,6 +486,12 @@ class BaseTaskExecutor(object):
             return True
 
 
+    def drop_tasks(self, tasks, description = ""):
+        """
+        Called when tasks are dropped from the executor
+        """
+        if(len(tasks) > 0):
+            self.log_task_events(tasks, TaskEvent.DROPPED, rospy.get_rostime(), description = description)                
 
     
 

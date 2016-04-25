@@ -12,6 +12,18 @@ from operator import attrgetter
 import copy
 from math import floor
 
+
+# def task_list_diff(all_tasks, subset_of_all_tasks):
+#     """
+#     Returns all_tasks - subset_of_all_tasks based on task ids
+#     """
+#     difference = []
+#     for at in all_tasks:
+#         if not any(st for st in subset_of_all_tasks if st.task_id == at.task_id):
+#             difference.append(at)
+#     return difference
+
+
 class ScheduledTaskExecutor(AbstractTaskExecutor):
 
     def __init__(self):
@@ -183,8 +195,10 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
                     if success and len(added) > 0:
                         rospy.loginfo('Was also able to reinstate previously active task after demand')
                     else:
+                        self.drop_tasks([currently_active_task], description = "Dropped because it couldn't be reinstated after a demanded task")
                         rospy.loginfo('Was not able to reinstate previously active task after demand (but other tasks ok)')
             else:
+                self.drop_tasks(previously_scheduled, description = "Dropped because it couldn't be reinstated after a demanded task")
                 rospy.loginfo('Was NOT able to reinstate tasks after demand')
 
 
@@ -441,8 +455,10 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
       # bound additional tasks by this bound
       if(len(additional_tasks)>0):
         bounded_tasks, dropped_tasks, lower_bound = self.bound_tasks_by_start_window(additional_tasks, self.execution_schedule.get_current_task())
+        
         if len(bounded_tasks) < len(additional_tasks):
           rospy.logwarn('Dropped %s additional tasks which are no longer executable' % (len(additional_tasks) - len(bounded_tasks)))
+          self.drop_tasks(dropped_tasks, description = "Dropped because it is now not possible to be executed in the time available")
         additional_tasks = bounded_tasks
       
     
@@ -452,8 +468,10 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
       
       if(len(schedulable_tasks)>0):         
         bounded_tasks, dropped_tasks, lower_bound = self.bound_tasks_by_start_window(schedulable_tasks, self.execution_schedule.get_current_task())
+        
         if len(bounded_tasks) < len(schedulable_tasks):
           rospy.logwarn('Dropped %s existing tasks which are no longer executable' % (len(schedulable_tasks) - len(bounded_tasks)))
+          self.drop_tasks(dropped_tasks, description = "Dropped because it is now not possible to be executed in the time available")
           # have to remove these from schedule too, although this assumes successful scheduling
           # TODO: what if scheduling is not successful?
           self.execution_schedule.remove_tasks(dropped_tasks)
@@ -505,11 +523,13 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
                 rospy.loginfo('Only rescheduling old schedule, total tasks to perform %s' % self.execution_schedule.get_execution_queue_length())
                 return True, additional_tasks
             else:
+                # don't need to drop here as additional_tasks is the empy list!
                 return False, []
 
         else: #we have new tasks
             sched_result = self.call_scheduler(to_schedule, lower_bound, current_id)
             all_throwen = [] # to save all throwen tasks
+        
             while(not sched_result and (len(additional_tasks)>0)): #schedule is not found, but we have still tasks to throw away
                 
                 sub_additional, throwen_away, priority_reached = self.throw_away_tasks(to_schedule, 0.2) #throw away 20% if tasks have same prio
@@ -563,7 +583,6 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
                   #to_schedule.extend(to_old_schedule)
                   to_schedule.extend(sub_additional)
                   additional_tasks = sub_additional #rewrite original set of added tasks
-
                   sched_result = self.call_scheduler(to_schedule, lower_bound, current_id) 
   
 
@@ -624,11 +643,14 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
                   self.execution_schedule.set_schedule(to_schedule)
 
                   rospy.loginfo('Added %s tasks into the schedule to get total of %s' % (len(new_tasks), self.execution_schedule.get_execution_queue_length()))
+                  self.drop_tasks(all_throwen, description = "Dropped because it was not possible to find a schedule given the constraints of all tasks. This was dropped because it was randomly selected from the lowest priority set.")
+
                   return True, new_tasks
                 else:  #there are no old tasks 
                       
                   self.execution_schedule.add_new_tasks(to_schedule)                
                   self.execution_schedule.set_schedule(to_schedule)
+                  self.drop_tasks(all_throwen, description = "Dropped because it was not possible to find a schedule given the constraints of all tasks. This was dropped because it was randomly selected from the lowest priority set.")                
 
                   rospy.loginfo('Added %s tasks into the schedule to get total of %s' % (len(to_schedule), self.execution_schedule.get_execution_queue_length()))
                   return True, to_schedule  
@@ -642,7 +664,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
     def schedule_tasks(self):
         loopSecs = 5
         
-        while not rospy.is_shutdown() and self.running:           
+        while not rospy.is_shutdown() and self.running:      
 
             # all encompassing try/catch to make sure this loop does not go down        
             try:
@@ -685,7 +707,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
 
             # all encompassing try/catch to make sure this loop does not go down
             try:
-                
+
                 # print "executing thread %s" % rospy.is_shutdown()
                 if(self.execution_schedule.wait_for_execution_change(wait_time)):
                     if self.running:
@@ -699,7 +721,6 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
             except Exception, e:
                 rospy.logwarn('Caught exception in execute_tasks loop: %s' % e)
                 rospy.sleep(1)
-
 
 
     def cancel_task(self, task_id): #Lenka note: 
