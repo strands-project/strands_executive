@@ -24,6 +24,7 @@ class PartialSatPrismJavaTalker(object):
         self.sock.connect((HOST, PORT))
         self.directory = dir_name         
         self.lock=Lock()
+        self.sock.settimeout(60*5)
         
     def call_prism(self,specification):
         command='partial_sat_guarantees\n'
