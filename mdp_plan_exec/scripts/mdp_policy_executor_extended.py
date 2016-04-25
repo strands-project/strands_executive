@@ -77,17 +77,10 @@ class MdpPolicyExecutor(object):
     
     def generate_policy_mdp(self,specification):
         #update initial state
-        print(self.closest_waypoint)
         self.current_extended_mdp.set_initial_state_from_waypoint(self.closest_waypoint)
         self.current_extended_mdp.set_mdp_action_durations(self.directory+self.file_name,rospy.Time.now())
-        expected_time=float(self.prism_policy_generator.call_prism(specification))
-        #feedback=ExecutePolicyFeedback(expected_time=expected_time)
-        #self.mdp_nav_as.publish_feedback(feedback)
-        #if feedback.expected_time==float("inf"):
-        if False:
-            rospy.logwarn("The goal is unattainable. Aborting...")
-            self.policy_mdp=None
-        else:
+        prism_call_success=self.prism_policy_generator.call_prism(specification)
+        if prism_call_success:
             self.policy_mdp=PolicyMdp(self.current_extended_mdp,
                                       self.directory + 'prod.aut',
                                       self.directory + 'prod.sta',
@@ -98,6 +91,9 @@ class MdpPolicyExecutor(object):
                                       self.directory + 'guarantees3.vect'
                                       )
             self.current_policy_flat_state=self.policy_mdp.initial_flat_state
+        else:
+            rospy.logwarn("Error generating policy. Aborting...")
+            self.policy_mdp=None
             
 
     def generate_current_nav_policy(self):
