@@ -17,7 +17,7 @@ class MdpTaskGuaranteesEstimator(object):
 
     def __init__(self,top_map):
         
-        self.top_map_mdp=TopMapMdp(top_map, explicit_doors=True)
+        self.top_map_mdp=TopMapMdp(top_map, explicit_doors=True, forget_doors=True, model_fatal_fails=True)
         self.current_extended_mdp=None
         self.policy_mdp=None
         self.directory = os.path.expanduser("~") + '/tmp/prism/guarantees_estimator/'
