@@ -26,11 +26,13 @@ class MDPTask(object):
     Class to store task and mdp related stuff together.
     """
 
-    def __init__(self, task, state_var, action):
+
+
+    def __init__(self, task, state_var, action, is_ltl = False):
         self.task = task
         self.state_var = state_var
         self.action = action
-
+        self.is_ltl = is_ltl
 
 
 
@@ -100,38 +102,75 @@ class MDPTaskExecutor(BaseTaskExecutor):
         self.tz = tzlocal()
         
 
+    def _extend_formalua_with_exec_flag(self, formula, state_var_name):
+        insert_after = len(formula) - 1
+        for i in range(len(formula) - 1, 0, -1):
+            if formula[i] == ')':
+                insert_after = i
+            elif formula[i] == '(':
+                break
+
+        return formula[:insert_after] + ' & (X ' + state_var_name + '=1)' + formula[insert_after:]
+
     def _convert_task_to_mdp_action(self, task):
         """ Converts a Task to a MdpAction.
             returns a task, state var, action triple
         """
 
-        action_name = 'n'+ str(task.task_id) + '_' + task.action + '_at_' + task.start_node_id  
-        # make sure there is nothing to make PRISM cry
-        action_name = action_name.replace('/','_')
+        is_ltl = False
+        # if this is the case then we're passed an LTL formula
+        if ' ' in task.action:
+            # action_name = 'n'+ str(task.task_id) + '_ltl_task'
+            # state_var_name = 'executed_' + action_name
 
-        state_var_name = 'executed_' + action_name
+            state_var = MdpStateVar()
+            outcome = MdpActionOutcome()            
+            action = MdpAction()
 
-        state_var = MdpStateVar(name = state_var_name,
-                init_val = 0, min_range = 0,
-                max_range = 1)
+            # task.action = self._extend_formalua_with_exec_flag(task.action, state_var_name)
 
-        outcome=MdpActionOutcome(probability = 1.0,
-                post_conds = [StringIntPair(string_data = state_var_name, int_data = 1)],
-                duration_probs = [1.0],
-                durations = [task.max_duration.to_sec()])
+            # state_var = MdpStateVar(name = state_var_name,
+            #         init_val = 0, min_range = 0,
+            #         max_range = 1)
 
-        action = MdpAction(name=action_name, 
-                 action_server=task.action, 
-                 waypoints=[task.start_node_id],
-                 pre_conds=[StringIntPair(string_data=state_var_name, int_data=0)],
-                 outcomes=[outcome])
+            # outcome = MdpActionOutcome(probability = 1.0,
+            #         post_conds = [StringIntPair(string_data = state_var_name, int_data = 1)],
+            #         duration_probs = [1.0],
+            #         durations = [0])
+            
+            # action = MdpAction(name=action_name, 
+            #          pre_conds=[StringIntPair(string_data=state_var_name, int_data=0)],
+            #          outcomes=[outcome])
 
-        action.arguments = task.arguments
+            is_ltl = True
+        else:
+            action_name = 'n'+ str(task.task_id) + '_' + task.action + '_at_' + task.start_node_id  
+            # make sure there is nothing to make PRISM cry
+            action_name = action_name.replace('/','_')
+
+            state_var_name = 'executed_' + action_name
+
+            state_var = MdpStateVar(name = state_var_name,
+                    init_val = 0, min_range = 0,
+                    max_range = 1)
+
+            outcome=MdpActionOutcome(probability = 1.0,
+                    post_conds = [StringIntPair(string_data = state_var_name, int_data = 1)],
+                    duration_probs = [1.0],
+                    durations = [task.max_duration.to_sec()])
+
+            action = MdpAction(name=action_name, 
+                     action_server=task.action, 
+                     waypoints=[task.start_node_id],
+                     pre_conds=[StringIntPair(string_data=state_var_name, int_data=0)],
+                     outcomes=[outcome])
+
+            action.arguments = task.arguments
 
         # print state_var
         # print action
 
-        return MDPTask(task, state_var, action)
+        return MDPTask(task, state_var, action, is_ltl = is_ltl)
 
     def add_tasks(self, tasks):
         """ Called with new tasks for the executor """
@@ -250,11 +289,9 @@ class MDPTaskExecutor(BaseTaskExecutor):
                 break
         return dropped
 
+
     def _mdp_single_task_to_goal(self, mdp_task):
-        mdp_spec = MdpDomainSpec()
-        mdp_spec.vars.append(mdp_task.state_var)
-        mdp_spec.actions.append(mdp_task.action)                    
-        mdp_spec.ltl_task = '(F %s=1)'% mdp_task.state_var.name                
+        mdp_spec = self._mdp_tasks_to_spec([mdp_task])[0]
         return ExecutePolicyExtendedGoal(spec = mdp_spec)
              
 
@@ -263,15 +300,40 @@ class MDPTaskExecutor(BaseTaskExecutor):
         Take a collection of MDPTask objects and produce an MdpDomainSpec from them.
         """
         mdp_spec = MdpDomainSpec()
-        mdp_spec.ltl_task = '(F ('
-        for mdp_task in mdp_tasks:
-
-            mdp_spec.vars.append(mdp_task.state_var)
-            mdp_spec.actions.append(mdp_task.action)
-            mdp_spec.ltl_task += '%s=1 & ' % mdp_task.state_var.name                
         
-        mdp_spec.ltl_task = mdp_spec.ltl_task[:-3]
-        mdp_spec.ltl_task += '))'
+        ltl_tasks = []
+        non_ltl_tasks = []
+
+        for mdp_task in mdp_tasks:
+            if mdp_task.is_ltl:
+                ltl_tasks.append(mdp_task)
+            else:
+                non_ltl_tasks.append(mdp_task)
+                mdp_spec.vars.append(mdp_task.state_var)
+                mdp_spec.actions.append(mdp_task.action)
+
+
+        if len(non_ltl_tasks) > 0:
+            mdp_spec.ltl_task = '(F ('
+            for mdp_task in non_ltl_tasks:
+                mdp_spec.ltl_task += '%s=1 & ' % mdp_task.state_var.name                
+            
+            mdp_spec.ltl_task = mdp_spec.ltl_task[:-3]
+            mdp_spec.ltl_task += '))'
+
+            if len(ltl_tasks) > 0:
+                mdp_spec.ltl_task += ' & '                
+
+
+        if len(ltl_tasks) > 0:
+            for ltl_task in ltl_tasks:
+                mdp_spec.ltl_task += ltl_task.task.action
+                mdp_spec.ltl_task += ' & '
+
+            mdp_spec.ltl_task = mdp_spec.ltl_task[:-3]
+
+        print mdp_spec.ltl_task
+
         return mdp_spec
 
             
@@ -566,7 +628,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                     # keep looping until paused or an Empty is thrown
                     while self.executing and not rospy.is_shutdown():
 
-                        (mdp_goal, new_active_batch, guarantees) = self.mdp_exec_queue.get(timeout = 10)
+                        (mdp_goal, new_active_batch, guarantees) = self.mdp_exec_queue.get(timeout = 1)
 
                         sent_goal = False
 
@@ -657,8 +719,8 @@ class MDPTaskExecutor(BaseTaskExecutor):
         """
         Set the active batch of tasks. Also updates self.active_tasks in the base class
         """
-        self.active_batch = batch
-        self.active_tasks = [m.task for m in self.active_batch]
+        self.active_batch = [m for m in batch if not m.is_ltl]
+        self.active_tasks = [m.task for m in self.active_batch if not m.is_ltl]
 
         
 
