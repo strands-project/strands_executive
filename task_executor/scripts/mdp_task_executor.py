@@ -291,7 +291,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
 
     def _mdp_single_task_to_goal(self, mdp_task):
-        mdp_spec = self._mdp_tasks_to_spec([mdp_task])[0]
+        mdp_spec = self._mdp_tasks_to_spec([mdp_task])
         return ExecutePolicyExtendedGoal(spec = mdp_spec)
              
 
@@ -568,6 +568,12 @@ class MDPTaskExecutor(BaseTaskExecutor):
                             # the basic thing here is not to recheck the normal tasks until after the next time-critical execution or until new normal tasks are added (which could be potentially earlier/shorter)
                             self.recheck_normal_tasks = False
                             # todo: we could also try some optimisation to fit in a task other than the first available normal one                    
+                    else:
+                        # if we get here we have normal tasks, but none of them were available for execution. this probaly means
+                        # that they're for the future
+                        # we can't set recheck_normal_tasks to False as this is the only way the time is rechecked
+                        rospy.loginfo('Next task available for execution in %.2f secs' % (self.normal_tasks[0].task.start_after - now).to_sec())
+                        # pass
             else:
                 rospy.logdebug('No need to recheck normal tasks')
 
