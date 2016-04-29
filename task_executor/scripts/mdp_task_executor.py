@@ -314,12 +314,12 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
 
         if len(non_ltl_tasks) > 0:
-            mdp_spec.ltl_task = '(F ('
+            mdp_spec.ltl_task = ''
             for mdp_task in non_ltl_tasks:
-                mdp_spec.ltl_task += '%s=1 & ' % mdp_task.state_var.name                
+                mdp_spec.ltl_task += '(F %s=1) & ' % mdp_task.state_var.name                
             
             mdp_spec.ltl_task = mdp_spec.ltl_task[:-3]
-            mdp_spec.ltl_task += '))'
+           # mdp_spec.ltl_task += '))'
 
             if len(ltl_tasks) > 0:
                 mdp_spec.ltl_task += ' & '                
