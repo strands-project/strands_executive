@@ -82,7 +82,6 @@ class MdpPolicyExecutor(object):
         prism_call_success=self.prism_policy_generator.call_prism(specification)
         if prism_call_success:
             self.policy_mdp=PolicyMdp(self.current_extended_mdp,
-                                      self.directory + 'prod.aut',
                                       self.directory + 'prod.sta',
                                       self.directory + 'prod.lab',
                                       self.directory + 'adv.tra',

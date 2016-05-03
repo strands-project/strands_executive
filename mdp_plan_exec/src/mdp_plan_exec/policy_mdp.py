@@ -8,7 +8,7 @@ from mdp import Mdp
         
 
 class PolicyMdp(Mdp):
-    def __init__(self, original_mdp, dfa_txt, product_sta, product_lab, policy_tra, probs_vect, progs_vect, exp_times_vect):
+    def __init__(self, original_mdp, product_sta, product_lab, policy_tra, probs_vect, progs_vect, exp_times_vect):
         Mdp.__init__(self)
         self.original_mdp=original_mdp
         self.n_state_vars=original_mdp.n_state_vars+1
@@ -24,15 +24,12 @@ class PolicyMdp(Mdp):
         self.transitions=[] #list of MdpTransitionDef instances: won't be filled for the policy, as we will work with the flat representations
         self.reward_names=list(original_mdp.reward_names)
         
-        #read automata file to get number of dfa states
+        #read sta product file to get flat state descriptions and number of dfa states
         self.n_aut_states=0
-        self.set_n_aut_states(dfa_txt)
-        self.state_vars_range["_da"]=[0, self.n_aut_states-1]
-        
-        #read sta product file to get flat state descriptions
         self.n_flat_states=0
         self.flat_state_defs={}
         self.read_prod_state_file(product_sta)
+        self.state_vars_range["_da"]=[0, self.n_aut_states]
         
         #read lab product file to get initial and accepting states
         self.initial_flat_state=-1
@@ -128,6 +125,8 @@ class PolicyMdp(Mdp):
             flat_state_dict={}
             for (var_name, value) in zip(variables, flat_state_list):
                 flat_state_dict[var_name] = int(value)
+                if var_name == '_da':
+                    self.n_aut_states=max(self.n_aut_states, int(value))
             self.flat_state_defs[state_id]=flat_state_dict
             self.n_flat_states+=1
         f.close()
