@@ -42,7 +42,7 @@ class MdpTaskGuaranteesEstimator(object):
             self.current_extended_mdp=deepcopy(self.top_map_mdp)
             self.current_extended_mdp.set_initial_state_from_waypoint(req.initial_waypoint)
             self.current_extended_mdp.add_extra_domain(req.spec.vars, req.spec.actions)
-            self.current_extended_mdp.set_mdp_action_durations(self.directory+self.file_name, req.epoch, set_initial_state=True) #add epoch - guarantees dict?
+            self.current_extended_mdp.add_predictions(self.directory+self.file_name, req.epoch, set_initial_state=True) #add epoch - guarantees dict?
             specification=self.generate_prism_specification(req.spec.ltl_task)
             rospy.loginfo("The specification is " + specification)
             prism_call_success=self.prism_estimator.call_prism(specification)
