@@ -5,7 +5,7 @@ import actionlib
 from actionlib_msgs.msg import GoalStatus
 from geometry_msgs.msg import PoseStamped
 from strands_navigation_msgs.srv import GetTopologicalMap, PredictEdgeState
-from door_pass.msg import PredictDoorState
+from door_pass.srv import PredictDoorState
 from strands_executive_msgs.msg import MdpAction, MdpActionOutcome, StringIntPair, StringTriple
 import strands_executive_msgs.mdp_action_utils as mau 
 from mongodb_store.message_store import MessageStoreProxy
@@ -216,11 +216,11 @@ class TopMapMdp(Mdp):
                 index=door_targets.index(source)
                 var_name="door_edge" + str(index)
                 check_door_action_name='check_door' + str(index) + '_at_' + source_wp
-                self.edge_to_door_dict[transition.action]=var_name
+                self.edge_to_door_dict[transition.action_name]=var_name
             else:
                 door_targets.append(target)
                 var_name="door_edge"+str(self.n_door_edges)
-                self.edge_to_door_dict[transition.action]=var_name
+                self.edge_to_door_dict[transition.action_name]=var_name
                 self.state_vars.append(var_name)
                 self.state_vars_range[var_name]=(-1,1) #-1, unkown, 0 closed, 1 open
                 self.initial_state[var_name]=-1
@@ -355,7 +355,7 @@ class TopMapMdp(Mdp):
                         if prob < 1:
                             transition.prob_post_conds=[[1-prob, {door_var:0}],[prob,{door_var:1}]]
                         else:
-                            transition.prob_post_conds=[[1, {door_var:1}]
+                            transition.prob_post_conds=[[1, {door_var:1}]]
                         transition.rewards["time"]=duration.to_sec()
         except rospy.ServiceException, e:
             rospy.logwarn("Error calling door expectations prediction service: " + str(e))
