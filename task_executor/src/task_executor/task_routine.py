@@ -1,3 +1,5 @@
+from __future__ import with_statement 
+
 import rospy
 from datetime import datetime, timedelta, date
 from dateutil.tz import tzlocal, tzutc
@@ -5,6 +7,7 @@ from copy import copy
 from mongodb_store.message_store import MessageStoreProxy
 from strands_executive_msgs.msg import Task, TaskEvent
 from threading import Thread
+import threading
 
 _epoch = datetime.utcfromtimestamp(0).replace(tzinfo=tzutc())
 
@@ -23,7 +26,7 @@ def time_to_secs(time):
     Coverts a datetime.time object to seconds.
     """
     return (time.hour * 60 * 60) + (time.minute * 60) + (time.second) + (time.microsecond/1000.0)
-	
+    
 
 
 
@@ -195,6 +198,9 @@ class DailyRoutineRunner(object):
     def __init__(self, daily_start, daily_end, add_tasks_srv, pre_start_window=timedelta(hours=0.25), day_start_cb=None, day_end_cb=None, tasks_allowed_fn=None, daily_tasks_fn=None):
         super(DailyRoutineRunner, self).__init__()
        
+        self._state_lock = threading.Lock()
+        self._extra_tasks = []
+        self._delaying = False
 
         if daily_start.tzinfo is None:
             raise RoutineException('Start time must have timezone set')
@@ -313,8 +319,10 @@ class DailyRoutineRunner(object):
                 now = datetime.fromtimestamp(rospy.get_rostime().to_sec(), tz=tzlocal())
 
             if self.day_start_cb is not None and not rospy.is_shutdown():
-                rospy.loginfo('triggering day start cb at %s' % now)
+                rospy.loginfo('triggering day start cb at %s' % now)                
                 self.day_start_cb()
+
+            self._delaying = True            
 
             while now < self.current_routine_end and not rospy.is_shutdown():
                 rospy.sleep(loop_delay)
@@ -362,6 +370,8 @@ class DailyRoutineRunner(object):
         """
             Should be called each new day, in advance of the overall daily start time.
         """
+
+
 
         todays_tasks = self._instantiate_tasks_for_today(self.routine_tasks)
         if self.daily_tasks_fn is not None:
@@ -425,10 +435,11 @@ class DailyRoutineRunner(object):
 
     def _delay_tasks(self, tasks):
         """
-            Delays call to the scheduer until the first of these needs to start, then reruns check for scheduling
+            Delays call to the scheduler until the first of these needs to start, then reruns check for scheduling
         """
 
         if len(tasks) == 0:
+            self._delaying = False
             return
 
         # find the soonest start date of all tasks
@@ -465,19 +476,39 @@ class DailyRoutineRunner(object):
         self._delay_scheduling(tasks, delay)
 
 
+    def insert_extra_tasks(self, tasks):
+        with self._state_lock:
+            self._extra_tasks += tasks
+
+        # if no tasks are being delayed then start up 
+        if not self._delaying:
+            self._delaying = True            
+            self._create_routine(self._extra_tasks)
+
+
     # separated out to try differeing approaches
     def _delay_scheduling(self, tasks, delay):
-        rospy.loginfo('Delaying %s tasks for %s secs' % (len(tasks), delay.secs))
+
 
         def _check_tasks():
+            delayed_tasks = tasks
+            rospy.loginfo('Delaying %s tasks for %s secs' % (len(delayed_tasks), delay.secs))
+
             # using a sleep instead of a timer as the timer seems flakey with sim time            
             target = rospy.get_rostime() + delay
             # make sure we can be killed here
             while rospy.get_rostime() < target and not rospy.is_shutdown():
-                rospy.sleep(1)
+                rospy.sleep(5)
+                with self._state_lock:
+                    if len(self._extra_tasks) > 0:                        
+                        rospy.loginfo('Inserting %s extra tasks into the routine for today' % len(self._extra_tasks))
+                        delayed_tasks += self._extra_tasks
+                        self._extra_tasks = []
+                        break
+
             # handle being shutdown
             if not rospy.is_shutdown():
-                self._create_routine(tasks)
+                self._create_routine(delayed_tasks)
 
         Thread(target=_check_tasks).start()
 
