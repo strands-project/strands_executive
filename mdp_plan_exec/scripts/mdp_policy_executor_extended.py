@@ -78,7 +78,7 @@ class MdpPolicyExecutor(object):
     def generate_policy_mdp(self,specification):
         #update initial state
         self.current_extended_mdp.set_initial_state_from_waypoint(self.closest_waypoint)
-        self.current_extended_mdp.set_mdp_action_durations(self.directory+self.file_name,rospy.Time.now())
+        self.current_extended_mdp.add_predictions(self.directory+self.file_name,rospy.Time.now())
         prism_call_success=self.prism_policy_generator.call_prism(specification)
         if prism_call_success:
             self.policy_mdp=PolicyMdp(self.current_extended_mdp,
