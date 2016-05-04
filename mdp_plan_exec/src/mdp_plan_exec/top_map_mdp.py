@@ -5,6 +5,7 @@ import actionlib
 from actionlib_msgs.msg import GoalStatus
 from geometry_msgs.msg import PoseStamped
 from strands_navigation_msgs.srv import GetTopologicalMap, PredictEdgeState
+from door_pass.srv import PredictDoorState
 from strands_executive_msgs.msg import MdpAction, MdpActionOutcome, StringIntPair, StringTriple
 import strands_executive_msgs.mdp_action_utils as mau 
 from mongodb_store.message_store import MessageStoreProxy
@@ -50,9 +51,12 @@ class TopMapMdp(Mdp):
         self.action_descriptions={}
         
         #DOOR MODELLING
-        if explicit_doors:  
+        self.explicit_doors=explicit_doors
+        if self.explicit_doors:  
             self.n_door_edges=0
+            self.edge_to_door_dict={}
             self.add_door_model(forget_doors)
+            self.get_door_estimates=rospy.ServiceProxy("/door_prediction/predict_doors", PredictDoorState) 
                     
         rospy.loginfo("Topological MDP initialised")
 
@@ -163,34 +167,7 @@ class TopMapMdp(Mdp):
         for node in self.top_map.nodes:
             if node.name==waypoint:
                 return self.mongo.insert(PoseStamped(pose=node.pose))
-            
-
-    
-    def set_mdp_action_durations(self, file_name, epoch=None, set_initial_state=True):
-        if epoch is None:
-            epoch=rospy.Time.now()
-        try:
-            predictions=self.get_edge_estimates(epoch)
-            if len(predictions.edge_ids) != len(self.nav_actions):
-                rospy.logwarn("Did not receive travel time estimations for all edges, the total navigation expected values will not be correct")
-            for (edge, prob, duration) in zip(predictions.edge_ids, predictions.probs, predictions.durations):
-                for transition in self.transitions:
-                    if edge == transition.action_name:
-                        if prob < 1:
-                            good_outcome=dict(transition.prob_post_conds[0][1])
-                            if self.model_fatal_fails:
-                                fatal_outcome=deepcopy(transition.pre_conds)
-                                fatal_outcome['waypoint']=-1
-                                transition.prob_post_conds=[(prob, good_outcome), (1-prob, fatal_outcome)]
-                            else:
-                                transition.prob_post_conds=[(prob, good_outcome), (1-prob, dict(transition.pre_conds))]
-                        transition.rewards["time"]=duration.to_sec()
-        except rospy.ServiceException, e:
-            rospy.logwarn("Error calling edge transversal times prediction service: " + str(e))
-            rospy.logwarn("The total navigation expected values will not be for the requested epoch.")                
-        self.write_prism_model(file_name, set_initial_state)
-        
-
+              
     def set_initial_state_from_waypoint(self,current_waypoint):
         self.initial_state['waypoint']=self.props_def[current_waypoint].conds['waypoint']
         
@@ -238,11 +215,12 @@ class TopMapMdp(Mdp):
             if source in door_targets:
                 index=door_targets.index(source)
                 var_name="door_edge" + str(index)
-                check_door_action_name='check_door' + str(index) + '_at_' + source_wp 
+                check_door_action_name='check_door' + str(index) + '_at_' + source_wp
+                self.edge_to_door_dict[transition.action_name]=var_name
             else:
                 door_targets.append(target)
                 var_name="door_edge"+str(self.n_door_edges)
-                print var_name
+                self.edge_to_door_dict[transition.action_name]=var_name
                 self.state_vars.append(var_name)
                 self.state_vars_range[var_name]=(-1,1) #-1, unkown, 0 closed, 1 open
                 self.initial_state[var_name]=-1
@@ -280,18 +258,7 @@ class TopMapMdp(Mdp):
                             trans_open.prob_post_conds[j][1][var_name]=-1
                             extra_trans_list+=[trans_open, trans_closed]
                 self.transitions+=extra_trans_list
-            
-            
-            
-            
-    def set_open_door_probabilities(self, file_name, epoch=None):
-        if epoch is not None:
-            rospy.loginfo("Getting probabilities for specific time of day")
-        else:
-            rospy.loginfo("Getting door probabilities for now")
-        #TODO change door transition probabilities
-        self.write_prism_model(file_name)
-        
+
 
     def string_int_pair_list_to_dict(self, string_int_pair_list):
         res={}
@@ -342,8 +309,55 @@ class TopMapMdp(Mdp):
             for waypoint in action.waypoints:
                 self.transitions.append(self.action_msg_to_transition(action, waypoint, use_expected_duration))
                                             
-                                       
+    def add_predictions(self, file_name, epoch=None, set_initial_state=True):
+        if epoch is None:
+            epoch=rospy.Time.now()
+        self.add_nav_predictions(epoch)
+        if self.explicit_doors:
+            self.add_door_predictions(epoch)
+        self.write_prism_model(file_name, set_initial_state)
         
+    
+    def add_nav_predictions(self, epoch):
+        try:
+            predictions=self.get_edge_estimates(epoch)
+            if len(predictions.edge_ids) != len(self.nav_actions):
+                rospy.logwarn("Did not receive nav expectations for all edges, the total navigation expected values will not be correct")
+            for (edge, prob, duration) in zip(predictions.edge_ids, predictions.probs, predictions.durations):
+                for transition in self.transitions:
+                    if edge == transition.action_name:
+                        good_outcome=dict(transition.prob_post_conds[0][1])
+                        if prob < 1:                            
+                            if self.model_fatal_fails:
+                                fatal_outcome=deepcopy(transition.pre_conds)
+                                fatal_outcome['waypoint']=-1
+                                transition.prob_post_conds=[(prob, good_outcome), (1-prob, fatal_outcome)]
+                            else:
+                                transition.prob_post_conds=[(prob, good_outcome), (1-prob, dict(transition.pre_conds))]
+                        else:
+                            transition.prob_post_conds=[[1, good_outcome]]
+                        transition.rewards["time"]=duration.to_sec()
+        except rospy.ServiceException, e:
+            rospy.logwarn("Error calling edge transversal times prediction service: " + str(e))
+            rospy.logwarn("The total navigation expected values will not be for the requested epoch.")
+            
+     
 
-
+    def add_door_predictions(self, epoch):
+        try:
+            predictions=self.get_door_estimates(epoch)
+            if len(predictions.edge_ids) != self.n_door_edges:
+                rospy.logwarn("Did not receive expectations for all doors, the total navigation expected values will not be correct")
+            for (edge, prob, duration) in zip(predictions.edge_ids, predictions.probs, predictions.durations):
+                door_var = self.edge_to_door_dict[edge]
+                for transition in self.transitions:
+                    if transition.pre_conds.has_key(door_var) and transition.pre_conds[door_var] == -1:
+                        if prob < 1:
+                            transition.prob_post_conds=[[1-prob, {door_var:0}],[prob,{door_var:1}]]
+                        else:
+                            transition.prob_post_conds=[[1, {door_var:1}]]
+                        transition.rewards["time"]=duration.to_sec()
+        except rospy.ServiceException, e:
+            rospy.logwarn("Error calling door expectations prediction service: " + str(e))
+            rospy.logwarn("The total navigation expected values will not be for the requested epoch.")
 
