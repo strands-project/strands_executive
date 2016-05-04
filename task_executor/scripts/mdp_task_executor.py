@@ -403,6 +403,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
             # 
             if guarantees.expected_time <= execution_window:                        
                 possibles_with_guarantees_in_time.append((mdp_task, mdp_spec, guarantees))
+
         
             # keep all guarantees anyway, as we might need to report one if we can't find a task to execute
             possibles_with_guarantees.append((mdp_task, mdp_spec, guarantees))
