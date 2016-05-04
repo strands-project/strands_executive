@@ -32,7 +32,7 @@ class MdpTravelTimeEstimator(object):
             return GetExpectedTravelTimesToWaypointResponse()
         if req.epoch != self.last_epoch:
             self.last_epoch=req.epoch
-            self.top_map_mdp.set_mdp_action_durations(self.directory+self.file_name, req.epoch)           
+            self.top_map_mdp.add_predictions(self.directory+self.file_name, req.epoch)           
         specification='R{"time"}min=? [ ( F "' + req.target_waypoint + '") ]'
         rospy.loginfo("The specification is " + specification)
         state_vector=map(rospy.Duration, self.prism_estimator.get_state_vector(specification))

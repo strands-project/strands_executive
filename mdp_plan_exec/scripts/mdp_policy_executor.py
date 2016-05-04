@@ -110,7 +110,7 @@ class MdpPolicyExecutor(object):
     def generate_prod_mdp(self,specification):
         #update initial state
         self.top_map_mdp.set_initial_state_from_waypoint(self.closest_waypoint)
-        self.top_map_mdp.set_mdp_action_durations(self.directory+self.file_name,rospy.Time.now())
+        self.top_map_mdp.add_predictions(self.directory+self.file_name,rospy.Time.now())
         expected_time=float(self.prism_policy_generator.get_policy(specification))
         feedback=ExecutePolicyFeedback(expected_time=expected_time)
         self.mdp_nav_as.publish_feedback(feedback)
