@@ -15,6 +15,13 @@ string BOOL_TYPE="____bool____"
 # Constant for string type
 string STRING_TYPE="____str____"
 
+
+# Some fixed constants to give examples of priorities
+uint64 LOW_PRIORITY=100
+uint64 MEDIUM_PRIORITY=200
+uint64 HIGH_PRIORITY=300
+
+
 # This holds the id of the task. This will be assigned by the framework, and doesn't need to be provided.
 uint64 task_id
 
