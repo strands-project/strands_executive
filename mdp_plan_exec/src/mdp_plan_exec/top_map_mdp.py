@@ -351,7 +351,7 @@ class TopMapMdp(Mdp):
             for (edge, prob, duration) in zip(predictions.edge_ids, predictions.probs, predictions.durations):
                 door_var = self.edge_to_door_dict[edge]
                 for transition in self.transitions:
-                    if transition.pre_conds.has_key[door_var] and transition.pre_conds[var_name] == -1:
+                    if transition.pre_conds.has_key(door_var) and transition.pre_conds[door_var] == -1:
                         if prob < 1:
                             transition.prob_post_conds=[[1-prob, {door_var:0}],[prob,{door_var:1}]]
                         else:
