@@ -399,12 +399,10 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
             (mdp_spec, guarantees) = self._get_guarantees_for_batch([mdp_task], estimates_service = mdp_estimates)
             
-            # only keep tasks that are achievable on their own
+            # only reason about combining tasks that are achievable on their own
             # 
-            # update: maybe not, as this would prevent single tasks from extending the execution window if necessary
-            # 
-            # if guarantees.expected_time <= execution_window:                        
-            #     possibles_with_guarantees_in_time.append((mdp_task, mdp_spec, guarantees))
+            if guarantees.expected_time <= execution_window:                        
+                possibles_with_guarantees_in_time.append((mdp_task, mdp_spec, guarantees))
         
             # keep all guarantees anyway, as we might need to report one if we can't find a task to execute
             possibles_with_guarantees.append((mdp_task, mdp_spec, guarantees))
@@ -414,12 +412,12 @@ class MDPTaskExecutor(BaseTaskExecutor):
         # sort the list of possibles by probability of success, with highest prob at start
         # sort is stable, so a sequence of sorts will  work, starting with the lowest priorit
 
-
+        possibles_with_guarantees_in_time  = sorted(possibles_with_guarantees_in_time, key=lambda x: x[0].task.end_before)  
         possibles_with_guarantees_in_time  = sorted(possibles_with_guarantees_in_time, key=lambda x: x[2].probability, reverse=True)  
         possibles_with_guarantees_in_time  = sorted(possibles_with_guarantees_in_time, key=lambda x: x[0].task.priority, reverse=True)  
 
         for possible in possibles_with_guarantees_in_time:
-            rospy.loginfo('%s will take %.2f secs with prio %s and prob %.4f' % (possible[0].action.name, possible[2].expected_time.to_sec(), possible[0].task.priority, possible[2].probability)) 
+            rospy.loginfo('%s will take %.2f secs with prio %s and prob %.4f ending before %s' % (possible[0].action.name, possible[2].expected_time.to_sec(), possible[0].task.priority, possible[2].probability, rostime_to_python(possible[0].task.end_before))) 
 
         # if at least one task fits into the executable time window
         if len(possibles_with_guarantees_in_time) > 0:
