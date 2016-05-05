@@ -418,10 +418,12 @@ class DailyRoutineRunner(object):
             # print (now).secs
             # print (now + task.max_duration).secs
 
+            time_critical = task.start_after == task.end_before
+
             start_time = now if now > task.start_after else task.start_after
 
             # check we're not too late
-            if start_time + task.max_duration > task.end_before:
+            if not time_critical and start_time + task.max_duration > task.end_before:
                 rospy.logwarn('At %s it is not possible to schedule task %s. Ignoring task for today' % (datetime.fromtimestamp(now.secs), task))
             else:
                 # if we're in the the window when this should be scheduled
