@@ -220,7 +220,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
             # todo: if added back to normal tasks it will almost certainly be re-executed immediately as it's at the current location, causing a loop
 
             now = rospy.get_rostime()
-            if self.remove_active_task(feedback.executed_action, self.goal_status_to_task_status(feedback.execution_status)):
+            if feedback.executed_action != '' and self.remove_active_task(feedback.executed_action, self.goal_status_to_task_status(feedback.execution_status)):
                 # update the time critical tasks based on current location
                 self._update_time_critical_tasks(now)
                 # check whether we're due to start a time-critical task that we'd otherwise miss
@@ -243,7 +243,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                 rospy.loginfo(log_string)
                 self.log_task_event(mdp_task.task, task_status, rospy.get_rostime(), description = log_string)        
                 return True
-        rospy.logwarn('Could not find %s in active batch'  % action_name)
+        # rospy.logwarn('Could not find %s in active batch'  % action_name)
         return False
 
     def _check_for_late_normal_tasks(self, now):
@@ -685,7 +685,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                                     if remaining_active > 0:
                                         log_string = 'Active batch still contained %s task(s) after successful execution' % remaining_active
                                         rospy.loginfo(log_string)
-                                        self.log_task_events((m.task for m in self.active_batch), TaskEvent.TASK_STOPPED, rospy.get_rostime(), description = log_string)        
+                                        self.log_task_events((m.task for m in self.active_batch if not m.is_ltl), TaskEvent.TASK_STOPPED, rospy.get_rostime(), description = log_string)        
                                         self.deactivate_active_batch()
 
                                 # execution was paused or a task was demanded, resulting in preemption
@@ -733,8 +733,10 @@ class MDPTaskExecutor(BaseTaskExecutor):
         """
         Set the active batch of tasks. Also updates self.active_tasks in the base class
         """
-        self.active_batch = [m for m in batch if not m.is_ltl]
-        self.active_tasks = [m.task for m in self.active_batch if not m.is_ltl]
+        # self.active_batch = [m for m in batch if not m.is_ltl]
+        # self.active_tasks = [m.task for m in self.active_batch if not m.is_ltl]
+        self.active_batch = copy(batch)
+        self.active_tasks = [m.task for m in self.active_batch]
 
         
 
@@ -747,13 +749,18 @@ class MDPTaskExecutor(BaseTaskExecutor):
         Takes the tasks from the active batch and returns them to the approach lists for later consideration
         """
         active_count = len(self.active_batch)
+        now = rospy.get_rostime()
 
         # for each task remaining in the active batch, put it back into the right list
         for mdp_task in self.active_batch:                    
-            if mdp_task.task.start_after == mdp_task.task.end_before:                        
-                self.time_critical_tasks.insert(mdp_task)
-            else:
-                self.normal_tasks.insert(mdp_task)                                                
+            # we can't monitor the execution of these tasks, so we always assume they're done when deactivated
+            if mdp_task.is_ltl:
+                self.log_task_events([mdp_task.task], TaskEvent.TASK_STOPPED, now, description = 'Active tasks were deactivated')             
+            else: 
+                if mdp_task.task.start_after == mdp_task.task.end_before:                        
+                    self.time_critical_tasks.insert(mdp_task)
+                else:
+                    self.normal_tasks.insert(mdp_task)                                                
 
         # empty the active batch. this might mean some feedback misses the update
         # the consequence is that the task was completed but we preempted before receiving the update, 
