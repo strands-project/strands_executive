@@ -188,7 +188,8 @@ class MdpPolicyExecutor(object):
             if self.policy_mdp.check_cond_sat(current_state_def, self.policy_mdp.flat_state_defs[flat_suc]):
                 self.current_flat_state=flat_suc
                 return
-        rospy.logerr("FODEU")
+        rospy.logerr("Error finding next state after action execution. Aborting...")
+        self.current_flat_state=None
 
 
     def execute_policy_cb(self,goal):
@@ -235,8 +236,13 @@ class MdpPolicyExecutor(object):
                 print(executed_action)
                 if not self.cancelled:
                     self.get_mdp_state_update_from_action_outcome(state_update)
+                    if self.current_flat_state is None:
+                        self.mdp_as.set_aborted()
+                        return
                     next_action=self.get_current_action()
                     self.publish_feedback(executed_action, status, next_action)
+                else:
+                    break
 
         
         
