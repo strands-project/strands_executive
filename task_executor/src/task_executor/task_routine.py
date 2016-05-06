@@ -526,7 +526,10 @@ class DailyRoutineRunner(object):
 
             if not self.day_off():
                 rospy.loginfo('Sending %s tasks to the scheduler' % (len(allowed_tasks)))
-                self.add_tasks_srv(allowed_tasks)
+                try:
+                   self.add_tasks_srv(allowed_tasks)
+                except Exception, e:
+                    rospy.logwarn('Exception on scheduler service call: %s' % e)
             else:
                 rospy.loginfo('Taking the day off')
             
