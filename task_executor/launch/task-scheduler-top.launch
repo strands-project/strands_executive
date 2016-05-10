@@ -1,5 +1,6 @@
 <launch>
-   <arg name="scheduler_version" default="4"/>
+  <arg name="scheduler_version" default="4"/>
+  <arg name="interruptible_wait" default="true"/>
 
   <node pkg="scheduler" type="scheduler_node" name="schedule_server"  output="screen">
     <param name="scheduler_version" type="int" value="$(arg scheduler_version)"/>
@@ -16,7 +17,9 @@
     <param name="count_threshold" type="int" value="5" />
   </node>
 
-  <!-- Utility node used for generating wait behaviours -->
-  <node pkg="wait_action" type="wait_node.py" name="wait_action"  output="screen"/>    
+    <!-- Utility node used for generating wait behaviours -->
+  <node pkg="wait_action" type="wait_node.py" name="wait_action"  output="screen">    
+    <param name="interruptible" type="bool" value="$(arg interruptible_wait)" />
+  </node>
 
 </launch>

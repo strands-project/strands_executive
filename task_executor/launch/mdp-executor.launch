@@ -1,5 +1,6 @@
 <launch>
-
+  <arg name="interruptible_wait" default="true"/>
+  
   <!-- run mdp plan exec -->
   <include file="$(find mdp_plan_exec)/launch/mdp_plan_exec_extended.launch">
   </include>
@@ -9,7 +10,9 @@
   	<param name="nav_service" type="string" value="mdp" />
   </node>
   
-  <!-- Utility node used for generating wait behaviours -->
-  <node pkg="wait_action" type="wait_node.py" name="wait_action"  output="screen"/>    
+    <!-- Utility node used for generating wait behaviours -->
+  <node pkg="wait_action" type="wait_node.py" name="wait_action"  output="screen">    
+    <param name="interruptible" type="bool" value="$(arg interruptible_wait)" />
+  </node>
 
 </launch>
