@@ -93,6 +93,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
         
         # topic on which current schedule is broadcast
         self.schedule_publisher = rospy.Publisher('current_schedule', ExecutionStatus, latch = True, queue_size = 1)
+        self.all_tasks_schedule_publisher = rospy.Publisher('task_executor/all_tasks', ExecutionStatus, latch = True, queue_size = 1)
 
         self.update_schedule_condition = Condition()
         self.schedule_publish_thread = Thread(target=self.publish_schedule)
@@ -187,7 +188,8 @@ class MDPTaskExecutor(BaseTaskExecutor):
                     self.time_critical_tasks.insert(mdp_task)
                 else:
                     self.normal_tasks.insert(mdp_task)
-                    
+        
+        self.republish_schedule()            
         self.recheck_normal_tasks = True
 
 
@@ -904,15 +906,22 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
                 # start from the time_cr
                 schedule = ExecutionStatus(currently_executing = len(active_batch) > 0)
+                all_tasks = ExecutionStatus(currently_executing = len(active_batch) > 0)
 
                 for m in active_batch:
                     m.task.execution_time = now
                     schedule.execution_queue.append(m.task)
+                    all_tasks.execution_queue.append(m.task)
+
 
                 schedule.execution_queue += [m.task for m in time_critical_tasks]
+                all_tasks.execution_queue += [m.task for m in time_critical_tasks]
 
+                all_tasks.execution_queue += [m.task for m in normal_tasks]        
+                all_tasks.execution_queue = sorted(all_tasks.execution_queue, key=lambda x: x.start_after)  
 
-                self.schedule_publisher.publish(schedule)
+                self.schedule_publisher.publish(schedule)    
+                self.all_tasks_schedule_publisher.publish(all_tasks)
 
                 self.update_schedule_condition.acquire()
                 self.update_schedule_condition.wait()
