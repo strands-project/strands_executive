@@ -358,9 +358,25 @@ class BaseTaskExecutor(object):
     cancel_task_ros_srv.type = CancelTask
 
 
+    def clear_schedule_regardless_ros_srv(self, req):
+        """ Remove all scheduled tasks and active task regardless of interruptibility """
+        
+        self.service_lock.acquire()        
+
+        self.clear_schedule()
+
+        if len(self.active_tasks) > 0:        
+            self.cancel_active_task()
+
+        self.service_lock.release()
+
+        return EmptyResponse()
+
+    clear_schedule_regardless_ros_srv.type = Empty
+
 
     def clear_schedule_ros_srv(self, req):
-        """ Remove all scheduled tasks and active task """
+        """ Remove all scheduled tasks and active task as long as active tasks are interruptible """
         
         self.service_lock.acquire()        
 
