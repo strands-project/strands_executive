@@ -93,14 +93,15 @@ class ActionExecutor(object):
                     action_finished = action_client.wait_for_result(poll_wait)
                     
                 if not action_finished:
-                    rospy.logwarn('Action %s exceeded maximum duration, preempting' % action_msg.name)
+                    if self.cancelled:
+                        rospy.logwarn("Policy execution has been preempted by another process")
+                    else:
+                        rospy.logwarn('Action %s exceeded maximum duration, preempting' % action_msg.name)
                     action_client.cancel_all_goals()
                     action_finished = action_client.wait_for_result(rospy.Duration(60)) #give some time for action to cancel
                     if not action_finished:
                         rospy.logwarn('Action %s did not respond to preemption, carrying on regardless. This could have dangerous side effects.' % action_msg.name)
-                    
-                if self.cancelled:
-                    self.cancelled=False
+
 
                 status=action_client.get_state()    
                 result=action_client.get_result()
@@ -115,8 +116,11 @@ class ActionExecutor(object):
         else:
             status=GoalStatus.SUCCEEDED
             result=None
-         
-        return (status, self.build_update_state_dict(status, result, action_msg.outcomes))
+        if self.cancelled:
+            self.cancelled = False
+            return (None, None)
+        else:
+            return (status, self.build_update_state_dict(status, result, action_msg.outcomes))
     
     def build_update_state_dict(self, status, result, action_outcomes):
         for action_outcome_msg in action_outcomes:
