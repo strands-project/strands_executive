@@ -144,7 +144,8 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
             is_ltl = True
         else:
-            action_name = 'n'+ str(task.task_id) + '_' + task.action + '_at_' + task.start_node_id  
+
+            action_name = 'n'+ str(task.task_id) + '_' + task.action + '_at_' + task.start_node_id.replace(' | ', '_or_')  
             # make sure there is nothing to make PRISM cry
             action_name = action_name.replace('/','_')
 
@@ -161,9 +162,11 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
             action = MdpAction(name=action_name, 
                      action_server=task.action, 
-                     waypoints=[task.start_node_id],
                      pre_conds=[StringIntPair(string_data=state_var_name, int_data=0)],
                      outcomes=[outcome])
+
+            for wp in task.start_node_id.split(' | '):
+                action.waypoints.append(wp)
 
             action.arguments = task.arguments
 
