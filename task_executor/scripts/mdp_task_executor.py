@@ -353,7 +353,10 @@ class MDPTaskExecutor(BaseTaskExecutor):
         if dropped:
             self.republish_schedule()
 
-    def _get_guarantees_for_batch(self, task_batch, estimates_service = None, initial_waypoint = None):
+    def _get_guarantees_for_batch(self, task_batch, estimates_service = None, initial_waypoint = None, epoch = None):
+
+        if epoch is None:
+            epoch = rospy.get_rostime()
 
         if initial_waypoint is None:
             initial_waypoint = self.get_topological_node()
@@ -363,7 +366,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
             estimates_service.wait_for_service()
 
         spec = self._mdp_tasks_to_spec(task_batch)
-        request = GetGuaranteesForCoSafeTaskRequest(spec = spec, initial_waypoint = initial_waypoint) 
+        request = GetGuaranteesForCoSafeTaskRequest(spec = spec, initial_waypoint = initial_waypoint, epoch = epoch) 
         service_response = estimates_service(request)
         return (spec, service_response)
 
@@ -402,7 +405,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
         # now for each single task, get indpendent guarantees
         for mdp_task in possibles:
 
-            (mdp_spec, guarantees) = self._get_guarantees_for_batch([mdp_task], estimates_service = mdp_estimates)
+            (mdp_spec, guarantees) = self._get_guarantees_for_batch([mdp_task], estimates_service = mdp_estimates, epoch = now)
             
             # only reason about combining tasks that are achievable on their own
             # 
@@ -444,7 +447,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
                 mdp_tasks_to_check = copy(new_active_batch)
                 mdp_tasks_to_check.append(mdp_task)   
-                (mdp_spec, guarantees) = self._get_guarantees_for_batch(mdp_tasks_to_check, estimates_service = mdp_estimates)
+                (mdp_spec, guarantees) = self._get_guarantees_for_batch(mdp_tasks_to_check, estimates_service = mdp_estimates, epoch = now)
                
                 if guarantees.expected_time > execution_window:                        
                     rospy.loginfo('Too long policy duration for %s: %s' % (mdp_spec.ltl_task, guarantees.expected_time.to_sec())) 
@@ -481,7 +484,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
         for mdp_task in self.time_critical_tasks:
             if mdp_task.task.execution_time.secs == 0 or mdp_task.task.start_after < check_before:
-                spec, guarantees = self._get_guarantees_for_batch([mdp_task], estimates_service = estimates_service)
+                spec, guarantees = self._get_guarantees_for_batch([mdp_task], estimates_service = estimates_service, epoch = now)
                 expected_navigation_time = guarantees.expected_time - mdp_task.task.max_duration
                 mdp_task.task.execution_time = mdp_task.task.start_after - expected_navigation_time
             new_time_critical_tasks.insert(mdp_task)
@@ -533,7 +536,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                 self.time_critical_tasks = SortedCollection(self.time_critical_tasks[1:], key=(lambda t: t.task.execution_time))                            
                 mdp_goal = self._mdp_single_task_to_goal(next_time_critical_task)
                 rospy.loginfo('Executing time-critical task: %s. Start time was %s for execution at %s. Time is now %s' % (mdp_goal.spec.ltl_task, rostime_to_python(next_time_critical_task.task.execution_time), rostime_to_python(next_time_critical_task.task.start_after), rostime_to_python(now)))
-                self.mdp_exec_queue.put((mdp_goal, new_active_batch, self._get_guarantees_for_batch(new_active_batch)[1]))
+                self.mdp_exec_queue.put((mdp_goal, new_active_batch, self._get_guarantees_for_batch(new_active_batch, epoch = now)[1]))
 
             # else see what we can squeeze into available time
             elif self.recheck_normal_tasks:
@@ -592,11 +595,16 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
             self.republish_schedule()
     
-    def _expected_duration_to_completion_time(self, expected_time):
+    def _expected_duration_to_completion_time(self, expected_duration):
         """
         Take a guarantees struct and determine when the execution should complete by
         """
-        return rospy.get_rostime() + expected_time + rospy.Duration(60)
+
+        if expected_duration.secs < 0:
+            rospy.logwarn('Expected duration was less that 0, giving a default of 5 minutes')
+            expected_duration = rospy.Duration(5 * 60)
+
+        return rospy.get_rostime() + expected_duration + rospy.Duration(60)
 
     def _wait_for_policy_execution(self):
         """
@@ -614,15 +622,19 @@ class MDPTaskExecutor(BaseTaskExecutor):
                 remaining_secs = (self.expected_completion_time - now).to_sec()
 
             if remaining_secs < 0:
-                rospy.logwarn('Policy execution did not complete in expected time, preempting')
-                self.mdp_exec_client.cancel_all_goals()
-                # give the policy execution some time to clean up
-                complete = self.mdp_exec_client.wait_for_result(rospy.Duration(70))
-                if not complete:
-                    rospy.logwarn('Policy execution did not service preempt request in a reasonable time')
-                    return GoalStatus.ACTIVE
+
+                if self.are_tasks_interruptible(self.active_tasks):
+                    rospy.logwarn('Policy execution did not complete in expected time, preempting')
+                    self.mdp_exec_client.cancel_all_goals()
+                    # give the policy execution some time to clean up
+                    complete = self.mdp_exec_client.wait_for_result(rospy.Duration(70))
+                    if not complete:
+                        rospy.logwarn('Policy execution did not service preempt request in a reasonable time')
+                        return GoalStatus.ACTIVE
+                    else:
+                        return GoalStatus.RECALLED
                 else:
-                    return GoalStatus.RECALLED
+                    rospy.logwarn('Policy execution did not complete in expected time, but is non-interruptible, so waiting')
                 
             else:
                 if log_count % 10 == 0:
