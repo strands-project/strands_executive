@@ -364,10 +364,12 @@ class BaseTaskExecutor(object):
         
         self.service_lock.acquire()        
 
-        self.clear_schedule()
+        if self.are_tasks_interruptible(self.active_tasks):
 
-        if len(self.active_tasks) > 0:        
-            self.cancel_active_task()
+            self.clear_schedule()
+
+            if len(self.active_tasks) > 0:        
+                self.cancel_active_task()
 
         self.service_lock.release()
 
