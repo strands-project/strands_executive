@@ -930,7 +930,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                     all_tasks.execution_queue.append(m.task)
 
 
-                schedule.execution_queue += [m.task for m in time_critical_tasks]
+                # schedule.execution_queue += [m.task for m in time_critical_tasks]
                 all_tasks.execution_queue += [m.task for m in time_critical_tasks]
 
                 all_tasks.execution_queue += [m.task for m in normal_tasks]        
