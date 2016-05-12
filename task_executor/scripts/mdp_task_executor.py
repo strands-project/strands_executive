@@ -924,6 +924,9 @@ class MDPTaskExecutor(BaseTaskExecutor):
                 schedule = ExecutionStatus(currently_executing = len(active_batch) > 0)
                 all_tasks = ExecutionStatus(currently_executing = len(active_batch) > 0)
 
+                schedule.header.stamp = now
+                all_tasks.header.stamp = now
+
                 for m in active_batch:
                     m.task.execution_time = now
                     schedule.execution_queue.append(m.task)
