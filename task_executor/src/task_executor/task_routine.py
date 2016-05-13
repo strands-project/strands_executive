@@ -515,14 +515,34 @@ class DailyRoutineRunner(object):
         Thread(target=_check_tasks).start()
 
 
+    def _log_task_events(self, tasks, event, time, description=""):
+        task_event_publisher = rospy.Publisher('task_executor/events', TaskEvent, queue_size=1)
+
+        for task in tasks:
+            te = TaskEvent(task=task, event=event, time=time, description=description)
+            try:
+                task_event_publisher.publish(te)
+                self._logging_msg_store.insert(te)
+            except Exception, e:
+                rospy.logwarn('Caught exception when logging: %s' % e)
+
+                
     def _schedule_tasks(self, tasks):
 
         if len(tasks) > 0:
 
-            allowed_tasks = [t for t in tasks if self.tasks_allowed(t)]
+            allowed_tasks = []
+            dropped_tasks = []
+            
+            for t in tasks:
+                if self.tasks_allowed(t):
+                    allowed_tasks.append(t)
+                else:
+                    dropped_tasks.append(t)
     
             if len(allowed_tasks) != len(tasks):
-                rospy.loginfo('Provided function prevented %s of %s tasks being send to the scheduler' % (len(tasks) - len(allowed_tasks), len(tasks)))
+                rospy.loginfo('Provided function prevented %s of %s tasks being send to the scheduler. ' % (len(dropped_tasks), len(tasks)))
+                self._log_task_events(dropped_tasks, TaskEvent.DROPPED, rospy.get_rostime(), "Task not passed from the routine to the executor due to provided function")
 
             if not self.day_off():
                 rospy.loginfo('Sending %s tasks to the scheduler' % (len(allowed_tasks)))

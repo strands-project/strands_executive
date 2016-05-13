@@ -609,6 +609,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
         poll_time = rospy.Duration(5)
         log_count = 0
+        interrupted = False
 
         while not self.mdp_exec_client.wait_for_result(poll_time) and not rospy.is_shutdown():
 
@@ -639,10 +640,10 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
             with self.state_lock:
                 # check whether we're due to start a time-critical task that we'd otherwise miss
-                if self._should_start_next_time_critical_task(now):
+                if not interrupted and self._should_start_next_time_critical_task(now):
                     rospy.logwarn('We should be executing a time-critical task now, so cancelling execution')
                     self.mdp_exec_client.cancel_all_goals()
-
+                    interrupted = True
 
         return self.mdp_exec_client.get_state()
 
