@@ -357,7 +357,7 @@ class TopMapMdp(Mdp):
                                 transition.prob_post_conds=[[1-prob, {door_var:0}],[prob,{door_var:1}]]
                             else:
                                 transition.prob_post_conds=[[1, {door_var:1}]]
-                            transition.rewards["time"]=duration.to_sec()
+                            transition.rewards["time"]=prob*duration.to_sec() + (1-prob)*self.door_timeout
         except rospy.ServiceException, e:
             rospy.logwarn("Error calling door expectations prediction service: " + str(e))
             rospy.logwarn("The total navigation expected values will not be for the requested epoch.")
