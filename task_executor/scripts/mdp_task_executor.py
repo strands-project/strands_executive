@@ -228,10 +228,6 @@ class MDPTaskExecutor(BaseTaskExecutor):
             if feedback.executed_action != '' and self.remove_active_task(feedback.executed_action, self.goal_status_to_task_status(feedback.execution_status)):
                 # update the time critical tasks based on current location
                 self._update_time_critical_tasks(now)
-                # check whether we're due to start a time-critical task that we'd otherwise miss
-                if self._should_start_next_time_critical_task(now) and self.mdp_exec_client is not None:
-                    rospy.logwarn('We should be executing a time-critical task now, so cancelling execution')
-                    self.mdp_exec_client.cancel_all_goals()
 
         self.republish_schedule()
 
@@ -611,7 +607,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
         Wait until policy execution is complete or until we reach expected_completion_time at which point policy execution is preempted.
         """
 
-        poll_time = rospy.Duration(1)
+        poll_time = rospy.Duration(5)
         log_count = 0
 
         while not self.mdp_exec_client.wait_for_result(poll_time) and not rospy.is_shutdown():
@@ -637,9 +633,16 @@ class MDPTaskExecutor(BaseTaskExecutor):
                     rospy.logwarn('Policy execution did not complete in expected time, but is non-interruptible, so waiting')
                 
             else:
-                if log_count % 10 == 0:
+                if log_count % 6 == 0:
                     rospy.loginfo('Another %.2f seconds until expected policy completion' % remaining_secs)
             log_count += 1
+
+            with self.state_lock:
+                # check whether we're due to start a time-critical task that we'd otherwise miss
+                if self._should_start_next_time_critical_task(now):
+                    rospy.logwarn('We should be executing a time-critical task now, so cancelling execution')
+                    self.mdp_exec_client.cancel_all_goals()
+
 
         return self.mdp_exec_client.get_state()
 
