@@ -329,6 +329,7 @@ class ScheduledTaskExecutor(AbstractTaskExecutor):
         # pub.publish(std_msgs.msg.String("foo"))
         
         exe_status = ExecutionStatus()
+        exe_status.header.stamp = rospy.get_rostime()
 
         current = self.execution_schedule.get_current_task()
         

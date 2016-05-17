@@ -32,7 +32,7 @@ if __name__ == '__main__':
     # get services to call into execution framework
     add_task, set_execution_status = get_services()
 
-    nodes = ['h_2', 'v_2', 'h_-2']    
+    nodes = ['WayPoint1', 'WayPoint2', 'ChargingPoint']    
     tasks = map(create_wait_task, nodes)
 
     # wait_task = Task(action='',start_node_id=sys.argv[1], max_duration=max_duration)
