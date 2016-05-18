@@ -228,8 +228,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
             if feedback.executed_action != '' and self.remove_active_task(feedback.executed_action, self.goal_status_to_task_status(feedback.execution_status)):
                 # update the time critical tasks based on current location
                 self._update_time_critical_tasks(now)
-
-        self.republish_schedule()
+                self.republish_schedule()
 
     def remove_active_task(self, action_name, task_status):
         """
@@ -346,8 +345,8 @@ class MDPTaskExecutor(BaseTaskExecutor):
         dropped = self._check_for_late_time_critical_tasks(now)
         dropped = dropped or self._check_for_late_normal_tasks(now)                                            
 
-        if dropped:
-            self.republish_schedule()
+
+        return dropped
 
     def _get_guarantees_for_batch(self, task_batch, estimates_service = None, initial_waypoint = None, epoch = None):
 
@@ -511,7 +510,8 @@ class MDPTaskExecutor(BaseTaskExecutor):
             # todo: this ignores what happens when the robot is moving, so need to check during execution too.
             self._update_time_critical_tasks(now)
         
-            self._drop_out_of_time_tasks(now)
+            if self._drop_out_of_time_tasks(now):
+                self.republish_schedule()
 
             execution_window = self.execution_window
 
@@ -589,7 +589,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
             else:
                 rospy.logdebug('No need to recheck normal tasks')
 
-            self.republish_schedule()
+            
     
     def _expected_duration_to_completion_time(self, expected_duration):
         """
@@ -612,6 +612,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
         interrupted = False
 
         while not self.mdp_exec_client.wait_for_result(poll_time) and not rospy.is_shutdown():
+
 
             # locking here as the feedback callback can change self.expected_completion_time
             with self.state_lock:
@@ -663,6 +664,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                     # keep looping until paused or an Empty is thrown
                     while self.executing and not rospy.is_shutdown():
 
+
                         (mdp_goal, new_active_batch, guarantees) = self.mdp_exec_queue.get(timeout = 1)
 
                         sent_goal = False
@@ -670,6 +672,8 @@ class MDPTaskExecutor(BaseTaskExecutor):
                         with self.state_lock:
                             # always set active batch, but we can correct it later if we don't actually send the goal
                             self.set_active_batch(deepcopy(new_active_batch))
+
+                            self.republish_schedule()
 
                             # execution status could have changed while acquiring the lock
                             if self.executing:            
@@ -727,12 +731,13 @@ class MDPTaskExecutor(BaseTaskExecutor):
                                 self.mdp_exec_client = None
                                 # whatever happened or was executed, we should now recheck the available normal tasks
                                 self.recheck_normal_tasks = True
-                            self.republish_schedule()
+                            
                         else:
                             with self.state_lock:
                                 rospy.loginfo('Active batch not executed, returning %s tasks to task lists' % len(self.active_batch))
                                 self.deactivate_active_batch()
 
+                        self.republish_schedule()
 
                 except Empty, e:
                     pass
@@ -759,7 +764,6 @@ class MDPTaskExecutor(BaseTaskExecutor):
         self.active_batch = copy(batch)
         self.active_tasks = [m.task for m in self.active_batch]
 
-        
 
     def start_execution(self):
         """ Called when overall execution should  (re)start """
@@ -912,6 +916,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                 # copy all relevant entries under lock 
                 # we're taking a deepcopy as we might mess around with the times a bit
                 with self.state_lock:
+                    expected_completion_time = deepcopy(self.expected_completion_time)
                     active_batch = deepcopy(self.active_batch)
                     normal_tasks = deepcopy(self.normal_tasks)
                     time_critical_tasks = deepcopy(self.time_critical_tasks)
@@ -924,17 +929,22 @@ class MDPTaskExecutor(BaseTaskExecutor):
                 schedule = ExecutionStatus(currently_executing = len(active_batch) > 0)
                 all_tasks = ExecutionStatus(currently_executing = len(active_batch) > 0)
 
+                schedule.header.stamp = now
+                all_tasks.header.stamp = now
+
                 for m in active_batch:
                     m.task.execution_time = now
                     schedule.execution_queue.append(m.task)
                     all_tasks.execution_queue.append(m.task)
 
 
-                schedule.execution_queue += [m.task for m in time_critical_tasks]
+                # schedule.execution_queue += [m.task for m in time_critical_tasks]
                 all_tasks.execution_queue += [m.task for m in time_critical_tasks]
 
                 all_tasks.execution_queue += [m.task for m in normal_tasks]        
                 all_tasks.execution_queue = sorted(all_tasks.execution_queue, key=lambda x: x.start_after)  
+                all_tasks.execution_queue = sorted(all_tasks.execution_queue, key=lambda x: x.priority)  
+
 
                 self.schedule_publisher.publish(schedule)    
                 self.all_tasks_schedule_publisher.publish(all_tasks)
