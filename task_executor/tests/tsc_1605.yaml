@@ -1,5 +1,52 @@
 - meta:
     map: tsc20160523
+    node: ChargingPoint
+    pointset: tsc_1605
+  node:
+    edges:
+    - action: undocking
+      edge_id: ChargingPoint_Station
+      inflation_radius: 0.0
+      map_2d: tsc20160523
+      node: Station
+      recovery_behaviours_config: ''
+      top_vel: 0.55
+    localise_by_topic: '{"topic": "/battery_state", "field": "charging", "val": true,
+      "localise_anywhere": false}'
+    map: tsc20160523
+    name: ChargingPoint
+    pointset: tsc_1605
+    pose:
+      orientation:
+        w: -0.703398406506
+        x: 2.76526481713e-08
+        y: 7.59753948643e-09
+        z: -0.710795760155
+      position:
+        x: -47.1828079224
+        y: -5.35404396057
+        z: 0.0
+    verts:
+    - x: 0.689999997616
+      y: 0.287000000477
+    - x: 0.287000000477
+      y: 0.689999997616
+    - x: -0.287000000477
+      y: 0.689999997616
+    - x: -0.689999997616
+      y: 0.287000000477
+    - x: -0.689999997616
+      y: -0.287000000477
+    - x: -0.287000000477
+      y: -0.689999997616
+    - x: 0.287000000477
+      y: -0.689999997616
+    - x: 0.689999997616
+      y: -0.287000000477
+    xy_goal_tolerance: 0.3
+    yaw_goal_tolerance: 0.1
+- meta:
+    map: tsc20160523
     node: ChargingPoint1
     pointset: tsc_1605
   node:
@@ -43,31 +90,58 @@
     yaw_goal_tolerance: 0.0
 - meta:
     map: tsc20160523
-    node: ChargingPoint2
+    node: Station
     pointset: tsc_1605
   node:
     edges:
-    - action: undocking
-      edge_id: ChargingPoint2_Station2
+    - action: human_aware_navigation
+      edge_id: Station_WayPoint61
       inflation_radius: 0.0
       map_2d: tsc20160523
-      node: Station2
+      node: WayPoint61
       recovery_behaviours_config: ''
       top_vel: 0.55
-    localise_by_topic: '{"topic": "/battery_state", "field": "charging", "val": true,
-      "localise_anywhere": false}'
+    - action: human_aware_navigation
+      edge_id: Station_WayPoint56
+      inflation_radius: 0.0
+      map_2d: tsc20160523
+      node: WayPoint56
+      recovery_behaviours_config: ''
+      top_vel: 0.55
+    - action: human_aware_navigation
+      edge_id: Station_WayPoint62
+      inflation_radius: 0.0
+      map_2d: tsc20160523
+      node: WayPoint62
+      recovery_behaviours_config: ''
+      top_vel: 0.55
+    - action: docking
+      edge_id: Station_ChargingPoint
+      inflation_radius: 0.0
+      map_2d: tsc20160523
+      node: ChargingPoint
+      recovery_behaviours_config: ''
+      top_vel: 0.55
+    - action: human_aware_navigation
+      edge_id: Station_WayPoint65
+      inflation_radius: 0.0
+      map_2d: tsc20160523
+      node: WayPoint65
+      recovery_behaviours_config: ''
+      top_vel: 0.55
+    localise_by_topic: ''
     map: tsc20160523
-    name: ChargingPoint2
+    name: Station
     pointset: tsc_1605
     pose:
       orientation:
-        w: -0.703398406506
-        x: 2.76526481713e-08
-        y: 7.59753948643e-09
-        z: -0.710795760155
+        w: 0.729740796213
+        x: 0.0
+        y: 0.0
+        z: 0.683723899204
       position:
-        x: -47.1828079224
-        y: -5.35404396057
+        x: -47.2558938802
+        y: -6.50354544985
         z: 0.0
     verts:
     - x: 0.689999997616
@@ -148,80 +222,6 @@
       y: -0.287000000477
     xy_goal_tolerance: 0.0
     yaw_goal_tolerance: 0.0
-- meta:
-    map: tsc20160523
-    node: Station2
-    pointset: tsc_1605
-  node:
-    edges:
-    - action: human_aware_navigation
-      edge_id: Station2_WayPoint61
-      inflation_radius: 0.0
-      map_2d: tsc20160523
-      node: WayPoint61
-      recovery_behaviours_config: ''
-      top_vel: 0.55
-    - action: human_aware_navigation
-      edge_id: Station2_WayPoint56
-      inflation_radius: 0.0
-      map_2d: tsc20160523
-      node: WayPoint56
-      recovery_behaviours_config: ''
-      top_vel: 0.55
-    - action: human_aware_navigation
-      edge_id: Station2_WayPoint62
-      inflation_radius: 0.0
-      map_2d: tsc20160523
-      node: WayPoint62
-      recovery_behaviours_config: ''
-      top_vel: 0.55
-    - action: docking
-      edge_id: Station2_ChargingPoint2
-      inflation_radius: 0.0
-      map_2d: tsc20160523
-      node: ChargingPoint2
-      recovery_behaviours_config: ''
-      top_vel: 0.55
-    - action: human_aware_navigation
-      edge_id: Station2_WayPoint65
-      inflation_radius: 0.0
-      map_2d: tsc20160523
-      node: WayPoint65
-      recovery_behaviours_config: ''
-      top_vel: 0.55
-    localise_by_topic: ''
-    map: tsc20160523
-    name: Station2
-    pointset: tsc_1605
-    pose:
-      orientation:
-        w: 0.729740796213
-        x: 0.0
-        y: 0.0
-        z: 0.683723899204
-      position:
-        x: -47.2558938802
-        y: -6.50354544985
-        z: 0.0
-    verts:
-    - x: 0.689999997616
-      y: 0.287000000477
-    - x: 0.287000000477
-      y: 0.689999997616
-    - x: -0.287000000477
-      y: 0.689999997616
-    - x: -0.689999997616
-      y: 0.287000000477
-    - x: -0.689999997616
-      y: -0.287000000477
-    - x: -0.287000000477
-      y: -0.689999997616
-    - x: 0.287000000477
-      y: -0.689999997616
-    - x: 0.689999997616
-      y: -0.287000000477
-    xy_goal_tolerance: 0.3
-    yaw_goal_tolerance: 0.1
 - meta:
     map: tsc20160523
     node: WayPoint1
@@ -533,13 +533,6 @@
       inflation_radius: 0.0
       map_2d: tsc20160523
       node: WayPoint4
-      recovery_behaviours_config: ''
-      top_vel: 0.55
-    - action: human_aware_navigation
-      edge_id: WayPoint14_WayPoint15
-      inflation_radius: 0.0
-      map_2d: tsc20160523
-      node: WayPoint15
       recovery_behaviours_config: ''
       top_vel: 0.55
     - action: human_aware_navigation
@@ -3474,10 +3467,10 @@
       recovery_behaviours_config: ''
       top_vel: 0.55
     - action: human_aware_navigation
-      edge_id: WayPoint56_Station2
+      edge_id: WayPoint56_Station
       inflation_radius: 0.0
       map_2d: tsc20160523
-      node: Station2
+      node: Station
       recovery_behaviours_config: ''
       top_vel: 0.55
     - action: human_aware_navigation
@@ -3827,10 +3820,10 @@
       recovery_behaviours_config: ''
       top_vel: 0.55
     - action: human_aware_navigation
-      edge_id: WayPoint61_Station2
+      edge_id: WayPoint61_Station
       inflation_radius: 0.0
       map_2d: tsc20160523
-      node: Station2
+      node: Station
       recovery_behaviours_config: ''
       top_vel: 0.55
     localise_by_topic: ''
@@ -3894,10 +3887,10 @@
       recovery_behaviours_config: ''
       top_vel: 0.55
     - action: human_aware_navigation
-      edge_id: WayPoint62_Station2
+      edge_id: WayPoint62_Station
       inflation_radius: 0.0
       map_2d: tsc20160523
-      node: Station2
+      node: Station
       recovery_behaviours_config: ''
       top_vel: 0.55
     localise_by_topic: ''
@@ -3975,10 +3968,10 @@
       recovery_behaviours_config: ''
       top_vel: 0.55
     - action: human_aware_navigation
-      edge_id: WayPoint65_Station2
+      edge_id: WayPoint65_Station
       inflation_radius: 0.0
       map_2d: tsc20160523
-      node: Station2
+      node: Station
       recovery_behaviours_config: ''
       top_vel: 0.55
     localise_by_topic: ''
