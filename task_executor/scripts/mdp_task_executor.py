@@ -9,7 +9,6 @@ from task_executor.base_executor import BaseTaskExecutor
 from threading import Thread, Condition
 from task_executor.execution_schedule import ExecutionSchedule
 from operator import attrgetter
-import copy
 from math import floor
 import threading
 import actionlib
@@ -166,8 +165,10 @@ class MDPTaskExecutor(BaseTaskExecutor):
                      pre_conds=[StringIntPair(string_data=state_var_name, int_data=0)],
                      outcomes=[outcome])
 
-            for wp in task.start_node_id.split(' | '):
-                action.waypoints.append(wp)
+
+            if len(task.start_node_id) > 0:
+                for wp in task.start_node_id.split(' | '):
+                    action.waypoints.append(wp)
 
             action.arguments = task.arguments
 
