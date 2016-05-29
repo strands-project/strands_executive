@@ -2,6 +2,96 @@
 Changelog for package mdp_plan_exec
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* include door timeout in time cost for door waiting
+* improving preemption
+* only look at check_door transitions for door predictions
+* other bug
+* bug fixes
+* integrate door predictions
+* other bug
+* bug fixes
+* stop reading from dfa file
+* integrate door predictions
+* stop reading from dfa file
+* increasing timeout for socket comm
+* handling call prism result in policy executor properly
+* give some more memory to prism - makes solving lager models slightly faster
+* have guarantees estimator build correct topo map mdp
+* correct typo
+* Merge branch 'full_planning' of https://github.com/bfalacerda/strands_executive into full_planning
+  Conflicts:
+  mdp_plan_exec/src/mdp_plan_exec/top_map_mdp.py
+* back to using install in /opt/prism
+* code clean, slight feedback improvement, model fatal nav fails
+* proper set of policy init state
+* completing execute policy action feedback
+* removing unused file
+* Added logging and longer delays on timeouts.
+* task guarantees service now needs initial waypoint, and outputs the values for prob, prog, and time
+* Adding waits for the necessary rosparam.
+* proper preemption of non-nav actions
+* Fix cancellation flag reset.
+* Added locking to estimator to prevent errors due to concurrent access.
+* Automated testing updated.
+  The tests are now less strict, but do run well enough to actually catch possible execution-time failures.
+* Removed constants from MdpAction, using ones from Task instead so they are directly compatible for automatic conversion.
+  This necessitated added STRING_TYPE to the Task msg to keep @bfalacerda happy for completeness.
+* correct bug with expected guarantees node - forgot to change variable name
+* Added waits for the rosparam
+* Initial mdp exec setup
+* Update mdp_policy_executor_extended.py
+  quick edit to address https://github.com/bfalacerda/strands_executive/issues/5
+* avoid deleting _da component from policy state definitions
+* add door_timeout variable
+* make sure model is updated before modelc checking
+* correct code for forgetting open doors; add support for door_wait_and_pass action
+* publish feedback when executing non-nav actions
+* add service to get estimates for cosafe task
+* example client
+* first version of full planning policy execution extended server
+* first version of extended execution
+* adding possibility to explicitely model closed doors
+* back to using install in /opt/prism
+* code clean, slight feedback improvement, model fatal nav fails
+* proper set of policy init state
+* completing execute policy action feedback
+* removing unused file
+* Added logging and longer delays on timeouts.
+* task guarantees service now needs initial waypoint, and outputs the values for prob, prog, and time
+* Adding waits for the necessary rosparam.
+* more robust calls to /topological_prediction/predict_edges service.
+* proper preemption of non-nav actions
+* Fix cancellation flag reset.
+* Added locking to estimator to prevent errors due to concurrent access.
+* Automated testing updated.
+  The tests are now less strict, but do run well enough to actually catch possible execution-time failures.
+* Removed constants from MdpAction, using ones from Task instead so they are directly compatible for automatic conversion.
+  This necessitated added STRING_TYPE to the Task msg to keep @bfalacerda happy for completeness.
+* correct bug with expected guarantees node - forgot to change variable name
+* Added waits for the rosparam
+* Initial mdp exec setup
+* Update mdp_policy_executor_extended.py
+  quick edit to address https://github.com/bfalacerda/strands_executive/issues/5
+* avoid deleting _da component from policy state definitions
+* add door_timeout variable
+* make sure model is updated before modelc checking
+* Merge branch 'full_planning' of https://github.com/bfalacerda/strands_executive into full_planning
+  Conflicts:
+  mdp_plan_exec/src/mdp_plan_exec/top_map_mdp.py
+* correct code for forgetting open doors; add support for door_wait_and_pass action
+* remove unused exec count from transition def
+* allowing for execution of policies when starting waypoint is forbidden
+* publish feedback when executing non-nav actions
+* add service to get estimates for cosafe task
+* example client
+* first version of full planning policy execution extended server
+* first version of extended execution
+* making robot stop nav policy when entering a forbidden wp
+* adding possibility to explicitely model closed doors
+* Contributors: Bruno Lacerda, Nick Hawes
+
 0.1.2 (2015-08-26)
 ------------------
 

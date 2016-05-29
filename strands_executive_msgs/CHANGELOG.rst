@@ -3,6 +3,44 @@ Changelog for package strands_executive_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* Added header field to schedule to allow sync of multiple topics
+* Added priority examples to msg
+* completing execute policy action feedback
+* task guarantees service now needs initial waypoint, and outputs the values for prob, prog, and time
+* Changed the base exectur active_task field to be active_tasks list to suit mdp_task_executor.
+  This change has been propogated back through the scheduled_task_executor but needs more testing on real tasks.
+* On-demand tasks and logging updated
+* Removed constants from MdpAction, using ones from Task instead so they are directly compatible for automatic conversion.
+  This necessitated added STRING_TYPE to the Task msg to keep @bfalacerda happy for completeness.
+* proper naming for the response of the service
+  see https://github.com/bfalacerda/strands_executive/issues/6
+* Formatting.
+* Formatting
+* publish feedback when executing non-nav actions
+* add service to get estimates for cosafe task
+* first version of full planning policy execution extended server
+* first version of extended execution
+* new action messages
+* completing execute policy action feedback
+* task guarantees service now needs initial waypoint, and outputs the values for prob, prog, and time
+* Changed the base exectur active_task field to be active_tasks list to suit mdp_task_executor.
+  This change has been propogated back through the scheduled_task_executor but needs more testing on real tasks.
+* On-demand tasks and logging updated
+* Removed constants from MdpAction, using ones from Task instead so they are directly compatible for automatic conversion.
+  This necessitated added STRING_TYPE to the Task msg to keep @bfalacerda happy for completeness.
+* proper naming for the response of the service
+  see https://github.com/bfalacerda/strands_executive/issues/6
+* Formatting.
+* Formatting
+* publish feedback when executing non-nav actions
+* add service to get estimates for cosafe task
+* first version of full planning policy execution extended server
+* first version of extended execution
+* new action messages
+* Contributors: Bruno Lacerda, Nick Hawes
+
 0.1.2 (2015-08-26)
 ------------------
 
