@@ -2,8 +2,8 @@
 Changelog for package strands_executive_tutorial
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.0 (2016-05-29)
+------------------
 * Update tutorial.md
 * Minor edit.
 * Updated with includes

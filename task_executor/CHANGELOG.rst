@@ -2,8 +2,8 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.0 (2016-05-29)
+------------------
 * Preventing empty waypoint from being added to the list.
 * Updates to schedule status publishing and printing, mainly for mdp executor.
 * Added header field to schedule to allow sync of multiple topics
