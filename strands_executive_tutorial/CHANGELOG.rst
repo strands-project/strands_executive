@@ -2,6 +2,9 @@
 Changelog for package strands_executive_tutorial
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 1.0.4 (2016-06-06)
 ------------------
 
