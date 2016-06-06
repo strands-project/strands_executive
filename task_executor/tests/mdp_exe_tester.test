@@ -5,7 +5,7 @@
   </include>
 
   <include file="$(find topological_utils)/launch/dummy_topological_navigation.launch"> 
-  	<arg name="yaml_map" default="$(find task_executor)/tests/tsc2015.yaml" />
+  	<arg name="yaml_map" default="$(find task_executor)/tests/tsc_1605.yaml" />
   </include>		
 
   <include file="$(find task_executor)/launch/mdp-executor.launch" />
