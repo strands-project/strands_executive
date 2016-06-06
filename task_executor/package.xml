@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>task_executor</name>
-  <version>1.0.5</version>
+  <version>1.0.6</version>
   <description>A package for triggering and monitoring the execution of actionlib-based tasks.</description>
  
   <maintainer email="n.a.hawes@cs.bham.ac.uk">Nick Hawes</maintainer>

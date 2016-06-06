@@ -2,8 +2,8 @@
 Changelog for package mdp_plan_exec
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.6 (2016-06-06)
+------------------
 * made dependency on door_pass explicit
 * Contributors: Nick Hawes
 
