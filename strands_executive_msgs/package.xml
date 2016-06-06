@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>strands_executive_msgs</name>
-  <version>1.0.3</version>
+  <version>1.0.4</version>
   <description>Messages used to interact with the STRANDS executive framework.</description>
 
   <maintainer email="n.a.hawes@cs.bham.ac.uk">Nick Hawes</maintainer>
