@@ -2,6 +2,12 @@
 Changelog for package mdp_plan_exec
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Added install for new scripts.
+* Making sure remapping is possible for topics.
+* Contributors: Nick Hawes
+
 1.0.0 (2016-05-29)
 ------------------
 * include door timeout in time cost for door waiting

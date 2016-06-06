@@ -2,6 +2,13 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Creating a utility function for multi-wp definitions.
+* Updated map.
+* Updated test to use new tsc top map.
+* Contributors: Nick Hawes
+
 1.0.0 (2016-05-29)
 ------------------
 * Preventing empty waypoint from being added to the list.
