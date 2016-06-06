@@ -2,8 +2,8 @@
 Changelog for package mdp_plan_exec
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.1 (2016-06-06)
+------------------
 * Added install for new scripts.
 * Making sure remapping is possible for topics.
 * Contributors: Nick Hawes
