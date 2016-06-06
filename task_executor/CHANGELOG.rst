@@ -2,6 +2,9 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 1.0.1 (2016-06-06)
 ------------------
 * Creating a utility function for multi-wp definitions.
