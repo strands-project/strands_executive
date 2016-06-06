@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>mdp_plan_exec</name>
-  <version>1.0.1</version>
+  <version>1.0.2</version>
   <description>The mdp_plan_exec package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
