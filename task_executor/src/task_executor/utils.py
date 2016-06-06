@@ -102,3 +102,9 @@ def rostime_close(target, reading, delta = rospy.Duration(60)):
     return abs((target - reading).to_sec()) <= delta.to_sec()
 
 
+def get_start_node_ids(task):
+    """ 
+    Get the list of starting waypoints frmo the start_node_id, spliting on | if necessary.
+    """
+    return map(str.strip, task.start_node_id.split('|'))
+

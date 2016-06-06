@@ -13,7 +13,7 @@ from math import floor
 import threading
 import actionlib
 from task_executor.SortedCollection import SortedCollection
-from task_executor.utils import rostime_to_python, rostime_close
+from task_executor.utils import rostime_to_python, rostime_close, get_start_node_ids
 from dateutil.tz import tzlocal
 from copy import copy, deepcopy
 from actionlib_msgs.msg import GoalStatus
@@ -167,7 +167,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
 
             if len(task.start_node_id) > 0:
-                for wp in task.start_node_id.split(' | '):
+                for wp in get_start_node_ids(task):
                     action.waypoints.append(wp)
 
             action.arguments = task.arguments
