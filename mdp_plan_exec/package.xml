@@ -55,6 +55,7 @@
   <run_depend>topological_navigation</run_depend>
   <run_depend>strands_navigation_msgs</run_depend>
   <run_depend>strands_executive_msgs</run_depend>
+  <run_depend>door_pass</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->
