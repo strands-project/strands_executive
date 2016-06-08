@@ -893,6 +893,8 @@ class MDPTaskExecutor(BaseTaskExecutor):
             self.log_task_events((m.task for m in self.time_critical_tasks), TaskEvent.DROPPED, now, description = 'Schedule was cleared')        
             self.time_critical_tasks.clear()
             self.executing = prior_execution_state 
+        
+        self.republish_schedule()                        
         rospy.loginfo('All tasks cleared')
 
 
