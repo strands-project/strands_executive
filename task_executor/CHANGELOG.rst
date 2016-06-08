@@ -2,6 +2,145 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.0.6 (2016-06-06)
+------------------
+
+1.0.5 (2016-06-06)
+------------------
+
+1.0.4 (2016-06-06)
+------------------
+
+1.0.3 (2016-06-06)
+------------------
+
+1.0.2 (2016-06-06)
+------------------
+
+1.0.1 (2016-06-06)
+------------------
+* Creating a utility function for multi-wp definitions.
+* Updated map.
+* Updated test to use new tsc top map.
+* Contributors: Nick Hawes
+
+1.0.0 (2016-05-29)
+------------------
+* Preventing empty waypoint from being added to the list.
+* Updates to schedule status publishing and printing, mainly for mdp executor.
+* Added header field to schedule to allow sync of multiple topics
+* Now only publishing active tasks on current_schedule. all_tasks still contains all tasks including those in current_schedule.
+* Only interrupting once
+* Testing for time critical in execution wait rather than feedback. This allows ongoing tasks to be terminated, not just navigation.
+* Checking for itnerruptibility before preempting.
+* Added option for clearing all tasks to bypass interruptibility
+* Publishing all tasks.
+* Not letting clear service clear when an interruptible task is active.
+* Exposing wait interruptibility param.
+* Added ability to perform a task at one of a list of nodes.
+  start_node_id list to be a waypoint list separated with precisely ' | ' no variation on spaces etc.
+* Exception handling in routine
+* Daealing with time critical tasks in routine
+* LTL tasks are now included in the active batch and therefore published as part of the schedule.
+  This closes `#234 <https://github.com/strands-project/strands_executive/issues/234>`_
+* Sorting by priority as primary key then probability
+* Added ability to add extra tasks to live routine.
+* Added sorting by end time too
+* Sorting by priority as primary key then probability
+* Change LTL formula writing to allow reasoning on progression
+* Fixed crash on task demand.
+* Change LTL formula writing to allow reasoning on progression
+* Fixed crash on task demand.
+* Removed unnecessary publisher
+* Merging published dropped tasks changes into new main branch.
+* This adds support for LTL formula execution via the mdp_task_executor.
+  The current constraint is that the execution of these tasks is not monitored for completion. This means that if one is interrupted for whatever reason, then they are not retried.
+  LTL tasks are specified using the Task's action field, e.g.
+  ```
+  ltl_task = Task(action='(F "WayPoint4")')
+  ```
+  the start_after and end_before fields are respected for scheduling, but max_duration is ignored.
+* Using execution time to monitor execution.
+* adding duration back in to example
+* Handling tasks without times more directly
+* Changes for executors to propagate active task changes.
+  Also changes to move towards monitoring execution time in the mdp_task_executor. In addition this version checks a wider range of tasks for execution.
+* Set up a test set that should hopefully pass.
+* Changed the base exectur active_task field to be active_tasks list to suit mdp_task_executor.
+  This change has been propogated back through the scheduled_task_executor but needs more testing on real tasks.
+* Implemented clear_schedule
+  This also adds an important update to pause_execution. By waiting for the active batch to become empty we are avoiding exiting the pause method before execution has really stopped.
+* Replacing forward slashes with underscores in task names to fix `#14 <https://github.com/strands-project/strands_executive/issues/14>`_
+* Approximate schedule being published.
+* On-demand tasks and logging updated
+* On-demand tasks in and tested
+* Updated test file
+* Pause/restart fixed, tested and working.
+* MDP executor debugged and short-term tested with normal and time-critical tasks.
+  This is is still just responding to add_tasks and set_execution_status services, but should be reasonably robust.
+  Ready for robot testing.
+* Changed to correct door checking then pass action.
+* Added mdp test to cmake file
+* Automated testing updated.
+  The tests are now less strict, but do run well enough to actually catch possible execution-time failures.
+* Removed constants from MdpAction, using ones from Task instead so they are directly compatible for automatic conversion.
+  This necessitated added STRING_TYPE to the Task msg to keep @bfalacerda happy for completeness.
+* Adding exceutor back to launch file.
+* First version to cover both time critical and normal tasks. Needs extensive testing.
+* Basic executor working.
+* Added time window to example.
+* Added SortedCollection class
+* Initial mdp exec setup
+* Excution will now be interrupted after action execution if this is necessary to start a time-critical task.
+* Change to how time prediction is done for time-critical tasks.
+  Now we update at the start of batch selection time, to only use the current location of the robot.
+  Next up, need to check when moving too.
+* Now uses probability to order tasks then selects on time.
+* Using execution time to monitor execution.
+* adding duration back in to example
+* Handling tasks without times more directly
+* Added try/catch to main threads to prevent exiting.
+* Added explanations for dropped tasks.
+* A first attempt at publishing when a task is dropped by the executor.
+  This is for `#217 <https://github.com/strands-project/strands_executive/issues/217>`_
+* Changes for executors to propagate active task changes.
+  Also changes to move towards monitoring execution time in the mdp_task_executor. In addition this version checks a wider range of tasks for execution.
+* Set up a test set that should hopefully pass.
+* Changed the base exectur active_task field to be active_tasks list to suit mdp_task_executor.
+  This change has been propogated back through the scheduled_task_executor but needs more testing on real tasks.
+* Implemented clear_schedule
+  This also adds an important update to pause_execution. By waiting for the active batch to become empty we are avoiding exiting the pause method before execution has really stopped.
+* Replacing forward slashes with underscores in task names to fix `#14 <https://github.com/strands-project/strands_executive/issues/14>`_
+* Approximate schedule being published.
+* On-demand tasks and logging updated
+* On-demand tasks in and tested
+* Updated test file
+* Pause/restart fixed, tested and working.
+* MDP executor debugged and short-term tested with normal and time-critical tasks.
+  This is is still just responding to add_tasks and set_execution_status services, but should be reasonably robust.
+  Ready for robot testing.
+* Changed to correct door checking then pass action.
+* Added mdp test to cmake file
+* Automated testing updated.
+  The tests are now less strict, but do run well enough to actually catch possible execution-time failures.
+* Removed constants from MdpAction, using ones from Task instead so they are directly compatible for automatic conversion.
+  This necessitated added STRING_TYPE to the Task msg to keep @bfalacerda happy for completeness.
+* Adding exceutor back to launch file.
+* First version to cover both time critical and normal tasks. Needs extensive testing.
+* Basic executor working.
+* Added time window to example.
+* Added SortedCollection class
+* Initial mdp exec setup
+* Merge pull request `#198 <https://github.com/strands-project/strands_executive/issues/198>`_ from hawesie/node_says_relax
+  Automatically set relaxed_nav parameter.
+* Moved edge explore functionality out to routine
+* Removed exploration tasks as they are dangerous because they don't respect the robot's routine.
+* Added the ability to trigger actions to explore edges to improve stats
+* Automatically set relaxed_nav parameter.
+  The problem we have is that early estimates of navigation durations can be low, causing navigation actions to be killed even when they are working. The relaxed_nav parameter greatly inflates the estimates to prevent this happening, but must be set manually.
+  This PR adds a node which automatically sets the value of the relaxed_nav based on the number of nav stats for each edge. This is a rather coarse way of doing it, but given the separation of concerns in the system there is not other way. The better future solution is to get some kind of confidence measure with the estimate.
+* Contributors: Bruno Lacerda, Marc Hanheide, Nick Hawes
+
 0.1.2 (2015-08-26)
 ------------------
 

@@ -9,12 +9,11 @@ from task_executor.base_executor import BaseTaskExecutor
 from threading import Thread, Condition
 from task_executor.execution_schedule import ExecutionSchedule
 from operator import attrgetter
-import copy
 from math import floor
 import threading
 import actionlib
 from task_executor.SortedCollection import SortedCollection
-from task_executor.utils import rostime_to_python, rostime_close
+from task_executor.utils import rostime_to_python, rostime_close, get_start_node_ids
 from dateutil.tz import tzlocal
 from copy import copy, deepcopy
 from actionlib_msgs.msg import GoalStatus
@@ -166,8 +165,10 @@ class MDPTaskExecutor(BaseTaskExecutor):
                      pre_conds=[StringIntPair(string_data=state_var_name, int_data=0)],
                      outcomes=[outcome])
 
-            for wp in task.start_node_id.split(' | '):
-                action.waypoints.append(wp)
+
+            if len(task.start_node_id) > 0:
+                for wp in get_start_node_ids(task):
+                    action.waypoints.append(wp)
 
             action.arguments = task.arguments
 
@@ -896,6 +897,8 @@ class MDPTaskExecutor(BaseTaskExecutor):
             self.log_task_events((m.task for m in self.time_critical_tasks), TaskEvent.DROPPED, now, description = 'Schedule was cleared')        
             self.time_critical_tasks.clear()
             self.executing = prior_execution_state 
+        
+        self.republish_schedule()                        
         rospy.loginfo('All tasks cleared')
 
 
