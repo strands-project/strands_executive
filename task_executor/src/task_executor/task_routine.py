@@ -400,9 +400,8 @@ class DailyRoutineRunner(object):
 
         rospy.loginfo('Scheduling %s tasks now and %s later' % (len(schedule_now), len(schedule_later)))
 
+        schedule_later += self._schedule_tasks(schedule_now)
         self._delay_tasks(schedule_later)
-        self._schedule_tasks(schedule_now)
-
 
     def _queue_for_scheduling(self, tasks):
         now = rospy.get_rostime()
@@ -425,6 +424,7 @@ class DailyRoutineRunner(object):
             # check we're not too late
             if not time_critical and start_time + task.max_duration > task.end_before:
                 rospy.logwarn('At %s it is not possible to schedule task %s. Ignoring task for today' % (datetime.fromtimestamp(now.secs), task))
+                self._log_task_events([task], TaskEvent.DROPPED, now, "Max duration of task would exceed end of time window at time %s " % datetime.fromtimestamp(now.secs))
             else:
                 # if we're in the the window when this should be scheduled
                 if now > (task.start_after - self.pre_schedule_delay):
@@ -470,9 +470,10 @@ class DailyRoutineRunner(object):
 
         delay = min_start_date - now
 
-        if delay.secs <0:
-            rospy.logerr("The delay is less than zero: " + str(delay.secs))
-
+        if delay.secs < 0:
+            # rospy.logerr("The delay is less than zero: " + str(delay.secs))
+            # this is because we have passed through the start of some time window, so add in an arbitrary delay before checking again
+            delay = rospy.Duration(60)
 
         # print 'delaying %s' % delay.secs
         self._delay_scheduling(tasks, delay)
@@ -532,17 +533,16 @@ class DailyRoutineRunner(object):
         if len(tasks) > 0:
 
             allowed_tasks = []
-            dropped_tasks = []
+            delay_further = []
             
             for t in tasks:
                 if self.tasks_allowed(t):
                     allowed_tasks.append(t)
                 else:
-                    dropped_tasks.append(t)
+                    delay_further.append(t)
     
             if len(allowed_tasks) != len(tasks):
-                rospy.loginfo('Provided function prevented %s of %s tasks being send to the scheduler. ' % (len(dropped_tasks), len(tasks)))
-                self._log_task_events(dropped_tasks, TaskEvent.DROPPED, rospy.get_rostime(), "Task not passed from the routine to the executor due to provided function")
+                rospy.loginfo('Provided function prevented %s of %s tasks being send to the scheduler. ' % (len(delay_further), len(tasks)))                
 
             if not self.day_off():
                 rospy.loginfo('Sending %s tasks to the scheduler' % (len(allowed_tasks)))
@@ -550,8 +550,12 @@ class DailyRoutineRunner(object):
                    self.add_tasks_srv(allowed_tasks)
                 except Exception, e:
                     rospy.logwarn('Exception on scheduler service call: %s' % e)
+                    delay_further += allowed_tasks
+                return delay_further               
             else:
                 rospy.loginfo('Taking the day off')
+        
+        return []
             
 
     def _instantiate_for_day(self, start_of_day, daily_start, daily_duration, task):
