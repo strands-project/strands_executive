@@ -8,6 +8,7 @@ from mongodb_store.message_store import MessageStoreProxy
 from strands_executive_msgs.msg import Task, TaskEvent
 from threading import Thread
 import threading
+from task_executor.utils import rostime_to_python
 
 _epoch = datetime.utcfromtimestamp(0).replace(tzinfo=tzutc())
 
@@ -27,9 +28,6 @@ def time_to_secs(time):
     """
     return (time.hour * 60 * 60) + (time.minute * 60) + (time.second) + (time.microsecond/1000.0)
     
-
-
-
 
 def time_greater_than(t1, t2):
     """ Seems to be a bug in datetime when comparing localtz dates, so do this instead. """
@@ -168,7 +166,8 @@ class DailyRoutine(object):
             tasks = [tasks]
 
         if daily_start < self.daily_start:
-            raise Exception('Provided daily start %s is less than overall daily start %s' % (daily_start, self.daily_start))
+            rospy.logwarn('Provided daily start %s is less than overall daily start %s. Clamping to daily start.' % (daily_start, self.daily_start))
+            daily_start = self.daily_start
 
 
         daily_end = datetime.combine(date.today(), daily_start) + daily_duration
@@ -176,8 +175,8 @@ class DailyRoutine(object):
   
 
         if daily_end > overall_end:
-            raise Exception('Provided daily end %s is greater than overall daily end %s for tasks %s' % (daily_end, overall_end, tasks))
-
+            rospy.logwarn('Provided duration %s takes task past daily end %s for tasks %s. Clamping to daily end' % (daily_end, overall_end, tasks))
+            daily_duration = self.daily_end - daily_start
 
         self.routine_tasks += [(tasks, (daily_start, daily_duration))] * times
 
@@ -480,8 +479,27 @@ class DailyRoutineRunner(object):
 
 
     def insert_extra_tasks(self, tasks):
+
+        extra_tasks = []
+        dropped_tasks = []
+
+        for task in tasks:
+            
+            task_start = rostime_to_python(task.start_after, tz = self.daily_end.tzinfo).time()
+            task_end = rostime_to_python(task.end_before, tz = self.daily_end.tzinfo).time()
+
+            if time_greater_than(task_start, self.daily_end):
+                dropped_tasks.append(task)
+            elif time_less_than(task_end, self.daily_start):
+                dropped_tasks.append(task)
+            elif time_less_than(task_start, task_end):
+                dropped_tasks.append(task)
+            else:
+                extra_tasks.append(task)
+
         with self._state_lock:
-            self._extra_tasks += tasks
+            self._log_task_events(dropped_tasks, TaskEvent.DROPPED, rospy.get_rostime(), "Task does not fit into daily start/end window of routine.")
+            self._extra_tasks += extra_tasks
 
         # if no tasks are being delayed then start up 
         if not self._delaying:
