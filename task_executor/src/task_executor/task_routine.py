@@ -488,11 +488,11 @@ class DailyRoutineRunner(object):
             task_start = rostime_to_python(task.start_after, tz = self.daily_end.tzinfo).time()
             task_end = rostime_to_python(task.end_before, tz = self.daily_end.tzinfo).time()
 
-            if time_greater_than(task_start, self.daily_end):
+            if time_greater_than(task_start, self.current_routine_end):
                 dropped_tasks.append(task)
-            elif time_less_than(task_end, self.daily_start):
+            elif time_less_than(task_end, self.current_routine_start):
                 dropped_tasks.append(task)
-            elif time_less_than(task_start, task_end):
+            elif time_less_than(task_end, task_start):
                 dropped_tasks.append(task)
             else:
                 extra_tasks.append(task)
