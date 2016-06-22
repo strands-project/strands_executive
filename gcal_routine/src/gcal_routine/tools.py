@@ -180,6 +180,9 @@ class GCal:
             - self.time_offset
         t.end_before = rospy.Time.from_sec(timegm(end_utc.timetuple())) \
             - self.time_offset
+
+        t.end_before = t.start_after
+
         if 'location' in gcal_event:
             t.start_node_id = gcal_event['location']
             if len(t.end_node_id) == 0:

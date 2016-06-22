@@ -336,6 +336,19 @@ class BaseTaskExecutor(object):
                 return True
         return False
 
+    def cancel_active_task_ros_srv(self, req):   
+        
+        self.service_lock.acquire()
+        
+        self.cancel_active_task()
+     
+        self.service_lock.release()
+
+        return EmptyResponse()
+
+    cancel_active_task_ros_srv.type = Empty
+
+
     def cancel_task_ros_srv(self, req):
         """ Cancel the speficially requested task """        
 

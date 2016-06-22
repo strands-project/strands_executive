@@ -480,6 +480,8 @@ class DailyRoutineRunner(object):
 
     def insert_extra_tasks(self, tasks):
 
+        rospy.loginfo('Trying to insert an extra %s tasks into the running routine' % len(tasks))
+
         extra_tasks = []
         dropped_tasks = []
 
@@ -499,13 +501,15 @@ class DailyRoutineRunner(object):
 
         with self._state_lock:
             self._log_task_events(dropped_tasks, TaskEvent.DROPPED, rospy.get_rostime(), "Task does not fit into daily start/end window of routine.")
-            self._extra_tasks += extra_tasks
-
+            
         # if no tasks are being delayed then start up 
         if not self._delaying:
+            rospy.loginfo('Sending %s tasks to _create_routine' % len(extra_tasks))
             self._delaying = True            
-            self._create_routine(self._extra_tasks)
-
+            self._create_routine(extra_tasks)
+        else:
+            rospy.loginfo('Appending %s tasks to _extra_tasks' % len(extra_tasks))
+            self._extra_tasks += extra_tasks
 
     # separated out to try differeing approaches
     def _delay_scheduling(self, tasks, delay):

@@ -74,6 +74,8 @@ class MDPTaskExecutor(BaseTaskExecutor):
         self.state_lock = threading.Lock()
         self.mdp_exec_client = None
         self.set_active_batch([])
+        self.to_cancel = set()
+
         # only ever allow one batch in the execution queue. If this restriction is removed then demanding won't work immediately
         self.mdp_exec_queue = Queue(maxsize = 1)
 
@@ -401,18 +403,22 @@ class MDPTaskExecutor(BaseTaskExecutor):
         # now for each single task, get indpendent guarantees
         for mdp_task in possibles:
 
-            (mdp_spec, guarantees) = self._get_guarantees_for_batch([mdp_task], estimates_service = mdp_estimates, epoch = now)
+            try:
+                (mdp_spec, guarantees) = self._get_guarantees_for_batch([mdp_task], estimates_service = mdp_estimates, epoch = now)
             
-            # only reason about combining tasks that are achievable on their own
-            # 
-            if guarantees.expected_time <= execution_window:                        
-                possibles_with_guarantees_in_time.append((mdp_task, mdp_spec, guarantees))
+                # only reason about combining tasks that are achievable on their own
+                # 
+                if guarantees.expected_time <= execution_window:                        
+                    possibles_with_guarantees_in_time.append((mdp_task, mdp_spec, guarantees))
 
-        
-            # keep all guarantees anyway, as we might need to report one if we can't find a task to execute
-            possibles_with_guarantees.append((mdp_task, mdp_spec, guarantees))
+            
+                # keep all guarantees anyway, as we might need to report one if we can't find a task to execute
+                possibles_with_guarantees.append((mdp_task, mdp_spec, guarantees))
 
-
+            except Exception, e:
+                rospy.logwarn('Ignoring task due to: %s' % e)
+                self.normal_tasks.remove(mdp_task)
+ 
 
         # sort the list of possibles by probability of success, with highest prob at start
         # sort is stable, so a sequence of sorts will  work, starting with the lowest priorit
@@ -479,11 +485,17 @@ class MDPTaskExecutor(BaseTaskExecutor):
         new_time_critical_tasks = SortedCollection(key=(lambda t: t.task.execution_time))
 
         for mdp_task in self.time_critical_tasks:
-            if mdp_task.task.execution_time.secs == 0 or mdp_task.task.start_after < check_before:
-                spec, guarantees = self._get_guarantees_for_batch([mdp_task], estimates_service = estimates_service, epoch = now)
-                expected_navigation_time = guarantees.expected_time - mdp_task.task.max_duration
-                mdp_task.task.execution_time = mdp_task.task.start_after - expected_navigation_time
-            new_time_critical_tasks.insert(mdp_task)
+            try:
+                if mdp_task.task.execution_time.secs == 0 or mdp_task.task.start_after < check_before:
+                    spec, guarantees = self._get_guarantees_for_batch([mdp_task], estimates_service = estimates_service, epoch = now)
+                    expected_navigation_time = guarantees.expected_time - mdp_task.task.max_duration
+                    mdp_task.task.execution_time = mdp_task.task.start_after - expected_navigation_time
+                new_time_critical_tasks.insert(mdp_task)
+            except Exception, e:
+                rospy.logwarn('Dropping time-critical task due to: %s' % e)
+                self.time_critical_tasks.remove(mdp_task)
+                self.log_task_event(mdp_task.task, TaskEvent.DROPPED, now, description = 'Error on guarantee call. Probably due to incorrect waypoint.')        
+                self.republish_schedule()
 
         self.time_critical_tasks = new_time_critical_tasks
 
@@ -707,7 +719,40 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
                             with self.state_lock:
                                  
+                                # these are left after execution
+                                
+
+                                # remove those tasks which were part of the cancelled set
+                                print self.to_cancel
+                                
+
+                                active_tasks = []
+                                cancelled_tasks = []
+                                for m in self.active_batch:
+
+                                    print m.task.task_id 
+
+                                    if m.task.task_id in self.to_cancel:
+                                        print 'cancelled'
+                                        cancelled_tasks.append(m)
+                                    else:
+                                        print 'active'
+                                        active_tasks.append(m)
+
+                                self.active_batch = active_tasks
+                                self.to_cancel = []
+
+                                print cancelled_tasks
+                                print self.active_batch
+
+                                if len(cancelled_tasks) > 0:
+                                    log_string = 'Dropped %s task(s) after execution due to cancellation' % len(cancelled_tasks)
+                                    rospy.loginfo(log_string)
+                                    self.log_task_events(cancelled_tasks, TaskEvent.DROPPED, rospy.get_rostime(), description = log_string)        
+                                
                                 remaining_active = len(self.active_batch)
+                                
+
 
                                 # policy execution finished everything
                                 if final_status == GoalStatus.SUCCEEDED:
@@ -869,7 +914,13 @@ class MDPTaskExecutor(BaseTaskExecutor):
         pause_execution is often called before this. (this is always the case currently)
         """
         if self.executing:
+            
+            # save the current executing tasks to drop later
+            with self.state_lock:
+                self.to_cancel = set([m.task.task_id for m in self.active_batch])
+
             self.pause_execution()
+            
             with self.state_lock: 
                 self.executing = True
 
