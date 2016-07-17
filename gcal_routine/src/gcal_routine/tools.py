@@ -174,14 +174,11 @@ class GCal:
                           "Using default constructor." %
                           (factory_name, str(e)))
             t = Task()
-            t.action = gcal_event['summary']
-        
-        t.start_after = rospy.Time.from_sec(timegm(start_utc.timetuple())) \
-            - self.time_offset
-        t.end_before = rospy.Time.from_sec(timegm(end_utc.timetuple())) \
-            - self.time_offset
-
-        t.end_before = t.start_after
+            t.action = gcal_event['summary']    
+            t.start_after = rospy.Time.from_sec(timegm(start_utc.timetuple())) \
+                - self.time_offset
+            t.end_before = rospy.Time.from_sec(timegm(end_utc.timetuple())) \
+                - self.time_offset
 
         if 'location' in gcal_event:
             t.start_node_id = gcal_event['location']
