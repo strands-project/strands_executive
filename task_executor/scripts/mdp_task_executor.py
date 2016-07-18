@@ -489,6 +489,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                 if mdp_task.task.execution_time.secs == 0 or mdp_task.task.start_after < check_before:
                     spec, guarantees = self._get_guarantees_for_batch([mdp_task], estimates_service = estimates_service, epoch = now)
                     expected_navigation_time = guarantees.expected_time - mdp_task.task.max_duration
+                    rospy.loginfo('Expected navigation time for time-critical task: %s' % expected_navigation_time.secs)    
                     mdp_task.task.execution_time = mdp_task.task.start_after - expected_navigation_time
                 new_time_critical_tasks.insert(mdp_task)
             except Exception, e:
