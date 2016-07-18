@@ -242,11 +242,13 @@ def executions(results):
         for task_event in exec_group:
             if task_event.task.action == '':
                 task_event.task.action = 'no action'            
-                                   
-            output.append(['task %s' % task_event.task.task_id, task_event.task.action, task_event.task.start_node_id, task_event_string(task_event.event), datetime.utcfromtimestamp(task_event.time.to_sec()).strftime('%d/%m/%y %H:%M:%S')])
+            elif task_event.task.action == 'search_object':
+                task_event.task.action = 'search_object: %s' % task_event.task.arguments[3].second
+
+            output.append(['task %s' % task_event.task.task_id, task_event.task.action, task_event.task.start_node_id, task_event_string(task_event.event), datetime.utcfromtimestamp(task_event.time.to_sec()).strftime('%d/%m/%y %H:%M:%S'), task_event.description])
 
     # http://stackoverflow.com/a/9989441/135585
-    col_width = max(len(word) for row in output for word in row) + 4  # padding for row in output:
+    col_width = max(len(word) for row in output for word in row[:-1]) + 4  # padding for row in output:
     for row in output:
         if isinstance(row, list):
             print "".join(word.ljust(col_width) for word in row)

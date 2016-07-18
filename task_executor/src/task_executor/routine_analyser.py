@@ -246,7 +246,7 @@ class RoutineAnalyser(cmd.Cmd):
             self.colour_mappings[action] = colour_map(len(self.colour_mappings) * 30)         
             label = action
 
-        plt.hlines(y, start, end, self.colour_mappings[action], lw=10, label=label)
+        plt.hlines(y, start, end, self.colour_mappings[action], lw=6, label=label)
 
     def do_days(self, idx): 
         try: 
@@ -309,10 +309,10 @@ class RoutineAnalyser(cmd.Cmd):
 
 
             with PdfPages('{0}_task_plot.pdf'.format(filename)) as pdf:
-                y_sep = 10
+                y_sep = 6
                 y = 0
 
-                mpl.rcParams['font.size'] = 8
+                mpl.rcParams['font.size'] = 6
 
                 # 
                 y_label_points = []
