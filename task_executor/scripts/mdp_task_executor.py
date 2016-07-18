@@ -114,6 +114,17 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
         return formula[:insert_after] + ' & (X ' + state_var_name + '=1)' + formula[insert_after:]
 
+
+    def _create_travel_mdp_task(self, waypoint):
+        """ Creates an MDP task for just reacing these waypoints
+            
+        """
+        state_var = MdpStateVar()
+        action = MdpAction()                
+        task = Task(action='(F "%s")' % waypoint)
+        return MDPTask(task, state_var, action, is_ltl = True)
+
+
     def _convert_task_to_mdp_action(self, task):
         """ Converts a Task to a MdpAction.
             returns a task, state var, action triple
@@ -487,8 +498,9 @@ class MDPTaskExecutor(BaseTaskExecutor):
         for mdp_task in self.time_critical_tasks:
             try:
                 if mdp_task.task.execution_time.secs == 0 or mdp_task.task.start_after < check_before:
-                    spec, guarantees = self._get_guarantees_for_batch([mdp_task], estimates_service = estimates_service, epoch = now)
-                    expected_navigation_time = guarantees.expected_time - mdp_task.task.max_duration
+                    spec, guarantees = self._get_guarantees_for_batch([self._create_travel_mdp_task(mdp_task.task.start_node_id)], estimates_service = estimates_service, epoch = now)
+                    # prevents an underestimate due to this being the expected time to failure
+                    expected_navigation_time = rospy.Duration(guarantees.expected_time.secs /  guarantees.probability)
                     rospy.loginfo('Expected navigation time for time-critical task: %s' % expected_navigation_time.secs)    
                     mdp_task.task.execution_time = mdp_task.task.start_after - expected_navigation_time
                 new_time_critical_tasks.insert(mdp_task)
