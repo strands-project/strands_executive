@@ -336,7 +336,10 @@ class TopMapMdp(Mdp):
                                 transition.prob_post_conds=[(prob, good_outcome), (1-prob, dict(transition.pre_conds))]
                         else:
                             transition.prob_post_conds=[[1, good_outcome]]
-                        transition.rewards["time"]=duration.to_sec()
+                        if duration.to_sec > 0:
+                            transition.rewards["time"]=duration.to_sec()
+                        else:
+                            rospy.logwarn("Edge predictions outputting negative travel time expectations. Ignoring...")
         except rospy.ServiceException, e:
             rospy.logwarn("Error calling edge transversal times prediction service: " + str(e))
             rospy.logwarn("The total navigation expected values will not be for the requested epoch.")
@@ -358,7 +361,10 @@ class TopMapMdp(Mdp):
                                     transition.prob_post_conds=[[1-prob, {door_var:0}],[prob,{door_var:1}]]
                                 else:
                                     transition.prob_post_conds=[[1, {door_var:1}]]
-                                transition.rewards["time"]=prob*duration.to_sec() + (1-prob)*self.door_timeout
+                                if duration.to_sec() > 0:
+                                    transition.rewards["time"]=prob*duration.to_sec() + (1-prob)*self.door_timeout
+                                else:
+                                     rospy.logwarn("Door predictions outputting negative door wait expectations. Ignoring...")
                 except KeyError, e:
                     rospy.logwarn("Unknown edge in door predictions: " + edge)
         except rospy.ServiceException, e:
