@@ -15,9 +15,9 @@ from strands_executive_msgs.srv import GetGuaranteesForCoSafeTask, GetGuarantees
 
 class MdpTaskGuaranteesEstimator(object):
 
-    def __init__(self,top_map):
+    def __init__(self):
         
-        self.top_map_mdp=TopMapMdp(top_map, explicit_doors=True, forget_doors=True, model_fatal_fails=True)
+        self.top_map_mdp=TopMapMdp(explicit_doors=True, forget_doors=True, model_fatal_fails=True)
         self.current_extended_mdp=None
         self.policy_mdp=None
         self.directory = os.path.expanduser("~") + '/tmp/prism/guarantees_estimator/'
@@ -26,7 +26,7 @@ class MdpTaskGuaranteesEstimator(object):
             os.makedirs(self.directory)
         except OSError as ex:
             print 'error creating PRISM directory:',  ex
-        self.file_name=top_map+".mdp"
+        self.file_name="topo_map.mdp"
         self.prism_estimator=PartialSatPrismJavaTalker(8087,self.directory, self.file_name)
         self.get_guarantees_service = rospy.Service('/mdp_plan_exec/get_guarantees_for_co_safe_task',
                                                               GetGuaranteesForCoSafeTask,
@@ -39,6 +39,7 @@ class MdpTaskGuaranteesEstimator(object):
     def get_guarantees_cb(self,req):
         with self.service_lock:
             response=GetGuaranteesForCoSafeTaskResponse()
+            self.top_map_mdp.create_top_map_mdp_structure()
             self.current_extended_mdp=deepcopy(self.top_map_mdp)
             self.current_extended_mdp.set_initial_state_from_waypoint(req.initial_waypoint)
             self.current_extended_mdp.add_extra_domain(req.spec.vars, req.spec.actions)
@@ -69,13 +70,8 @@ class MdpTaskGuaranteesEstimator(object):
 
 if __name__ == '__main__':
     rospy.init_node('mdp_task_guarantees_estimator')
-    
-    while not rospy.has_param("/topological_map_name") and not rospy.is_shutdown():
-        rospy.sleep(0.1)
 
-    if not rospy.is_shutdown():
-        top_map_name=rospy.get_param("/topological_map_name")
-        mdp_estimator =  MdpTaskGuaranteesEstimator(top_map_name)
-        mdp_estimator.main()
+    mdp_estimator =  MdpTaskGuaranteesEstimator()
+    mdp_estimator.main()
     
     
