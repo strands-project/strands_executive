@@ -35,6 +35,7 @@ add_service_files(
   FILES
   AddTask.srv
   AddTasks.srv
+  AddCoSafeTasks.srv
   CreateTask.srv
   DemandTask.srv
   CancelTask.srv
