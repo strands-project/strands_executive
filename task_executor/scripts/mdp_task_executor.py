@@ -4,7 +4,7 @@ from __future__ import with_statement
 import rospy
 from Queue import Queue, Empty
 from strands_executive_msgs.msg import Task, ExecutionStatus, DurationMatrix, DurationList, ExecutePolicyExtendedAction, ExecutePolicyExtendedFeedback, ExecutePolicyExtendedGoal, MdpStateVar, StringIntPair, StringTriple, MdpAction, MdpActionOutcome, MdpDomainSpec, TaskEvent
-from strands_executive_msgs.srv import GetGuaranteesForCoSafeTask, GetGuaranteesForCoSafeTaskRequest
+from strands_executive_msgs.srv import GetGuaranteesForCoSafeTask, GetGuaranteesForCoSafeTaskRequest, AddCoSafeTasks
 from task_executor.base_executor import BaseTaskExecutor
 from threading import Thread, Condition
 from task_executor.execution_schedule import ExecutionSchedule
@@ -32,6 +32,13 @@ class MDPTask(object):
         self.state_var = state_var
         self.action = action
         self.is_ltl = is_ltl
+        self.is_mdp_spec = False
+        self.mdp_spec = None
+
+    def _set_mdp_spec(self, mdp_spec):
+        self.mdp_spec = mdp_spec
+        self.is_mdp_spec = True
+        self.is_ltl = False
 
 
 
@@ -104,6 +111,43 @@ class MDPTaskExecutor(BaseTaskExecutor):
         self.tz = tzlocal()
         
 
+    def add_co_safe_tasks_ros_srv(self, req):
+        """
+        Adds a task into the task execution framework.
+        """
+        self.service_lock.acquire()
+        now = rospy.get_rostime()
+        task_ids = []
+        tasks = []
+        task_spec_pairs = []
+        for i, spec in enumerate(req.domain_specs):
+
+            task = Task()
+
+            task.task_id = self.task_counter
+            task_ids.append(task.task_id)
+            self.task_counter += 1
+            task.start_after = req.start_after[i]
+            task.end_before = req.end_before[i]
+            task.action = spec.ltl_task
+
+            if task.start_after.secs == 0:
+                rospy.logwarn('Task %s did not have start_after set' % (task.action))                
+                task.start_after = now
+
+            if task.end_before.secs == 0:
+                rospy.logwarn('Task %s did not have end_before set, using start_after' % (task.action))                
+                task.end_before = task.start_after
+
+            tasks.append(task)
+            task_spec_pairs.append((task, spec))
+
+        self.add_specs(task_spec_pairs)        
+        self.log_task_events(tasks, TaskEvent.ADDED, rospy.get_rostime())                
+        self.service_lock.release()
+        return [task_ids]
+    add_co_safe_tasks_ros_srv.type=AddCoSafeTasks
+
     def _extend_formalua_with_exec_flag(self, formula, state_var_name):
         insert_after = len(formula) - 1
         for i in range(len(formula) - 1, 0, -1):
@@ -123,6 +167,15 @@ class MDPTaskExecutor(BaseTaskExecutor):
         action = MdpAction()                
         task = Task(action='(F "%s")' % waypoint)
         return MDPTask(task, state_var, action, is_ltl = True)
+
+
+    def _convert_spec_to_mdp_action(self, task, mdp_spec):
+        """
+            Converts an already formed MdpDomainSpec into our internal representation that's now a bit redundant.
+        """
+        mdp_task = MDPTask(task, None, None, is_ltl = False)
+        mdp_task._set_mdp_spec(mdp_spec)
+        return mdp_task
 
 
     def _convert_task_to_mdp_action(self, task):
@@ -206,6 +259,21 @@ class MDPTaskExecutor(BaseTaskExecutor):
         self.republish_schedule()            
         self.recheck_normal_tasks = True
 
+    def add_specs(self, task_spec_pairs):
+        """ Called with new mdp_specs for the executor """
+
+        with self.state_lock:
+            
+            for task, mdp_spec in task_spec_pairs:
+
+                mdp_task = self._convert_spec_to_mdp_action(task, mdp_spec)
+                if task.start_after == task.end_before:
+                    self.time_critical_tasks.insert(mdp_task)
+                else:
+                    self.normal_tasks.insert(mdp_task)
+        
+        self.republish_schedule()            
+        self.recheck_normal_tasks = True
 
     def goal_status_to_task_status(self, goal_status):
         if goal_status == GoalStatus.PREEMPTED:
@@ -250,7 +318,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
         """
         for i in range(len(self.active_batch)):
             mdp_task = self.active_batch[i]
-            if mdp_task.action.name == action_name:                
+            if mdp_task.action is not None and mdp_task.action.name == action_name:                
                 del self.active_batch[i]
                 del self.active_tasks[i]
                 log_string = 'Removing completed active task: %s. %s remaining in active batch' % (action_name, len(self.active_batch))
@@ -272,7 +340,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
             # todo: this ignores the navigation time for this task, making task dropping more permissive than it should be. this is ok for now.
             until_next_normal_task = next_normal_task.task.end_before - now
             if until_next_normal_task < (ZERO - self.allowable_lateness):
-                log_string = 'Dropping normal task %s as %s not enough time for execution' % (next_normal_task.action.name, until_next_normal_task.to_sec())
+                log_string = 'Dropping normal task %s as %s not enough time for execution' % (next_normal_task.task.action, until_next_normal_task.to_sec())
                 rospy.loginfo(log_string)
                 self.normal_tasks = SortedCollection(self.normal_tasks[1:], key=(lambda t: t.task.end_before))                
                 self.log_task_event(next_normal_task.task, TaskEvent.DROPPED, now, description = log_string)        
@@ -321,14 +389,20 @@ class MDPTaskExecutor(BaseTaskExecutor):
         for mdp_task in mdp_tasks:
             if mdp_task.is_ltl:
                 ltl_tasks.append(mdp_task)
+            elif mdp_task.is_mdp_spec:                
+                ltl_tasks.append(mdp_task)
+                mdp_spec.vars.extend(mdp_task.mdp_spec.vars)
+                mdp_spec.actions.extend(mdp_task.mdp_spec.actions)
             else:
                 non_ltl_tasks.append(mdp_task)
                 mdp_spec.vars.append(mdp_task.state_var)
                 mdp_spec.actions.append(mdp_task.action)
 
 
+        mdp_spec.ltl_task = ''
+
         if len(non_ltl_tasks) > 0:
-            mdp_spec.ltl_task = ''
+
             for mdp_task in non_ltl_tasks:
                 mdp_spec.ltl_task += '(F %s=1) & ' % mdp_task.state_var.name                
             
@@ -341,12 +415,16 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
         if len(ltl_tasks) > 0:
             for ltl_task in ltl_tasks:
-                mdp_spec.ltl_task += ltl_task.task.action
-                mdp_spec.ltl_task += ' & '
+                if ltl_task.is_mdp_spec:
+                    mdp_spec.ltl_task += ltl_task.mdp_spec.ltl_task
+                    mdp_spec.ltl_task += ' & '
+                else:
+                    mdp_spec.ltl_task += ltl_task.task.action
+                    mdp_spec.ltl_task += ' & '
 
             mdp_spec.ltl_task = mdp_spec.ltl_task[:-3]
 
-        print mdp_spec.ltl_task
+        # print mdp_spec
 
         return mdp_spec
 
@@ -372,11 +450,10 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
         if estimates_service is None:
             estimates_service = rospy.ServiceProxy('mdp_plan_exec/get_guarantees_for_co_safe_task', GetGuaranteesForCoSafeTask)
-            estimates_service.wait_for_service()
-
-        spec = self._mdp_tasks_to_spec(task_batch)
-        request = GetGuaranteesForCoSafeTaskRequest(spec = spec, initial_waypoint = initial_waypoint, epoch = epoch) 
-        service_response = estimates_service(request)
+            estimates_service.wait_for_service()        
+        spec = self._mdp_tasks_to_spec(task_batch)        
+        request = GetGuaranteesForCoSafeTaskRequest(spec = spec, initial_waypoint = initial_waypoint, epoch = epoch)         
+        service_response = estimates_service(request)        
         return (spec, service_response)
 
     def _choose_new_active_batch(self, task_check_limit, now, execution_window):
@@ -439,7 +516,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
         possibles_with_guarantees_in_time  = sorted(possibles_with_guarantees_in_time, key=lambda x: x[0].task.priority, reverse=True)  
 
         for possible in possibles_with_guarantees_in_time:
-            rospy.loginfo('%s will take %.2f secs with prio %s and prob %.4f ending before %s' % (possible[0].action.name, possible[2].expected_time.to_sec(), possible[0].task.priority, possible[2].probability, rostime_to_python(possible[0].task.end_before))) 
+            rospy.loginfo('%s will take %.2f secs with prio %s and prob %.4f ending before %s' % (possible[0].task.action, possible[2].expected_time.to_sec(), possible[0].task.priority, possible[2].probability, rostime_to_python(possible[0].task.end_before))) 
 
         # if at least one task fits into the executable time window
         if len(possibles_with_guarantees_in_time) > 0:
@@ -736,27 +813,27 @@ class MDPTaskExecutor(BaseTaskExecutor):
                                 
 
                                 # remove those tasks which were part of the cancelled set
-                                print self.to_cancel
+                                # print self.to_cancel
                                 
 
                                 active_tasks = []
                                 cancelled_tasks = []
                                 for m in self.active_batch:
 
-                                    print m.task.task_id 
+                                    # print m.task.task_id 
 
                                     if m.task.task_id in self.to_cancel:
-                                        print 'cancelled'
+                                        # print 'cancelled'
                                         cancelled_tasks.append(m)
                                     else:
-                                        print 'active'
+                                        # print 'active'
                                         active_tasks.append(m)
 
                                 self.active_batch = active_tasks
                                 self.to_cancel = []
 
-                                print cancelled_tasks
-                                print self.active_batch
+                                # print cancelled_tasks
+                                # print self.active_batch
 
                                 if len(cancelled_tasks) > 0:
                                     log_string = 'Dropped %s task(s) after execution due to cancellation' % len(cancelled_tasks)
@@ -773,7 +850,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                                     if remaining_active > 0:
                                         log_string = 'Active batch still contained %s task(s) after successful execution' % remaining_active
                                         rospy.loginfo(log_string)
-                                        self.log_task_events((m.task for m in self.active_batch if not m.is_ltl), TaskEvent.TASK_STOPPED, rospy.get_rostime(), description = log_string)        
+                                        self.log_task_events((m.task for m in self.active_batch if (not m.is_ltl and not m.is_mdp_spec)), TaskEvent.TASK_STOPPED, rospy.get_rostime(), description = log_string)        
                                         self.deactivate_active_batch()
 
                                 # execution was paused or a task was demanded, resulting in preemption
@@ -811,7 +888,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                 else:
                     rospy.sleep(1)
             except Exception, e:
-                rospy.logwarn('Caught exception in the mdp_exec loop: %s' % e)
+                rospy.logwarn('Caught exception in the mdp_exec loop: %s' % e)                
                 rospy.sleep(1)
         
         # makes publishing thread check for exit
@@ -822,8 +899,6 @@ class MDPTaskExecutor(BaseTaskExecutor):
         """
         Set the active batch of tasks. Also updates self.active_tasks in the base class
         """
-        # self.active_batch = [m for m in batch if not m.is_ltl]
-        # self.active_tasks = [m.task for m in self.active_batch if not m.is_ltl]
         self.active_batch = copy(batch)
         self.active_tasks = [m.task for m in self.active_batch]
 
@@ -842,7 +917,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
         # for each task remaining in the active batch, put it back into the right list
         for mdp_task in self.active_batch:                    
             # we can't monitor the execution of these tasks, so we always assume they're done when deactivated
-            if mdp_task.is_ltl:
+            if mdp_task.is_ltl or mdp_task.is_mdp_spec:
                 self.log_task_events([mdp_task.task], TaskEvent.TASK_STOPPED, now, description = 'Active tasks were deactivated')             
             else: 
                 if mdp_task.task.start_after == mdp_task.task.end_before:                        
