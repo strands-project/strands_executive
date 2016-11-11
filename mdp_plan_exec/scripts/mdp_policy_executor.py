@@ -17,7 +17,7 @@ from strands_executive_msgs.srv import GetSpecialWaypoints
 
    
 class MdpPolicyExecutor(object):
-    def __init__(self,top_map): 
+    def __init__(self): 
         got_service=False
         while not got_service:
             try:
@@ -39,13 +39,13 @@ class MdpPolicyExecutor(object):
             if rospy.is_shutdown():
                 return
         
-        self.top_map_mdp=TopMapMdp(top_map)
+        self.top_map_mdp=TopMapMdp()
         self.directory = os.path.expanduser("~") + '/tmp/prism/policy_executor/'
         try:
             os.makedirs(self.directory)
         except OSError as ex:
             print 'error creating PRISM directory:',  ex
-        self.file_name=top_map+".mdp"
+        self.file_name="topo_map.mdp"
         self.prism_policy_generator=PrismJavaTalker(8086,self.directory, self.file_name)
         
         self.current_prod_state=None
@@ -142,6 +142,7 @@ class MdpPolicyExecutor(object):
             self.mdp_nav_as.set_aborted()
             return
         rospy.loginfo("The specification is: " + specification)
+        self.top_map_mdp.create_top_map_mdp_structure()
         self.generate_prod_mdp(specification)
         if self.product_mdp is None:
             self.mdp_nav_as.set_aborted()
@@ -207,13 +208,8 @@ class MdpPolicyExecutor(object):
 
 if __name__ == '__main__':
     rospy.init_node('mdp_policy_executor')
-    
-    while not rospy.has_param("/topological_map_name") and not rospy.is_shutdown():
-        rospy.sleep(0.1)
 
-    if not rospy.is_shutdown():
-        top_map_name=rospy.get_param("/topological_map_name")
-        mdp_executor =  MdpPolicyExecutor(top_map_name)
-        mdp_executor.main()
+    mdp_executor =  MdpPolicyExecutor()
+    mdp_executor.main()
     
     

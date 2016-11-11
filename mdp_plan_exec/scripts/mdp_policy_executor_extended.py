@@ -20,7 +20,7 @@ from strands_executive_msgs.msg import ExecutePolicyExtendedAction, ExecutePolic
 
    
 class MdpPolicyExecutor(object):
-    def __init__(self,top_map): 
+    def __init__(self): 
 
         self.wait_for_result_dur=rospy.Duration(0.1)
         self.top_nav_policy_exec= SimpleActionClient('/topological_navigation/execute_policy_mode', ExecutePolicyModeAction)
@@ -31,7 +31,7 @@ class MdpPolicyExecutor(object):
             if rospy.is_shutdown():
                 return
         
-        self.top_map_mdp=TopMapMdp(top_map, explicit_doors=True, forget_doors=True, model_fatal_fails=True)
+        self.top_map_mdp=TopMapMdp(explicit_doors=True, forget_doors=True, model_fatal_fails=True)
         self.current_extended_mdp=None
         self.policy_mdp=None
         self.current_nav_policy_state_defs={}
@@ -41,7 +41,7 @@ class MdpPolicyExecutor(object):
             os.makedirs(self.directory)
         except OSError as ex:
             print 'error creating PRISM directory:',  ex
-        self.file_name=top_map+".mdp"
+        self.file_name="topo_map.mdp"
         self.prism_policy_generator=PartialSatPrismJavaTalker(8088,self.directory, self.file_name)
         
                
@@ -194,6 +194,7 @@ class MdpPolicyExecutor(object):
 
     def execute_policy_cb(self,goal):
         specification=self.generate_prism_specification(goal.spec.ltl_task)
+        self.top_map_mdp.create_top_map_mdp_structure()
         self.current_extended_mdp=deepcopy(self.top_map_mdp)
         self.current_extended_mdp.add_extra_domain(goal.spec.vars, goal.spec.actions)
         
@@ -279,12 +280,7 @@ class MdpPolicyExecutor(object):
 if __name__ == '__main__':
     rospy.init_node('mdp_policy_executor_extended')
 
-    while not rospy.has_param("/topological_map_name") and not rospy.is_shutdown():
-        rospy.sleep(0.1)
-
-    if not rospy.is_shutdown():
-        top_map_name=rospy.get_param("/topological_map_name")
-        mdp_executor =  MdpPolicyExecutor(top_map_name)
-        mdp_executor.main()
+    mdp_executor =  MdpPolicyExecutor()
+    mdp_executor.main()
         
     

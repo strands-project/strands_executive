@@ -4,7 +4,8 @@ import rospy
 import actionlib
 from actionlib_msgs.msg import GoalStatus
 from geometry_msgs.msg import PoseStamped
-from strands_navigation_msgs.srv import GetTopologicalMap, PredictEdgeState
+from strands_navigation_msgs.srv import PredictEdgeState
+from strands_navigation_msgs.msg import TopologicalMap
 from door_pass.srv import PredictDoorState
 from strands_executive_msgs.msg import MdpAction, MdpActionOutcome, StringIntPair, StringTriple
 import strands_executive_msgs.mdp_action_utils as mau 
@@ -13,17 +14,8 @@ from mongodb_store_msgs.msg import StringPair
 
 
 class TopMapMdp(Mdp):
-    def __init__(self,top_map_name, explicit_doors=False, forget_doors=False, model_fatal_fails=False):
-        Mdp.__init__(self)
-        got_service=False
-        while not got_service:
-            try:
-                rospy.wait_for_service("topological_map_publisher/get_topological_map", 1)
-                got_service=True
-            except rospy.ROSException,e:
-                rospy.loginfo("Waiting for get_topological_map service...")
-            if rospy.is_shutdown():
-                return            
+    def __init__(self, explicit_doors=False, forget_doors=False, model_fatal_fails=False):
+        Mdp.__init__(self)       
         got_service=False
         while not got_service:
             try:
@@ -35,29 +27,24 @@ class TopMapMdp(Mdp):
                 return
         self.mongo=MessageStoreProxy()
         
+        self.explicit_doors=explicit_doors
+        self.forget_doors = forget_doors
         self.model_fatal_fails=model_fatal_fails
-        self.top_map_name=top_map_name
-        self.get_top_map_srv=rospy.ServiceProxy("topological_map_publisher/get_topological_map", GetTopologicalMap)
+        
+        self.new_top_map = False
+        rospy.Subscriber("/topological_map", TopologicalMap, self.top_map_sub)
+        while not self.new_top_map:
+            rospy.loginfo("Waiting for topological map...")
+            rospy.sleep(1)
         self.get_edge_estimates=rospy.ServiceProxy("topological_prediction/predict_edges", PredictEdgeState)        
-
-        self.top_map=self.get_top_map_srv(self.top_map_name).map
-        self.check_spaces_in_top_map()
         
         self.nav_actions=[]
         self.door_pass_actions=rospy.get_param("~door_pass_actions", ["door_wait_and_pass", "door_wait_and_move_base"])
         self.door_timeout=240
         self.door_transitions=[]
-        self.create_top_map_mdp_structure()
         self.action_descriptions={}
-        
-        #DOOR MODELLING
-        self.explicit_doors=explicit_doors
-        if self.explicit_doors:  
-            self.n_door_edges=0
-            self.edge_to_door_dict={}
-            self.add_door_model(forget_doors)
-            self.get_door_estimates=rospy.ServiceProxy("/door_prediction/predict_doors", PredictDoorState) 
-                    
+        self.create_top_map_mdp_structure()
+              
         rospy.loginfo("Topological MDP initialised")
 
     def check_spaces_in_top_map(self):
@@ -68,47 +55,69 @@ class TopMapMdp(Mdp):
                 if ' ' in edge.edge_id:
                     raise SyntaxError("An edge from '" + node.name + "' has an edge_id '" + edge.edge_id + "' with a white space. Remove it")
 
+    def top_map_sub(self, msg):
+        self.new_top_map = True
+        self.top_map = msg
+        self.check_spaces_in_top_map()
+        
+
     def create_top_map_mdp_structure(self):
-        self.n_state_vars=1
-        self.state_vars=['waypoint']
-        self.initial_state={'waypoint':0}
-        n_waypoints=len(self.top_map.nodes)
-        if self.model_fatal_fails:
-            self.state_vars_range={'waypoint':(-1,n_waypoints-1)}
-        else:
-            self.state_vars_range={'waypoint':(0,n_waypoints-1)}
-                
-        self.n_props=n_waypoints
-        self.props=[]
-        
-        self.reward_names=['time']
-        
-        i=0
-        for node in self.top_map.nodes:
-            waypoint_name=node.name
-            self.props.append(waypoint_name)            
-            self.props_def[waypoint_name]=MdpPropDef(name=waypoint_name,
-                                                    conds={'waypoint':i})
-            i=i+1
-        
-        i=0
-        self.n_actions=0
-        for node in self.top_map.nodes:
-            source_name=node.name
-            for edge in node.edges:
-                target_index=self.props.index(edge.node)
-                action_name=edge.edge_id
-                self.actions.append(action_name)
-                self.nav_actions.append(action_name)
-                trans=MdpTransitionDef(action_name=action_name,
-                                                  pre_conds={'waypoint':i},
-                                                  prob_post_conds=[(1.0, {'waypoint':target_index})],
-                                                  rewards={'time':1.0})
-                self.transitions.append(trans)
-                if edge.action in self.door_pass_actions:
-                    self.door_transitions.append(trans)
-                self.n_actions=self.n_actions+1 # all actions have a different name
-            i=i+1
+        if self.new_top_map:
+            rospy.loginfo("Updating topological map")
+            self.new_top_map=False
+            self.n_state_vars=1
+            self.state_vars=['waypoint']
+            self.initial_state={'waypoint':0}
+            n_waypoints=len(self.top_map.nodes)
+            if self.model_fatal_fails:
+                self.state_vars_range={'waypoint':(-1,n_waypoints-1)}
+            else:
+                self.state_vars_range={'waypoint':(0,n_waypoints-1)}
+                    
+            self.n_props=n_waypoints
+            self.props=[]
+            self.props_def = {}
+            
+            self.reward_names=['time']
+            
+            i=0
+            for node in self.top_map.nodes:
+                waypoint_name=node.name
+                self.props.append(waypoint_name)            
+                self.props_def[waypoint_name]=MdpPropDef(name=waypoint_name,
+                                                        conds={'waypoint':i})
+                i=i+1
+            
+            i = 0
+            self.n_actions = 0
+            self.actions = []
+            self.nav_actions = []
+            self.transitions = []
+            self.door_transitions = []
+            for node in self.top_map.nodes:
+                source_name=node.name
+                for edge in node.edges:
+                    target_index=self.props.index(edge.node)
+                    action_name=edge.edge_id
+                    self.actions.append(action_name)
+                    self.nav_actions.append(action_name)
+                    trans=MdpTransitionDef(action_name=action_name,
+                                                    pre_conds={'waypoint':i},
+                                                    prob_post_conds=[(1.0, {'waypoint':target_index})],
+                                                    rewards={'time':1.0})
+                    self.transitions.append(trans)
+                    if edge.action in self.door_pass_actions:
+                        self.door_transitions.append(trans)
+                    self.n_actions=self.n_actions+1 # all actions have a different name
+                i=i+1
+            
+            #DOOR MODELLING
+            if self.explicit_doors:  
+                self.n_door_edges=0
+                self.edge_to_door_dict={}
+                self.add_door_model(self.forget_doors)
+                self.get_door_estimates=rospy.ServiceProxy("/door_prediction/predict_doors", PredictDoorState) 
+                    
             
 
     def parse_sta_to_waypoints(self, sta_file, n_states):

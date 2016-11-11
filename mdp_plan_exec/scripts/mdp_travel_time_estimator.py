@@ -12,15 +12,15 @@ from strands_executive_msgs.srv import GetExpectedTravelTimesToWaypoint, GetExpe
 
 class MdpTravelTimeEstimator(object):
 
-    def __init__(self,top_map):
+    def __init__(self):
         
-        self.top_map_mdp=TopMapMdp(top_map)
+        self.top_map_mdp=TopMapMdp()
         self.directory = os.path.expanduser("~") + '/tmp/prism/time_estimator/'
         try:
             os.makedirs(self.directory)
         except OSError as ex:
             print 'error creating PRISM directory:',  ex
-        self.file_name=top_map+".mdp"
+        self.file_name="topo_map.mdp"
         self.prism_estimator=PrismJavaTalker(8085,self.directory, self.file_name)        
         self.last_epoch=-1
         self.travel_times_to_waypoint_service = rospy.Service('/mdp_plan_exec/get_expected_travel_times_to_waypoint', GetExpectedTravelTimesToWaypoint, self.travel_times_to_waypoint_cb)                
@@ -35,6 +35,7 @@ class MdpTravelTimeEstimator(object):
             self.top_map_mdp.add_predictions(self.directory+self.file_name, req.epoch)           
         specification='R{"time"}min=? [ ( F "' + req.target_waypoint + '") ]'
         rospy.loginfo("The specification is " + specification)
+        self.top_map_mdp.create_top_map_mdp_structure()
         state_vector=map(rospy.Duration, self.prism_estimator.get_state_vector(specification))
         state_vector_names=self.top_map_mdp.parse_sta_to_waypoints(self.directory+'original.sta', len(state_vector))
         return GetExpectedTravelTimesToWaypointResponse(source_waypoints=state_vector_names, travel_times=state_vector)
@@ -49,13 +50,8 @@ class MdpTravelTimeEstimator(object):
 
 if __name__ == '__main__':
     rospy.init_node('mdp_travel_time_estimator')
-    
-    while not rospy.has_param("/topological_map_name") and not rospy.is_shutdown():
-        rospy.sleep(0.1)
 
-    if not rospy.is_shutdown():
-        top_map_name=rospy.get_param("/topological_map_name")
-        mdp_estimator =  MdpTravelTimeEstimator(top_map_name)
-        mdp_estimator.main()
+    mdp_estimator =  MdpTravelTimeEstimator()
+    mdp_estimator.main()
     
     
