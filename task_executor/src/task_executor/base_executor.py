@@ -263,6 +263,7 @@ class BaseTaskExecutor(object):
         """
         Gets a bunch of fresh ids
         """
+
         self.service_lock.acquire()
         rv = [[self.get_next_id() for x in range(req.count)]]
         self.service_lock.release()
@@ -282,7 +283,6 @@ class BaseTaskExecutor(object):
         now = rospy.get_rostime()
         task_ids = []
         for task in req.tasks:
-
             if task.task_id < 1:
                 task.task_id = self.get_next_id()
 
