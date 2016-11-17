@@ -224,7 +224,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
             outcome=MdpActionOutcome(probability = 1.0,
                     post_conds = [StringIntPair(string_data = state_var_name, int_data = 1)],
                     duration_probs = [1.0],
-                    durations = [task.max_duration.to_sec()])
+                    durations = [task.expected_duration.to_sec()])
 
             action = MdpAction(name=action_name, 
                      action_server=task.action, 
