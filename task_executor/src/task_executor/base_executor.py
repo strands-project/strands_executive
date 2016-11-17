@@ -274,6 +274,9 @@ class BaseTaskExecutor(object):
                 rospy.logwarn('Task %s did not have max_duration set' % (task.action))
                 task.max_duration = rospy.Duration(5 * 60)
 
+            if task.expected_duration.secs == 0:
+                rospy.logwarn('Task %s did not have expected_duration set, using max_duration' % (task.action))
+
             if task.start_after.secs == 0:
                 rospy.logwarn('Task %s did not have start_after set' % (task.action))                
                 task.start_after = now
@@ -306,7 +309,12 @@ class BaseTaskExecutor(object):
             req.task.end_before = rospy.get_rostime() + (req.task.max_duration * 20)
             req.task.execution_time = rospy.get_rostime()
 
+            if task.max_duration.secs == 0:
+                rospy.logwarn('Task %s did not have max_duration set' % (task.action))
+                task.max_duration = rospy.Duration(5 * 60)
 
+            if task.expected_duration.secs == 0:
+                rospy.logwarn('Task %s did not have expected_duration set, using max_duration' % (task.action))
 
             # stop anything else
             if len(self.active_tasks) > 0:
