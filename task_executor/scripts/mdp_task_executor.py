@@ -525,16 +525,17 @@ class MDPTaskExecutor(BaseTaskExecutor):
             new_active_batch = [possibles_with_guarantees_in_time[0][0]]
             last_successful_spec = (possibles_with_guarantees_in_time[0][1], possibles_with_guarantees_in_time[0][2])
 
-            # greedily combine with the rest
+            # remove the most probable from the list of possibles
             possibles_with_guarantees_in_time = possibles_with_guarantees_in_time[1:]            
 
             # limit the tasks inspected by the batch limit... we are skipping tasks, so just using the batch limit isn't enough
             for possible in possibles_with_guarantees_in_time:
 
-                mdp_task = possible[0]
                 if len(new_active_batch) == self.batch_limit:
                     break                
 
+
+                mdp_task = possible[0]
                 mdp_tasks_to_check = copy(new_active_batch)
                 mdp_tasks_to_check.append(mdp_task)   
                 (mdp_spec, guarantees) = self._get_guarantees_for_batch(mdp_tasks_to_check, estimates_service = mdp_estimates, epoch = now)
