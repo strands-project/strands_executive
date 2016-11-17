@@ -258,6 +258,19 @@ class BaseTaskExecutor(object):
         return [self.active_tasks]
     get_active_tasks_ros_srv.type=GetActiveTasks
 
+
+    def get_ids_ros_srv(self, req):
+        """
+        Gets a bunch of fresh ids
+        """
+        return [[self.get_next_id() for x in range(req.count)]]
+    get_ids_ros_srv.type=GetIDs
+
+    def get_next_id(self):
+        rv = self.task_counter
+        self.task_counter += 1
+        return rv
+
     def add_tasks_ros_srv(self, req):
         """
         Adds a task into the task execution framework.
@@ -266,9 +279,8 @@ class BaseTaskExecutor(object):
         now = rospy.get_rostime()
         task_ids = []
         for task in req.tasks:
-            task.task_id = self.task_counter
-            task_ids.append(task.task_id)
-            self.task_counter += 1
+            task.task_id = self.get_next_id()
+            task_ids.append(task.task_id)            
             
             if task.max_duration.secs == 0:
                 rospy.logwarn('Task %s did not have max_duration set' % (task.action))
