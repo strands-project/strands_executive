@@ -16,7 +16,6 @@ from threading import Thread
 
 PKG = 'gcal_routine'
 
-
 def rostime_str(rt):
     return str(datetime.fromtimestamp(rt.secs)) + '  ' + str(rt.secs)
 
