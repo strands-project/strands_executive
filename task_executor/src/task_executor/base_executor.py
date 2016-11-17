@@ -263,12 +263,15 @@ class BaseTaskExecutor(object):
         """
         Gets a bunch of fresh ids
         """
-        return [[self.get_next_id() for x in range(req.count)]]
+        self.service_lock.acquire()
+        rv = [[self.get_next_id() for x in range(req.count)]]
+        self.service_lock.release()
+        return rv
     get_ids_ros_srv.type=GetIDs
 
     def get_next_id(self):
         rv = self.task_counter
-        self.task_counter += 1
+        self.task_counter += 1        
         return rv
 
     def add_tasks_ros_srv(self, req):
@@ -279,7 +282,10 @@ class BaseTaskExecutor(object):
         now = rospy.get_rostime()
         task_ids = []
         for task in req.tasks:
-            task.task_id = self.get_next_id()
+
+            if task.task_id < 1:
+                task.task_id = self.get_next_id()
+
             task_ids.append(task.task_id)            
             
             if task.max_duration.secs == 0:
@@ -313,8 +319,8 @@ class BaseTaskExecutor(object):
             if not self.are_tasks_interruptible(self.active_tasks):
                 return [False, 0, self.active_task_completes_by - rospy.get_rostime()]
 
-            req.task.task_id = self.task_counter        
-            self.task_counter += 1
+            if req.task.task_id < 1:
+                req.task.task_id = self.get_next_id()
 
             # give the task some sensible defaults
             req.task.start_after = rospy.get_rostime() - rospy.Duration(10)
