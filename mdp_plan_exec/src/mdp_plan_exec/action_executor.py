@@ -126,7 +126,7 @@ class ActionExecutor(object):
         for action_outcome_msg in action_outcomes:
             if action_outcome_msg.probability==1:
                 return self.build_dict_from_string_int_pairs(action_outcome_msg.post_conds)
-            elif action_outcome_msg.status==[] or status in action_outcome_msg.status:
+            elif (action_outcome_msg.status==[]) or (status in action_outcome_msg.status):
                 if action_outcome_msg.result==[]:
                     return self.build_dict_from_string_int_pairs(action_outcome_msg.post_conds)
                 else:
