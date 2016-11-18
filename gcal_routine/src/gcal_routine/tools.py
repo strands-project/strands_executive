@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 from strands_executive_msgs.msg import Task
 import rospy
-import urllib
 import json
+import requests
+
 from calendar import timegm
 from dateutil import parser
 from dateutil import tz
@@ -14,9 +15,6 @@ from pprint import pprint
 from threading import Thread
 
 PKG = 'gcal_routine'
-
-
-
 
 def rostime_str(rt):
     return str(datetime.fromtimestamp(rt.secs)) + '  ' + str(rt.secs)
@@ -92,8 +90,8 @@ class GCal:
                     mt = now + timedelta(days=self.maxTimeDelta)
                     uri = "%s&timeMax=%sZ" % (uri, mt.isoformat())
                 rospy.loginfo('updating from google calendar %s', uri)
-                response = urllib.urlopen(uri)
-                self.gcal = json.loads(response.read())
+                response = requests.get(uri)
+                self.gcal = json.loads(response.text)
             except Exception, e:
                 rospy.logerr('failed to get response from %s: %s',
                              self.uri, str(e))
