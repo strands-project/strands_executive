@@ -93,7 +93,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
         self.execution_window = rospy.Duration(1200)
         
         # and the max number of tasks to fit into this window due to MDP scaling issues
-        self.batch_limit = 6
+        self.batch_limit = 5
 
         self.expected_completion_time = rospy.Time()
         self.mdp_exec_thread = Thread(target=self.mdp_exec)    
