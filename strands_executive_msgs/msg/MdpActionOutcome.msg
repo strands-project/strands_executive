@@ -29,8 +29,8 @@ float64[] duration_probs
 # list of duration clusters representatives. same lenght as duration_probs list, as elements in the 2 lists with the same index are related
 float64[] durations 
 
-# list of goal status outcomes associated to this outcome. After the action is executed, we check if its final GoalStatus is in this list.
-actionlib_msgs/GoalStatus[] status 
+# list of goal status, as defined in actionlib_msgs/GoalStatus.msg outcomes associated to this outcome. After the action is executed, we check if its final GoalStatus is in this list.
+int8[] status 
 
 # (attribute, type, value). If the check of the status above is True, then we go through each element of the list and check if result.attribute==value. if so, then this is the outcome and we update the state"
 strands_executive_msgs/StringTriple[] result 
