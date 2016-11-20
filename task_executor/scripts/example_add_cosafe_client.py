@@ -7,7 +7,7 @@ from actionlib_msgs.msg import GoalStatus
 from strands_executive_msgs.msg import ExecutePolicyExtendedAction, ExecutePolicyExtendedFeedback, ExecutePolicyExtendedGoal, MdpStateVar, StringIntPair, StringTriple, MdpAction, MdpActionOutcome, MdpDomainSpec
 from strands_executive_msgs.srv import GetGuaranteesForCoSafeTask, GetGuaranteesForCoSafeTaskRequest
 import strands_executive_msgs.mdp_action_utils as mau
-from strands_executive_msgs.srv import AddCoSafeTasks, SetExecutionStatus
+from strands_executive_msgs.srv import AddCoSafeTasks, SetExecutionStatus, DemandCoSafeTask
 
 import sys
 
@@ -49,22 +49,24 @@ def create_metric_map_action(waypoint_name, duration=5):
 def get_services():
     # get services necessary to do the jon
     add_tasks_srv_name = '/task_executor/add_co_safe_tasks'
+    demand_task_srv_name = '/task_executor/demand_co_safe_task'
     set_exe_stat_srv_name = '/task_executor/set_execution_status'
     rospy.loginfo("Waiting for task_executor service...")
     rospy.wait_for_service(add_tasks_srv_name)
     rospy.wait_for_service(set_exe_stat_srv_name)
     rospy.loginfo("Done")        
     add_tasks_srv = rospy.ServiceProxy(add_tasks_srv_name, AddCoSafeTasks)
+    demand_task_srv = rospy.ServiceProxy(demand_task_srv_name, DemandCoSafeTask)
     set_execution_status = rospy.ServiceProxy(set_exe_stat_srv_name, SetExecutionStatus)
-    return add_tasks_srv, set_execution_status
+    return add_tasks_srv, demand_task_srv, set_execution_status
 
 if __name__ == '__main__':
     rospy.init_node('mdp_client_test')
     
-    n_waypoints=6
+    n_waypoints=1
     
       # get services to call into execution framework
-    add_tasks, set_execution_status = get_services()
+    add_tasks, demand_task, set_execution_status = get_services()
 
     
     
@@ -78,7 +80,7 @@ if __name__ == '__main__':
         ltl_task+='(F executed_wait_at_' + waypoint_name + '=1) & '
     spec.ltl_task=ltl_task[:-3]
     
+    # print add_tasks([spec],[rospy.Time()], [rospy.get_rostime() + rospy.Duration(60 * 60)])
+    # set_execution_status(True)
 
-    print add_tasks([spec],[rospy.Time()], [rospy.get_rostime() + rospy.Duration(60 * 60)])
-    set_execution_status(True)
-
+    print demand_task(spec,rospy.Time(), rospy.get_rostime() + rospy.Duration(60 * 60))

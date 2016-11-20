@@ -4,7 +4,7 @@ from __future__ import with_statement
 import rospy
 from Queue import Queue, Empty
 from strands_executive_msgs.msg import Task, ExecutionStatus, DurationMatrix, DurationList, ExecutePolicyExtendedAction, ExecutePolicyExtendedFeedback, ExecutePolicyExtendedGoal, MdpStateVar, StringIntPair, StringTriple, MdpAction, MdpActionOutcome, MdpDomainSpec, TaskEvent
-from strands_executive_msgs.srv import GetGuaranteesForCoSafeTask, GetGuaranteesForCoSafeTaskRequest, AddCoSafeTasks
+from strands_executive_msgs.srv import GetGuaranteesForCoSafeTask, GetGuaranteesForCoSafeTaskRequest, AddCoSafeTasks, DemandCoSafeTask
 from task_executor.base_executor import BaseTaskExecutor
 from threading import Thread, Condition
 from task_executor.execution_schedule import ExecutionSchedule
@@ -121,38 +121,94 @@ class MDPTaskExecutor(BaseTaskExecutor):
         """
         Adds a task into the task execution framework.
         """
-        self.service_lock.acquire()
-        now = rospy.get_rostime()
-        task_ids = []
-        tasks = []
-        task_spec_pairs = []
-        for i, spec in enumerate(req.domain_specs):
+        try:
+            self.service_lock.acquire()
+            now = rospy.get_rostime()
+            task_ids = []
+            tasks = []
+            task_spec_pairs = []
+            for i, spec in enumerate(req.domain_specs):
+
+                task = Task()
+
+                task.task_id = self.get_next_id()
+                task_ids.append(task.task_id)
+                
+                task.start_after = req.start_after[i]
+                task.end_before = req.end_before[i]
+                task.action = spec.ltl_task
+
+                if task.start_after.secs == 0:
+                    rospy.logwarn('Task %s did not have start_after set' % (task.action))                
+                    task.start_after = now
+
+                if task.end_before.secs == 0:
+                    rospy.logwarn('Task %s did not have end_before set, using start_after' % (task.action))                
+                    task.end_before = task.start_after
+
+                tasks.append(task)
+                task_spec_pairs.append((task, spec))
+
+            self.add_specs(task_spec_pairs)        
+            self.log_task_events(tasks, TaskEvent.ADDED, rospy.get_rostime())                
+            self.service_lock.release()
+            return [task_ids]
+        finally:    
+            self.service_lock.release()
+    add_co_safe_tasks_ros_srv.type=AddCoSafeTasks
+
+
+    def demand_co_safe_task_ros_srv(self, req):
+        """
+        Demand a the task from the execution framework.
+        """
+        try:            
+            self.service_lock.acquire()
+            now = rospy.get_rostime()
+
+            if not self.are_tasks_interruptible(self.active_tasks):
+                return [False, 0, self.active_task_completes_by - now]
+
+            # A task needs to be created for internal monitoring
 
             task = Task()
+            task.task_id = self.get_next_id()
+            task.start_after = req.start_after
+            task.end_before = req.end_before
+            task.action = req.domain_spec.ltl_task
 
-            task.task_id = self.task_counter
-            task_ids.append(task.task_id)
-            self.task_counter += 1
-            task.start_after = req.start_after[i]
-            task.end_before = req.end_before[i]
-            task.action = spec.ltl_task
-
+            # give the task some sensible defaults
             if task.start_after.secs == 0:
-                rospy.logwarn('Task %s did not have start_after set' % (task.action))                
+                rospy.loginfo('Demanded task %s did not have start_after set, using now' % (task.action))                
                 task.start_after = now
 
             if task.end_before.secs == 0:
-                rospy.logwarn('Task %s did not have end_before set, using start_after' % (task.action))                
-                task.end_before = task.start_after
+                rospy.loginfo('Demand task %s did not have end_before set, using start_after' % (task.action))                
+                # make this appear as a time-critical task
+                task.end_before = now 
+        
+            task.execution_time = now
 
-            tasks.append(task)
-            task_spec_pairs.append((task, spec))
+            # stop anything else
+            if len(self.active_tasks) > 0:
+                self.pause_execution()
+                self.executing = False
+                self.cancel_active_task()
 
-        self.add_specs(task_spec_pairs)        
-        self.log_task_events(tasks, TaskEvent.ADDED, rospy.get_rostime())                
-        self.service_lock.release()
-        return [task_ids]
-    add_co_safe_tasks_ros_srv.type=AddCoSafeTasks
+            # and inform implementation to let it take action
+            self.demand_spec(task, req.domain_spec)                        
+            
+            if not self.executing:
+                self.executing = True
+                self.start_execution()
+
+            self.log_task_event(task, TaskEvent.DEMANDED, rospy.get_rostime())                
+            return [True, task.task_id, rospy.Duration(0)]        
+        finally:    
+            self.service_lock.release()
+
+    demand_co_safe_task_ros_srv.type=DemandCoSafeTask
+
 
     def _extend_formalua_with_exec_flag(self, formula, state_var_name):
         insert_after = len(formula) - 1
@@ -280,6 +336,28 @@ class MDPTaskExecutor(BaseTaskExecutor):
         
         self.republish_schedule()            
         self.recheck_normal_tasks = True
+
+
+    def demand_spec(self, task, mdp_spec):
+        with self.state_lock:
+            prior_execution_state = self.executing
+
+        # this cleans up the current execution and sets self.executing to false
+        self.pause_execution()            
+
+        # todo: potential race condition -- what happens if someone calls start/pause execution here
+
+        with self.state_lock:            
+            # convert the demanded task into an mdp task for policy execution 
+            demanded_mdp_task = self._convert_spec_to_mdp_action(task, mdp_spec)
+            # and queue it up for execution
+            mdp_goal = self._mdp_single_task_to_goal(demanded_mdp_task)
+            # put blocks until the queue is empty, so we guarantee that the queue is empty while we're under lock
+            tasks = [demanded_mdp_task]
+            self.mdp_exec_queue.put((mdp_goal, tasks, self._get_guarantees_for_batch(tasks)[1]))
+            rospy.loginfo('Queued up demanded task: %s' % (demanded_mdp_task.task.action))
+            self.executing = prior_execution_state 
+
 
     def goal_status_to_task_status(self, goal_status):
         if goal_status == GoalStatus.PREEMPTED:
