@@ -195,6 +195,7 @@ class GCal:
         # max duration to be the event length in calendar.
         if self.time_critical:
             t.max_duration = t.end_before - t.start_after
+            t.max_duration.secs = t.max_duration.secs / 2
             t.end_before = t.start_after
 
         return t

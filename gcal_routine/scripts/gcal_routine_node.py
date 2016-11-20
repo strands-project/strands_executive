@@ -27,7 +27,7 @@ if __name__ == '__main__':
                                pre_start_window=timedelta(
                                    minutes=rospy.get_param(
                                        '~pre_start_window_min',
-                                       15)),
+                                       30)),
                                update_wait=rospy.get_param(
                                    '~routine_update_wait_sec',
                                    10))
