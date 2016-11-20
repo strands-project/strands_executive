@@ -1,5 +1,6 @@
 <launch>
   <arg name="interruptible_wait" default="true"/>
+  <arg name="combined_sort" default="false"/>
   
   <!-- run mdp plan exec -->
   <include file="$(find mdp_plan_exec)/launch/mdp_plan_exec_extended.launch">
@@ -8,6 +9,7 @@
   <!-- mdp task system using mdp navigation -->
   <node pkg="task_executor" type="mdp_task_executor.py" name="mdp_task_executor"  output="screen">
   	<param name="nav_service" type="string" value="mdp" />
+    <param name="combined_sort" type="bool" value="$(arg combined_sort)" />
   </node>
   
     <!-- Utility node used for generating wait behaviours -->
