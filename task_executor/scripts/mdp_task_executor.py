@@ -27,13 +27,14 @@ class MDPTask(object):
 
 
 
-    def __init__(self, task, state_var, action, is_ltl = False):
+    def __init__(self, task, state_var, action, is_ltl = False, is_on_demand = False):
         self.task = task
         self.state_var = state_var
         self.action = action
         self.is_ltl = is_ltl
         self.is_mdp_spec = False
         self.mdp_spec = None
+        self.is_on_demand = is_on_demand
 
     def _set_mdp_spec(self, mdp_spec):
         self.mdp_spec = mdp_spec
@@ -82,6 +83,9 @@ class MDPTaskExecutor(BaseTaskExecutor):
         self.mdp_exec_client = None
         self.set_active_batch([])
         self.to_cancel = set()
+
+        # is a on-demand task active
+        self.on_demand_active = False
 
         # only ever allow one batch in the execution queue. If this restriction is removed then demanding won't work immediately
         self.mdp_exec_queue = Queue(maxsize = 1)
@@ -196,7 +200,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                 self.cancel_active_task()
 
             # and inform implementation to let it take action
-            self.demand_spec(task, req.domain_spec)                        
+            self.spec_demanded(task, req.domain_spec)                        
             
             if not self.executing:
                 self.executing = True
@@ -338,7 +342,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
         self.recheck_normal_tasks = True
 
 
-    def demand_spec(self, task, mdp_spec):
+    def spec_demanded(self, task, mdp_spec):
         with self.state_lock:
             prior_execution_state = self.executing
 
@@ -350,6 +354,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
         with self.state_lock:            
             # convert the demanded task into an mdp task for policy execution 
             demanded_mdp_task = self._convert_spec_to_mdp_action(task, mdp_spec)
+            demanded_mdp_task.is_on_demand = True
             # and queue it up for execution
             mdp_goal = self._mdp_single_task_to_goal(demanded_mdp_task)
             # put blocks until the queue is empty, so we guarantee that the queue is empty while we're under lock
@@ -357,6 +362,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
             self.mdp_exec_queue.put((mdp_goal, tasks, self._get_guarantees_for_batch(tasks)[1]))
             rospy.loginfo('Queued up demanded task: %s' % (demanded_mdp_task.task.action))
             self.executing = prior_execution_state 
+            
 
 
     def goal_status_to_task_status(self, goal_status):
@@ -854,14 +860,17 @@ class MDPTaskExecutor(BaseTaskExecutor):
             with self.state_lock:
                 # check whether we're due to start a time-critical task that we'd otherwise miss
                 if self._should_start_next_time_critical_task(now):
-                    rospy.logwarn('We should be executing a time-critical task now, so cancelling execution')
-                    self.mdp_exec_client.cancel_all_goals()
-                    complete = self.mdp_exec_client.wait_for_result(rospy.Duration(70))
-                    if not complete:
-                        rospy.logwarn('Policy execution did not service preempt request in a reasonable time')
-                        return GoalStatus.ACTIVE
+                    if self.on_demand_active:                                                    
+                        rospy.logwarn('Ignoring the start of a time-critical task due to an on-demand task')
                     else:
-                        return GoalStatus.RECALLED
+                        rospy.logwarn('We should be executing a time-critical task now, so cancelling execution')
+                        self.mdp_exec_client.cancel_all_goals()
+                        complete = self.mdp_exec_client.wait_for_result(rospy.Duration(70))
+                        if not complete:
+                            rospy.logwarn('Policy execution did not service preempt request in a reasonable time')
+                            return GoalStatus.ACTIVE
+                        else:
+                            return GoalStatus.RECALLED
 
         return self.mdp_exec_client.get_state()
 
@@ -905,6 +914,13 @@ class MDPTaskExecutor(BaseTaskExecutor):
                                     self.expected_completion_time = self._expected_duration_to_completion_time(guarantees.expected_time)
                                     rospy.loginfo('Sent goal for %s' % mdp_goal.spec.ltl_task)
                                     self.republish_schedule()
+
+                                    for m in self.active_batch:
+                                        self.on_demand_active = self.on_demand_active or m.is_on_demand
+
+                                    if self.on_demand_active:
+                                        rospy.loginfo('This is an on-demand task')
+
                                     sent_goal = True
                                 else:
                                     self.mdp_exec_client = None
@@ -914,6 +930,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                         self.mdp_exec_queue.task_done()
 
                         if sent_goal:
+
 
                             final_status = self._wait_for_policy_execution()
 
@@ -951,12 +968,13 @@ class MDPTaskExecutor(BaseTaskExecutor):
                                     self.log_task_events(cancelled_tasks, TaskEvent.DROPPED, rospy.get_rostime(), description = log_string)        
                                 
                                 remaining_active = len(self.active_batch)
-                                
+                                self.on_demand_active = False                                
 
 
                                 # policy execution finished everything
                                 if final_status == GoalStatus.SUCCEEDED:
                                     rospy.loginfo('Policy execution succeeded')                                
+
                                     if remaining_active > 0:
                                         log_string = 'Active batch still contained %s task(s) after successful execution' % remaining_active
                                         rospy.loginfo(log_string)
@@ -976,7 +994,8 @@ class MDPTaskExecutor(BaseTaskExecutor):
                                     self.log_task_events((m.task for m in self.active_batch), TaskEvent.DROPPED, rospy.get_rostime(), description = log_string)        
                                     # todo: is dropping really necessary here? the tasks themselves were not aborted, just policy execution
                                     self.set_active_batch([])
-                                                    
+                                                                        
+
                                 # make sure this can't be used now execution is complete
                                 self.mdp_exec_client = None
                                 # whatever happened or was executed, we should now recheck the available normal tasks
@@ -1007,11 +1026,11 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
     def set_active_batch(self, batch):
         """
-        Set the active batch of tasks. Also updates self.active_tasks in the base class
+        Set the active batch of tasks. Also updates self.active_tasks in the base class 
         """
         self.active_batch = copy(batch)
         self.active_tasks = [m.task for m in self.active_batch]
-
+                  
 
     def start_execution(self):
         """ Called when overall execution should  (re)start """
@@ -1019,7 +1038,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
     def deactivate_active_batch(self):
         """
-        Takes the tasks from the active batch and returns them to the approach lists for later consideration
+        Takes the tasks from the active batch and returns them to the approach lists for later consideration.  
         """
         active_count = len(self.active_batch)
         now = rospy.get_rostime()
@@ -1027,9 +1046,10 @@ class MDPTaskExecutor(BaseTaskExecutor):
         # for each task remaining in the active batch, put it back into the right list
         for mdp_task in self.active_batch:                    
             # we can't monitor the execution of these tasks, so we always assume they're done when deactivated
-            if mdp_task.is_ltl or mdp_task.is_mdp_spec:
+            if mdp_task.is_ltl or mdp_task.is_mdp_spec or mdp_task.is_on_demand:
                 self.log_task_events([mdp_task.task], TaskEvent.TASK_STOPPED, now, description = 'Active tasks were deactivated')             
-            else: 
+            # if this wasn't an on-demand task, re-add it for later
+            else:                                                     
                 if mdp_task.task.start_after == mdp_task.task.end_before:                        
                     self.time_critical_tasks.insert(mdp_task)
                 else:
@@ -1087,7 +1107,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
         with self.state_lock:
             prior_execution_state = self.executing
-
+                
 
         # this cleans up the current execution and sets self.executing to false
         self.pause_execution()            
@@ -1097,6 +1117,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
         with self.state_lock:            
             # convert the demanded task into an mdp task for policy execution 
             demanded_mdp_task = self._convert_task_to_mdp_action(demanded_task)
+            demanded_mdp_task.is_on_demand = True
             # and queue it up for execution
             mdp_goal = self._mdp_single_task_to_goal(demanded_mdp_task)
             # put blocks until the queue is empty, so we guarantee that the queue is empty while we're under lock
@@ -1104,6 +1125,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
             self.mdp_exec_queue.put((mdp_goal, tasks, self._get_guarantees_for_batch(tasks)[1]))
             rospy.loginfo('Queued up demanded task: %s' % (demanded_mdp_task.action.name))
             self.executing = prior_execution_state 
+            
 
     def cancel_active_task(self):
         """ 
