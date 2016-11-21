@@ -50,6 +50,7 @@ add_service_files(
   GetActiveTasks.srv
   GetGuaranteesForCoSafeTask.srv
   GetIDs.srv
+  DemandCoSafeTask.srv
 )
 
 
