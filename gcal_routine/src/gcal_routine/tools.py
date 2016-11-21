@@ -16,6 +16,7 @@ from threading import Thread
 
 PKG = 'gcal_routine'
 
+
 def rostime_str(rt):
     return str(datetime.fromtimestamp(rt.secs)) + '  ' + str(rt.secs)
 
@@ -24,7 +25,7 @@ class GCal:
 
     def __init__(self, calendar, key, add_cb=None,
                  remove_cb=None, update_wait=60, minTimeDelta=None,
-                 maxTimeDelta=None, file_name=None):
+                 maxTimeDelta=None, file_name=None, time_critical=False):
         self.tz_utc = tz.gettz('UTC')
         if file_name is not None:
             self.uri = file_name
@@ -40,6 +41,7 @@ class GCal:
         self.remove_cb = remove_cb
         self.minTimeDelta = minTimeDelta
         self.maxTimeDelta = maxTimeDelta
+        self.time_critical = time_critical
         self.update_worker = Thread(target=self._update_run)
 
     def start_worker(self):
@@ -151,7 +153,8 @@ class GCal:
             if 'description' in gcal_event:
                 t = factory.call(gcal_event['description']).task
             else:
-                start_after = rospy.Time.from_sec(timegm(start_utc.timetuple())) \
+                start_after = rospy.Time.from_sec(
+                    timegm(start_utc.timetuple())) \
                     - self.time_offset
                 end_before = rospy.Time.from_sec(timegm(end_utc.timetuple())) \
                     - self.time_offset
@@ -172,8 +175,9 @@ class GCal:
                           "Using default constructor." %
                           (factory_name, str(e)))
             t = Task()
-            t.action = gcal_event['summary']    
-            t.start_after = rospy.Time.from_sec(timegm(start_utc.timetuple())) \
+            t.action = gcal_event['summary']
+            t.start_after = rospy.Time.from_sec(
+                timegm(start_utc.timetuple())) \
                 - self.time_offset
             t.end_before = rospy.Time.from_sec(timegm(end_utc.timetuple())) \
                 - self.time_offset
@@ -184,6 +188,16 @@ class GCal:
                 t.end_node_id = gcal_event['location']
         if t.max_duration.secs == 0:
             t.max_duration = (t.end_before - t.start_after) / 2
+
+        # if it's a time critical task, then the new
+        # scheduler requires the task to have the same end
+        # time as start time, to indicate time "criticalness".
+        # Opportunistically, in this case we assume the
+        # max duration to be the event length in calendar.
+        if self.time_critical:
+            t.max_duration = t.end_before - t.start_after
+            t.max_duration.secs = t.max_duration.secs / 2
+            t.end_before = t.start_after
 
         return t
 
