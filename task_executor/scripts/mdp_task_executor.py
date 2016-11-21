@@ -93,7 +93,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
         self.execution_window = rospy.Duration(1200)
         
         # and the max number of tasks to fit into this window due to MDP scaling issues
-        self.batch_limit = 6
+        self.batch_limit = 5
 
         self.expected_completion_time = rospy.Time()
         self.mdp_exec_thread = Thread(target=self.mdp_exec)    
@@ -106,6 +106,12 @@ class MDPTaskExecutor(BaseTaskExecutor):
         self.update_schedule_condition = Condition()
         self.schedule_publish_thread = Thread(target=self.publish_schedule)
         self.schedule_publish_thread.start()
+
+        self.use_combined_sort_criteria = rospy.get_param('~combined_sort', False) 
+        if self.use_combined_sort_criteria:
+            rospy.loginfo('Using combined sort criteria')
+        else:
+            rospy.loginfo('Using separate sort criteria')
 
         self.advertise_services()
         self.tz = tzlocal()
@@ -224,7 +230,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
             outcome=MdpActionOutcome(probability = 1.0,
                     post_conds = [StringIntPair(string_data = state_var_name, int_data = 1)],
                     duration_probs = [1.0],
-                    durations = [task.max_duration.to_sec()])
+                    durations = [task.expected_duration.to_sec()])
 
             action = MdpAction(name=action_name, 
                      action_server=task.action, 
@@ -508,15 +514,40 @@ class MDPTaskExecutor(BaseTaskExecutor):
                 self.normal_tasks.remove(mdp_task)
  
 
-        # sort the list of possibles by probability of success, with highest prob at start
-        # sort is stable, so a sequence of sorts will  work, starting with the lowest priorit
 
-        possibles_with_guarantees_in_time  = sorted(possibles_with_guarantees_in_time, key=lambda x: x[0].task.end_before)  
-        possibles_with_guarantees_in_time  = sorted(possibles_with_guarantees_in_time, key=lambda x: x[2].probability, reverse=True)  
-        possibles_with_guarantees_in_time  = sorted(possibles_with_guarantees_in_time, key=lambda x: x[0].task.priority, reverse=True)  
+        if self.use_combined_sort_criteria:
 
-        for possible in possibles_with_guarantees_in_time:
-            rospy.loginfo('%s will take %.2f secs with prio %s and prob %.4f ending before %s' % (possible[0].task.action, possible[2].expected_time.to_sec(), possible[0].task.priority, possible[2].probability, rostime_to_python(possible[0].task.end_before))) 
+            def task_reward(task_tuple):                
+                # sanity check for zero-time case
+                if task_tuple[2].expected_time.secs > 0:
+                    expected_time = task_tuple[2].expected_time.to_sec()
+                else:
+                    expected_time = 1.0
+
+                # sanity check for zero priority case
+                if task_tuple[0].task.priority == 0:
+                    rospy.logwarn('Priority is used for sorting but task %s had a priority of 0' % (task_tuple[0].task.action))
+                    priority = 1.0
+                else:
+                    priority = task_tuple[0].task.priority
+
+                return (priority*task_tuple[2].probability)/expected_time
+
+            possibles_with_guarantees_in_time  = sorted(possibles_with_guarantees_in_time, key=lambda x: task_reward(x), reverse=True)    
+            for possible in possibles_with_guarantees_in_time:
+                rospy.loginfo('%s, with reward %.2f, will take %.2f secs with prio %s and prob %.4f ending before %s' % (possible[0].task.action, task_reward(possible), possible[2].expected_time.to_sec(), possible[0].task.priority, possible[2].probability, rostime_to_python(possible[0].task.end_before))) 
+
+        else:
+
+            # sort the list of possibles by probability of success, with highest prob at start
+            # sort is stable, so a sequence of sorts will  work, starting with the lowest priorit
+
+            possibles_with_guarantees_in_time  = sorted(possibles_with_guarantees_in_time, key=lambda x: x[0].task.end_before)  
+            possibles_with_guarantees_in_time  = sorted(possibles_with_guarantees_in_time, key=lambda x: x[2].probability, reverse=True)  
+            possibles_with_guarantees_in_time  = sorted(possibles_with_guarantees_in_time, key=lambda x: x[0].task.priority, reverse=True)  
+
+            for possible in possibles_with_guarantees_in_time:
+                rospy.loginfo('%s will take %.2f secs with prio %s and prob %.4f ending before %s' % (possible[0].task.action, possible[2].expected_time.to_sec(), possible[0].task.priority, possible[2].probability, rostime_to_python(possible[0].task.end_before))) 
 
         # if at least one task fits into the executable time window
         if len(possibles_with_guarantees_in_time) > 0:
@@ -525,16 +556,17 @@ class MDPTaskExecutor(BaseTaskExecutor):
             new_active_batch = [possibles_with_guarantees_in_time[0][0]]
             last_successful_spec = (possibles_with_guarantees_in_time[0][1], possibles_with_guarantees_in_time[0][2])
 
-            # greedily combine with the rest
+            # remove the most probable from the list of possibles
             possibles_with_guarantees_in_time = possibles_with_guarantees_in_time[1:]            
 
             # limit the tasks inspected by the batch limit... we are skipping tasks, so just using the batch limit isn't enough
             for possible in possibles_with_guarantees_in_time:
 
-                mdp_task = possible[0]
                 if len(new_active_batch) == self.batch_limit:
                     break                
 
+
+                mdp_task = possible[0]
                 mdp_tasks_to_check = copy(new_active_batch)
                 mdp_tasks_to_check.append(mdp_task)   
                 (mdp_spec, guarantees) = self._get_guarantees_for_batch(mdp_tasks_to_check, estimates_service = mdp_estimates, epoch = now)

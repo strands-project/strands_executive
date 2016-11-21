@@ -49,6 +49,7 @@ add_service_files(
   IsTaskInterruptible.srv
   GetActiveTasks.srv
   GetGuaranteesForCoSafeTask.srv
+  GetIDs.srv
 )
 
 
