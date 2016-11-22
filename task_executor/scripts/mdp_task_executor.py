@@ -426,11 +426,13 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
         while len(self.normal_tasks) > 0:
 
+            # look at the next normal task
             next_normal_task = self.normal_tasks[0]
-            # todo: this ignores the navigation time for this task, making task dropping more permissive than it should be. this is ok for now.
-            until_next_normal_task = next_normal_task.task.end_before - now
-            if until_next_normal_task < (ZERO - self.allowable_lateness):
-                log_string = 'Dropping normal task %s as %s not enough time for execution' % (next_normal_task.task.action, until_next_normal_task.to_sec())
+
+            # drop the task if there's not enough time for expected duration to occur before the window closes
+            # this ignores the navigation time for this task, making task dropping more permissive than it should be. this is ok for now.
+            if now > (next_normal_task.task.end_before -  next_normal_task.task.expected_duration):
+                log_string = 'Dropping normal task %s as time window closed at %s ' % (next_normal_task.task.action, next_normal_task.task.end_before)
                 rospy.loginfo(log_string)
                 self.normal_tasks = SortedCollection(self.normal_tasks[1:], key=(lambda t: t.task.end_before))                
                 self.log_task_event(next_normal_task.task, TaskEvent.DROPPED, now, description = log_string)        
