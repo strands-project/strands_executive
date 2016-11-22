@@ -176,7 +176,7 @@ class DailyRoutine(object):
 
         if daily_end > overall_end:
             rospy.logwarn('Provided duration %s takes task past daily end %s for tasks %s. Clamping to daily end' % (daily_end, overall_end, tasks))
-            daily_duration = self.daily_end - daily_start
+            daily_duration = daily_end - datetime.combine(date.today(), daily_start)
 
         self.routine_tasks += [(tasks, (daily_start, daily_duration))] * times
 
