@@ -294,6 +294,7 @@ class BaseTaskExecutor(object):
 
             if task.expected_duration.secs == 0:
                 rospy.logwarn('Task %s did not have expected_duration set, using max_duration' % (task.action))
+                task.expected_duration = task.max_duration
 
             if task.start_after.secs == 0:
                 rospy.logwarn('Task %s did not have start_after set' % (task.action))                
