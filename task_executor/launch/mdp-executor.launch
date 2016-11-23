@@ -1,6 +1,7 @@
 <launch>
   <arg name="interruptible_wait" default="true"/>
   <arg name="combined_sort" default="false"/>
+  <arg name="close_windows" default="true"/>
   
   <!-- run mdp plan exec -->
   <include file="$(find mdp_plan_exec)/launch/mdp_plan_exec_extended.launch">
@@ -10,6 +11,7 @@
   <node pkg="task_executor" type="mdp_task_executor.py" name="mdp_task_executor"  output="screen">
   	<param name="nav_service" type="string" value="mdp" />
     <param name="combined_sort" type="bool" value="$(arg combined_sort)" />
+    <param name="close_windows" type="bool" value="$(arg close_windows)" />
   </node>
   
     <!-- Utility node used for generating wait behaviours -->

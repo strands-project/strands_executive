@@ -114,6 +114,8 @@ class MDPTaskExecutor(BaseTaskExecutor):
         self.schedule_publish_thread.start()
 
         self.use_combined_sort_criteria = rospy.get_param('~combined_sort', False) 
+        self.cancel_at_window_end = rospy.get_param('~close_windows', False) 
+
         if self.use_combined_sort_criteria:
             rospy.loginfo('Using combined sort criteria')
         else:
@@ -819,7 +821,15 @@ class MDPTaskExecutor(BaseTaskExecutor):
             rospy.logwarn('Expected duration was less that 0, giving a default of 5 minutes')
             expected_duration = rospy.Duration(5 * 60)
 
-        return rospy.get_rostime() + expected_duration + rospy.Duration(60)
+        expected_completion_time = rospy.get_rostime() + expected_duration + rospy.Duration(60)
+
+        if self.cancel_at_window_end:
+            for mdp_task in self.active_batch:
+                if mdp_task.task.end_before < expected_completion_time:
+                    # rospy.logwarn('Curtailing execution with end of task window')
+                    expected_completion_time = mdp_task.task.end_before
+
+        return expected_completion_time
 
     def _wait_for_policy_execution(self):
         """
