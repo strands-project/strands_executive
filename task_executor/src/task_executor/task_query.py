@@ -14,8 +14,6 @@ from task_executor.utils import rostime_to_python
 
 
 
-
-
 def remove_duplicates(results):
     seen = set()
     seen_add = seen.add

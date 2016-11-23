@@ -4,6 +4,21 @@ from task_executor.msg import *
 from datetime import datetime, timedelta
 from std_msgs.msg import String
 
+
+def max_duration(d1,d2):
+    if d1.to_sec() > d2.to_sec():
+        return d1
+    else:
+        return d2
+
+def ros_duration_to_string(duration):
+    return "%s" % duration.to_sec()
+
+def ros_time_to_string(time):
+    return datetime.fromtimestamp(time.to_sec()).strftime('%d/%m/%y %H:%M:%S')    
+
+
+
 class TestTaskAction(object):
     """ 
     Creates the action servers the example tasks require.

@@ -4,7 +4,7 @@ from actionlib_msgs.msg import GoalStatus
 from mongodb_store.message_store import MessageStoreProxy
 import mongodb_store.util as dc_util
 from strands_executive_msgs.msg import MdpAction, Task
-
+from strands_executive_msgs.srv import IsTaskInterruptible
 
 class ActionExecutor(object):
     def __init__(self):
@@ -66,6 +66,25 @@ class ActionExecutor(object):
                 res=action_outcome_msg
         return res
     
+
+    def is_action_interruptible(self, action):
+        if action is None:
+            rospy.logwarn('is_action_interruptible passed a None, returning True')
+            return True
+
+        try:
+            srv_name = action + '_is_interruptible'
+            rospy.wait_for_service(srv_name, timeout=1)    
+            is_interruptible = rospy.ServiceProxy(srv_name, IsTaskInterruptible)
+            return is_interruptible().status
+        except rospy.ROSException as exc:
+            rospy.logdebug('%s service does not exist, treating as interruptible')
+            return True
+        except rospy.ServiceException as exc:
+            rospy.logwarn(exc.message)
+            return True
+
+
     def execute_action(self, action_msg):
         self.cancelled=False
         rospy.loginfo("Executing " + action_msg.name + ". Actionlib server is: " + action_msg.action_server)
@@ -88,10 +107,18 @@ class ActionExecutor(object):
                 
                 action_finished = False
                 timer=0
-                while (not action_finished) and (timer < max_action_duration + wiggle_room) and (not self.cancelled):
+
+
+
+                while (not action_finished) and (not self.cancelled):
                     timer += poll_wait.to_sec()
                     action_finished = action_client.wait_for_result(poll_wait)
-                    
+                    if timer > (max_action_duration + wiggle_room):
+                        if self.is_action_interruptible(action_msg.action_server):
+                            break   
+                        else:
+                            rospy.logwarn('Action execution has timed out but is not interruptible, so execution continues')
+
                 if not action_finished:
                     if self.cancelled:
                         rospy.logwarn("Policy execution has been preempted by another process")
