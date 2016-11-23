@@ -13,10 +13,12 @@ from math import floor
 import threading
 import actionlib
 from task_executor.SortedCollection import SortedCollection
-from task_executor.utils import rostime_to_python, rostime_close, get_start_node_ids
+from task_executor.utils import rostime_to_python, rostime_close, get_start_node_ids, ros_duration_to_string, ros_time_to_string, max_duration
 from dateutil.tz import tzlocal
 from copy import copy, deepcopy
 from actionlib_msgs.msg import GoalStatus
+
+
 
 ZERO = rospy.Duration(0)
 
@@ -563,37 +565,34 @@ class MDPTaskExecutor(BaseTaskExecutor):
         last_successful_spec = None
         
 
-        possibles = []
-
-        # first collect the tasks which we can possibly consider
-        for mdp_task in self.normal_tasks[:task_check_limit]:     
-
-            # stop when we hit the limit 
-            # if len(possibles) == self.batch_limit:
-            #     break
-
-            # only consider tasks which we are allowed to execute from now
-            if mdp_task.task.start_after < now:
-                possibles.append(mdp_task)
-
 
         possibles_with_guarantees_in_time = []
         possibles_with_guarantees = []
 
         # now for each single task, get indpendent guarantees
-        for mdp_task in possibles:
+        for mdp_task in self.normal_tasks[:task_check_limit]:     
 
             try:
                 (mdp_spec, guarantees) = self._get_guarantees_for_batch([mdp_task], estimates_service = mdp_estimates, epoch = now)
             
-                # only reason about combining tasks that are achievable on their own
+                # only reason about combining tasks that have their windows opena and are achievable on their own
                 # 
-                if guarantees.expected_time <= execution_window:                        
-                    possibles_with_guarantees_in_time.append((mdp_task, mdp_spec, guarantees))
 
-            
-                # keep all guarantees anyway, as we might need to report one if we can't find a task to execute
-                possibles_with_guarantees.append((mdp_task, mdp_spec, guarantees))
+                nav_time = max_duration(guarantees.expected_time - mdp_task.task.max_duration, ZERO)
+
+                # print 'timing details'
+                # print ros_time_to_string(now)
+                # print ros_time_to_string(mdp_task.task.start_after)
+                # print ros_duration_to_string(guarantees.expected_time)
+                # print ros_duration_to_string(mdp_task.task.max_duration)
+                # print "Start by: %s" % ros_time_to_string(mdp_task.task.start_after - nav_time)
+
+                if now > (mdp_task.task.start_after - nav_time):
+                    if guarantees.expected_time <= execution_window:                        
+                        possibles_with_guarantees_in_time.append((mdp_task, mdp_spec, guarantees))
+
+                    # keep all guarantees anyway, as we might need to report one if we can't find a task to execute
+                    possibles_with_guarantees.append((mdp_task, mdp_spec, guarantees))
 
             except Exception, e:
                 rospy.logwarn('Ignoring task due to: %s' % e)
@@ -650,7 +649,6 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
                 if len(new_active_batch) == self.batch_limit:
                     break                
-
 
                 mdp_task = possible[0]
                 mdp_tasks_to_check = copy(new_active_batch)
@@ -805,7 +803,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                         # if we get here we have normal tasks, but none of them were available for execution. this probaly means
                         # that they're for the future
                         # we can't set recheck_normal_tasks to False as this is the only way the time is rechecked
-                        rospy.loginfo('Next task available for execution in %.2f secs' % (self.normal_tasks[0].task.start_after - now).to_sec())
+                        rospy.loginfo('Next task available for execution in at most %.2f secs' % (self.normal_tasks[0].task.start_after - now).to_sec())
                         # pass
             else:
                 rospy.logdebug('No need to recheck normal tasks')
