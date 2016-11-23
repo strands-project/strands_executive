@@ -158,8 +158,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                 task_spec_pairs.append((task, spec))
 
             self.add_specs(task_spec_pairs)        
-            self.log_task_events(tasks, TaskEvent.ADDED, rospy.get_rostime())                
-            self.service_lock.release()
+            self.log_task_events(tasks, TaskEvent.ADDED, rospy.get_rostime())                            
             return [task_ids]
         finally:    
             self.service_lock.release()
