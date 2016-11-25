@@ -79,7 +79,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
         self.time_critical_tasks = SortedCollection(key=(lambda t: t.task.execution_time))
 
         # how late can tasks be expected to be before they're dropped at planning time
-        self.allowable_lateness = rospy.Duration(300)
+        self.allowable_lateness = rospy.Duration(rospy.get_param("~allowable_lateness", 300))
     
         self.state_lock = threading.Lock()
         self.mdp_exec_client = None
@@ -693,8 +693,11 @@ class MDPTaskExecutor(BaseTaskExecutor):
             try:
                 if mdp_task.task.execution_time.secs == 0 or mdp_task.task.start_after < check_before:
                     spec, guarantees = self._get_guarantees_for_batch([self._create_travel_mdp_task(mdp_task.task.start_node_id)], estimates_service = estimates_service, epoch = now)
+                    # take the predicted time directly, alternative factor in the probability,
+                    # see below.
+                    expected_navigation_time = rospy.Duration(guarantees.expected_time.secs)
                     # prevents an underestimate due to this being the expected time to failure
-                    expected_navigation_time = rospy.Duration(guarantees.expected_time.secs /  guarantees.probability)
+                    # expected_navigation_time = rospy.Duration(guarantees.expected_time.secs /  guarantees.probability)
                     rospy.loginfo('Expected navigation time for time-critical task: %s' % expected_navigation_time.secs)    
                     mdp_task.task.execution_time = mdp_task.task.start_after - expected_navigation_time
                 new_time_critical_tasks.insert(mdp_task)

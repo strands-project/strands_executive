@@ -150,25 +150,29 @@ class GCal:
         factory_name = '/' + action_name + "_create"
         try:
             factory = rospy.ServiceProxy(factory_name, CreateTask)
-            if 'description' in gcal_event:
-                t = factory.call(gcal_event['description']).task
+            # if 'description' in gcal_event:
+            #     t = factory.call(gcal_event['description']).task
+            # else:
+            start_after = rospy.Time.from_sec(timegm(start_utc.timetuple())) \
+                          - self.time_offset
+            end_before = rospy.Time.from_sec(timegm(end_utc.timetuple())) \
+                         - self.time_offset
+            sa = "start_after: {secs: %d, nsecs: %d}" % \
+                 (start_after.secs, start_after.nsecs)
+            eb = "end_before: {secs: %d, nsecs: %d}" % \
+                 (end_before.secs, end_before.nsecs)
+            sn = "start_node_id: '%s'" % gcal_event['location']
+            en = "end_node_id: '%s'" % gcal_event['location']
+            if gcal_event.has_key('description'):
+                ds = "description: '%s'" % gcal_event['description']
             else:
-                start_after = rospy.Time.from_sec(
-                    timegm(start_utc.timetuple())) \
-                    - self.time_offset
-                end_before = rospy.Time.from_sec(timegm(end_utc.timetuple())) \
-                    - self.time_offset
-                sa = "start_after: {secs: %d, nsecs: %d}" % \
-                         (start_after.secs, start_after.nsecs)
-                eb = "end_before: {secs: %d, nsecs: %d}" % \
-                         (end_before.secs, end_before.nsecs)
-                sn = "start_node_id: '%s'" % gcal_event['location']
-                en = "end_node_id: '%s'" % gcal_event['location']
+                ds = "description: "
 
-                yaml = "{%s, %s, %s, %s}" % (sa, eb, sn, en) 
-                rospy.loginfo("calling with pre-populated yaml: %s" % yaml)
-                t = factory.call(yaml).task
-                rospy.loginfo("got the task back: %s" % str(t))
+            yaml = "{%s, %s, %s, %s, %s}" % (sa, eb, sn, en, ds)
+
+            rospy.loginfo("calling with pre-populated yaml: %s" % yaml)
+            t = factory.call(yaml).task
+            rospy.loginfo("got the task back: %s" % str(t))
         except Exception as e:
             rospy.logwarn("Couldn't instantiate task from factory %s."
                           "error: %s."
