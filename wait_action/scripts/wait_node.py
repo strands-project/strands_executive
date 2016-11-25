@@ -49,17 +49,26 @@ class WaitServer(AbstractTaskServer):
                 target = now + a_really_long_time
                 # rospy.loginfo("waiting a really long time")
 
+            # for testing overruns
+            # if True:
+            #     a_really_long_time = rospy.Duration(60 * 60 * 24 * 3)
+            #     target = now + a_really_long_time
+
             rospy.loginfo("target wait time: %s"
                           % datetime.fromtimestamp(target.secs))
+
+
 
             # how often to provide feedback
             feedback_secs = 5.0
             feedback = WaitFeedback()
             # how long to wait
             wait_duration_secs = target.secs - now.secs
+            
 
             # the rate to publish feedback at/check time at
             r = rospy.Rate(1.0/feedback_secs)
+
 
             count = 1.0
             feedback_steps = wait_duration_secs/feedback_secs

@@ -13,10 +13,12 @@ from math import floor
 import threading
 import actionlib
 from task_executor.SortedCollection import SortedCollection
-from task_executor.utils import rostime_to_python, rostime_close, get_start_node_ids
+from task_executor.utils import rostime_to_python, rostime_close, get_start_node_ids, ros_duration_to_string, ros_time_to_string, max_duration
 from dateutil.tz import tzlocal
 from copy import copy, deepcopy
 from actionlib_msgs.msg import GoalStatus
+
+
 
 ZERO = rospy.Duration(0)
 
@@ -112,6 +114,8 @@ class MDPTaskExecutor(BaseTaskExecutor):
         self.schedule_publish_thread.start()
 
         self.use_combined_sort_criteria = rospy.get_param('~combined_sort', False) 
+        self.cancel_at_window_end = rospy.get_param('~close_windows', False) 
+
         if self.use_combined_sort_criteria:
             rospy.loginfo('Using combined sort criteria')
         else:
@@ -154,8 +158,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                 task_spec_pairs.append((task, spec))
 
             self.add_specs(task_spec_pairs)        
-            self.log_task_events(tasks, TaskEvent.ADDED, rospy.get_rostime())                
-            self.service_lock.release()
+            self.log_task_events(tasks, TaskEvent.ADDED, rospy.get_rostime())                            
             return [task_ids]
         finally:    
             self.service_lock.release()
@@ -563,37 +566,34 @@ class MDPTaskExecutor(BaseTaskExecutor):
         last_successful_spec = None
         
 
-        possibles = []
-
-        # first collect the tasks which we can possibly consider
-        for mdp_task in self.normal_tasks[:task_check_limit]:     
-
-            # stop when we hit the limit 
-            # if len(possibles) == self.batch_limit:
-            #     break
-
-            # only consider tasks which we are allowed to execute from now
-            if mdp_task.task.start_after < now:
-                possibles.append(mdp_task)
-
 
         possibles_with_guarantees_in_time = []
         possibles_with_guarantees = []
 
         # now for each single task, get indpendent guarantees
-        for mdp_task in possibles:
+        for mdp_task in self.normal_tasks[:task_check_limit]:     
 
             try:
                 (mdp_spec, guarantees) = self._get_guarantees_for_batch([mdp_task], estimates_service = mdp_estimates, epoch = now)
             
-                # only reason about combining tasks that are achievable on their own
+                # only reason about combining tasks that have their windows opena and are achievable on their own
                 # 
-                if guarantees.expected_time <= execution_window:                        
-                    possibles_with_guarantees_in_time.append((mdp_task, mdp_spec, guarantees))
 
-            
-                # keep all guarantees anyway, as we might need to report one if we can't find a task to execute
-                possibles_with_guarantees.append((mdp_task, mdp_spec, guarantees))
+                nav_time = max_duration(guarantees.expected_time - mdp_task.task.max_duration, ZERO)
+
+                # print 'timing details'
+                # print ros_time_to_string(now)
+                # print ros_time_to_string(mdp_task.task.start_after)
+                # print ros_duration_to_string(guarantees.expected_time)
+                # print ros_duration_to_string(mdp_task.task.max_duration)
+                # print "Start by: %s" % ros_time_to_string(mdp_task.task.start_after - nav_time)
+
+                if now > (mdp_task.task.start_after - nav_time):
+                    if guarantees.expected_time <= execution_window:                        
+                        possibles_with_guarantees_in_time.append((mdp_task, mdp_spec, guarantees))
+
+                    # keep all guarantees anyway, as we might need to report one if we can't find a task to execute
+                    possibles_with_guarantees.append((mdp_task, mdp_spec, guarantees))
 
             except Exception, e:
                 rospy.logwarn('Ignoring task due to: %s' % e)
@@ -650,7 +650,6 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
                 if len(new_active_batch) == self.batch_limit:
                     break                
-
 
                 mdp_task = possible[0]
                 mdp_tasks_to_check = copy(new_active_batch)
@@ -805,7 +804,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                         # if we get here we have normal tasks, but none of them were available for execution. this probaly means
                         # that they're for the future
                         # we can't set recheck_normal_tasks to False as this is the only way the time is rechecked
-                        rospy.loginfo('Next task available for execution in %.2f secs' % (self.normal_tasks[0].task.start_after - now).to_sec())
+                        rospy.loginfo('Next task available for execution in at most %.2f secs' % (self.normal_tasks[0].task.start_after - now).to_sec())
                         # pass
             else:
                 rospy.logdebug('No need to recheck normal tasks')
@@ -821,7 +820,15 @@ class MDPTaskExecutor(BaseTaskExecutor):
             rospy.logwarn('Expected duration was less that 0, giving a default of 5 minutes')
             expected_duration = rospy.Duration(5 * 60)
 
-        return rospy.get_rostime() + expected_duration + rospy.Duration(60)
+        expected_completion_time = rospy.get_rostime() + expected_duration + rospy.Duration(60)
+
+        if self.cancel_at_window_end:
+            for mdp_task in self.active_batch:
+                if mdp_task.task.end_before < expected_completion_time:
+                    # rospy.logwarn('Curtailing execution with end of task window')
+                    expected_completion_time = mdp_task.task.end_before
+
+        return expected_completion_time
 
     def _wait_for_policy_execution(self):
         """
