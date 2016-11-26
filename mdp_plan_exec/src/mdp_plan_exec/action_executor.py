@@ -98,7 +98,7 @@ class ActionExecutor(object):
                 goal = goal_clz(*argument_list) 
                 
                 poll_wait = rospy.Duration(1)
-                if action_msg.max_duration == 0:
+                if action_msg.max_duration == rospy.Duration(0):
                     max_action_duration=self.get_max_action_duration(action_msg.outcomes)
                 else:
                     max_action_duration = action_msg.max_duration
