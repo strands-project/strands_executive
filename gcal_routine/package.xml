@@ -47,6 +47,7 @@
   <run_depend>rospy</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>python-dateutil</run_depend>
+  <run_depend>python-requests</run_depend>
   <run_depend>strands_executive_msgs</run_depend>
   <run_depend>mongodb_store_msgs</run_depend>
 

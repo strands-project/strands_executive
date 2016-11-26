@@ -1,5 +1,8 @@
 <launch>
   <arg name="interruptible_wait" default="true"/>
+  <arg name="combined_sort" default="false"/>
+  <arg name="close_windows" default="true"/>
+  <arg name="allowable_lateness" default="300"/>
   
   <!-- run mdp plan exec -->
   <include file="$(find mdp_plan_exec)/launch/mdp_plan_exec_extended.launch">
@@ -8,6 +11,9 @@
   <!-- mdp task system using mdp navigation -->
   <node pkg="task_executor" type="mdp_task_executor.py" name="mdp_task_executor"  output="screen">
   	<param name="nav_service" type="string" value="mdp" />
+    <param name="combined_sort" type="bool" value="$(arg combined_sort)" />
+    <param name="close_windows" type="bool" value="$(arg close_windows)" />
+    <param name="allowable_lateness" type="int" value="$(arg allowable_lateness)" />
   </node>
   
     <!-- Utility node used for generating wait behaviours -->

@@ -52,7 +52,7 @@ class GCalRoutineRunner(object):
         now = self.now()
         tasks = []
         for (i, task) in self.waiting_tasks.copy().items():
-            if task.end_before.secs - now.secs < 0:
+            if (task.end_before.secs + task.max_duration.secs) - now.secs < 0:
                 rospy.loginfo('removed outdated task %s that was'
                               ' planned to end until %s',
                               i, rostime_str(task.end_before))

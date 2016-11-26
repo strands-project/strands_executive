@@ -1,0 +1,13 @@
+# A domain specs to execute
+strands_executive_msgs/MdpDomainSpec domain_spec
+# Time after which to start the domain spec. If secs == 0 now is used
+time start_after
+# Time before which to end the domain spec
+time end_before
+---
+# Whether the task was successfully demanded
+bool success
+# If successful, the id of the task that was demanded
+uint64 task_id
+# If not successful, how long you may have to wait until the call might be successful, i.e. how long is left on the current execution which refused to be interrupted
+duration remaining_execution_time

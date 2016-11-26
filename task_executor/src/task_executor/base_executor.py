@@ -258,6 +258,22 @@ class BaseTaskExecutor(object):
         return [self.active_tasks]
     get_active_tasks_ros_srv.type=GetActiveTasks
 
+
+    def get_ids_ros_srv(self, req):
+        """
+        Gets a bunch of fresh ids
+        """
+        self.service_lock.acquire()
+        rv = [[self.get_next_id() for x in range(req.count)]]
+        self.service_lock.release()
+        return rv
+    get_ids_ros_srv.type=GetIDs
+
+    def get_next_id(self):
+        rv = self.task_counter
+        self.task_counter += 1        
+        return rv
+
     def add_tasks_ros_srv(self, req):
         """
         Adds a task into the task execution framework.
@@ -266,13 +282,19 @@ class BaseTaskExecutor(object):
         now = rospy.get_rostime()
         task_ids = []
         for task in req.tasks:
-            task.task_id = self.task_counter
-            task_ids.append(task.task_id)
-            self.task_counter += 1
+
+            if task.task_id < 1:
+                task.task_id = self.get_next_id()
+
+            task_ids.append(task.task_id)            
             
             if task.max_duration.secs == 0:
                 rospy.logwarn('Task %s did not have max_duration set' % (task.action))
                 task.max_duration = rospy.Duration(5 * 60)
+
+            if task.expected_duration.secs == 0:
+                rospy.logwarn('Task %s did not have expected_duration set, using max_duration' % (task.action))
+                task.expected_duration = task.max_duration
 
             if task.start_after.secs == 0:
                 rospy.logwarn('Task %s did not have start_after set' % (task.action))                
@@ -298,15 +320,21 @@ class BaseTaskExecutor(object):
             if not self.are_tasks_interruptible(self.active_tasks):
                 return [False, 0, self.active_task_completes_by - rospy.get_rostime()]
 
-            req.task.task_id = self.task_counter        
-            self.task_counter += 1
+            if req.task.task_id < 1:
+                req.task.task_id = self.get_next_id()
 
             # give the task some sensible defaults
             req.task.start_after = rospy.get_rostime() - rospy.Duration(10)
             req.task.end_before = rospy.get_rostime() + (req.task.max_duration * 20)
             req.task.execution_time = rospy.get_rostime()
 
+            if req.task.max_duration.secs == 0:
+                rospy.logwarn('Task %s did not have max_duration set' % (req.task.action))
+                req.task.max_duration = rospy.Duration(5 * 60)
 
+            if req.task.expected_duration.secs == 0:
+                rospy.logwarn('Task %s did not have expected_duration set, using max_duration' % (req.task.action))
+                req.task.expected_duration = req.task.max_duration
 
             # stop anything else
             if len(self.active_tasks) > 0:
