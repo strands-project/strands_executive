@@ -29,6 +29,7 @@ add_message_files(
   StringTriple.msg
   MdpDomainSpec.msg
   MdpTask.msg
+  LastTaskID.msg
 )
 
 # Generate services in the 'srv' folder
