@@ -12,6 +12,9 @@ mongodb_store_msgs/StringPair[] arguments
 #list of waypoints where action can be executed
 string[] waypoints 
 
+#max duration for executing this action
+duration max_duration
+
 #string representing other valuations of state variables that need to hold for the action to be active USE diagnostic_msgs/KeyValue?
 strands_executive_msgs/StringIntPair[] pre_conds 
 

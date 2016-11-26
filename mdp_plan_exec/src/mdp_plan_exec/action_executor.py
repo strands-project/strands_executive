@@ -98,8 +98,10 @@ class ActionExecutor(object):
                 goal = goal_clz(*argument_list) 
                 
                 poll_wait = rospy.Duration(1)
-
-                max_action_duration=self.get_max_action_duration(action_msg.outcomes)
+                if action_msg.max_duration == 0:
+                    max_action_duration=self.get_max_action_duration(action_msg.outcomes)
+                else:
+                    max_action_duration = action_msg.max_duration
                 wiggle_room=30
                 action_client=actionlib.SimpleActionClient(action_msg.action_server, action_clz)
                 action_client.wait_for_server(poll_wait)
@@ -107,8 +109,6 @@ class ActionExecutor(object):
                 
                 action_finished = False
                 timer=0
-
-
 
                 while (not action_finished) and (not self.cancelled):
                     timer += poll_wait.to_sec()
