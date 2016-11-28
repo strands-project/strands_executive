@@ -135,16 +135,18 @@ class MDPTaskExecutor(BaseTaskExecutor):
             task_ids = []
             tasks = []
             task_spec_pairs = []
-            for i, spec in enumerate(req.domain_specs):
+            for mdp_task in req.mdp_tasks:
 
                 task = Task()
 
                 task.task_id = self.get_next_id()
                 task_ids.append(task.task_id)
                 
-                task.start_after = req.start_after[i]
-                task.end_before = req.end_before[i]
-                task.action = spec.ltl_task
+                task.start_after = mdp_task.start_after
+                task.end_before = mdp_task.end_before
+                task.priority = mdp_task.priority
+
+                task.action = mdp_task.mdp_spec.ltl_task
 
                 if task.start_after.secs == 0:
                     rospy.logwarn('Task %s did not have start_after set' % (task.action))                
@@ -155,7 +157,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                     task.end_before = task.start_after
 
                 tasks.append(task)
-                task_spec_pairs.append((task, spec))
+                task_spec_pairs.append((task, mdp_task.mdp_spec))
 
             self.add_specs(task_spec_pairs)        
             self.log_task_events(tasks, TaskEvent.ADDED, rospy.get_rostime())                            
