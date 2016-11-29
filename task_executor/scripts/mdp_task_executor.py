@@ -979,7 +979,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                                 if len(cancelled_tasks) > 0:
                                     log_string = 'Dropped %s task(s) after execution due to cancellation' % len(cancelled_tasks)
                                     rospy.loginfo(log_string)
-                                    self.log_task_events(cancelled_tasks, TaskEvent.DROPPED, rospy.get_rostime(), description = log_string)        
+                                    self.log_task_events((m.task for m in cancelled_tasks), TaskEvent.DROPPED, rospy.get_rostime(), description = log_string)        
                                 
                                 remaining_active = len(self.active_batch)
                                 self.on_demand_active = False                                
