@@ -175,7 +175,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
             self.service_lock.acquire()
             now = rospy.get_rostime()
 
-            if not self.are_tasks_interruptible(self.active_tasks):
+            if not self.are_active_tasks_interruptible():
                 return [False, 0, self.active_task_completes_by - now]
 
             # A task needs to be created for internal monitoring
@@ -835,6 +835,10 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
         return expected_completion_time
 
+
+    def are_active_tasks_interruptible(self):
+        return super(MDPTaskExecutor, self).are_active_tasks_interruptible()
+
     def _wait_for_policy_execution(self):
         """
         Wait until policy execution is complete or until we reach expected_completion_time at which point policy execution is preempted.
@@ -853,7 +857,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
             if remaining_secs < 0:
 
-                if self.are_tasks_interruptible(self.active_tasks):
+                if self.are_active_tasks_interruptible():
                     rospy.logwarn('Policy execution did not complete in expected time, preempting')
                     self.mdp_exec_client.cancel_all_goals()
                     # give the policy execution some time to clean up
@@ -993,14 +997,14 @@ class MDPTaskExecutor(BaseTaskExecutor):
                                         log_string = 'Active batch still contained %s task(s) after successful execution' % remaining_active
                                         rospy.loginfo(log_string)
                                         self.log_task_events((m.task for m in self.active_batch if (not m.is_ltl and not m.is_mdp_spec)), TaskEvent.TASK_STOPPED, rospy.get_rostime(), description = log_string)        
-                                        self.deactivate_active_batch()
+                                        self.deactivate_active_batch(description = 'Tasks stopped after successful exectution')
 
                                 # execution was paused or a task was demanded, resulting in preemption
                                 elif final_status == GoalStatus.PREEMPTED:                                
                                     log_string = 'Policy execution was preempted, returning %s tasks to task lists' % remaining_active
                                     rospy.loginfo(log_string)
                                     self.log_task_events((m.task for m in self.active_batch), TaskEvent.TASK_STOPPED, rospy.get_rostime(), description = log_string)        
-                                    self.deactivate_active_batch()
+                                    self.deactivate_active_batch(description = 'Tasks stopped after preempted exectution')
                                 # here we may have cancelled an overrunning policy or had some other problem
                                 else:             
                                     log_string = 'Policy execution exited with status %s, dropping remaining active tasks' % GoalStatus.to_string(final_status)                   
@@ -1018,7 +1022,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                         else:
                             with self.state_lock:
                                 rospy.loginfo('Active batch not executed, returning %s tasks to task lists' % len(self.active_batch))
-                                self.deactivate_active_batch()
+                                self.deactivate_active_batch(save_all=True)
 
                         self.republish_schedule()
 
@@ -1050,7 +1054,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
         """ Called when overall execution should  (re)start """
         rospy.loginfo('(Re-)starting execution')        
 
-    def deactivate_active_batch(self):
+    def deactivate_active_batch(self, save_all = False, description = ''):
         """
         Takes the tasks from the active batch and returns them to the approach lists for later consideration.  
         """
@@ -1059,9 +1063,10 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
         # for each task remaining in the active batch, put it back into the right list
         for mdp_task in self.active_batch:                    
+
             # we can't monitor the execution of these tasks, so we always assume they're done when deactivated
-            if mdp_task.is_ltl or mdp_task.is_mdp_spec or mdp_task.is_on_demand:
-                self.log_task_events([mdp_task.task], TaskEvent.TASK_STOPPED, now, description = 'Active tasks were deactivated')             
+            if not save_all and (mdp_task.is_ltl or mdp_task.is_mdp_spec or mdp_task.is_on_demand):
+                self.log_task_events([mdp_task.task], TaskEvent.TASK_STOPPED, now, description = description)             
             # if this wasn't an on-demand task, re-add it for later
             else:                                                     
                 if mdp_task.task.start_after == mdp_task.task.end_before:                        
