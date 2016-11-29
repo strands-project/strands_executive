@@ -317,7 +317,7 @@ class BaseTaskExecutor(object):
         try:            
             self.service_lock.acquire()
 
-            if not self.are_tasks_interruptible(self.active_tasks):
+            if not self.are_active_tasks_interruptible():
                 return [False, 0, self.active_task_completes_by - rospy.get_rostime()]
 
             if req.task.task_id < 1:
@@ -421,7 +421,7 @@ class BaseTaskExecutor(object):
         
         self.service_lock.acquire()        
 
-        if self.are_tasks_interruptible(self.active_tasks):
+        if self.are_active_tasks_interruptible():
 
             self.clear_schedule()
 
@@ -453,7 +453,7 @@ class BaseTaskExecutor(object):
             previous = self.executing
             
 
-            if self.are_tasks_interruptible(self.active_tasks):
+            if self.are_active_tasks_interruptible():
                 self.pause_execution()
                 self.executing = False
                 success = True            
@@ -520,8 +520,8 @@ class BaseTaskExecutor(object):
         return map(self.instantiate_from_string_pair, argument_list)
 
 
-    def are_tasks_interruptible(self, tasks):
-        for task in tasks:
+    def are_active_tasks_interruptible(self):
+        for task in self.active_tasks:
             if not self.is_task_interruptible(task):
                 return False
 

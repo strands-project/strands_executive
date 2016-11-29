@@ -63,7 +63,7 @@ def get_services():
 if __name__ == '__main__':
     rospy.init_node('mdp_client_test')
     
-    n_waypoints=1
+    n_waypoints=3
     
       # get services to call into execution framework
     add_tasks, demand_task, set_execution_status = get_services()
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     spec.ltl_task=ltl_task[:-3]
     
     # print add_tasks([spec],[rospy.Time()], [rospy.get_rostime() + rospy.Duration(60 * 60)])
-    # set_execution_status(True)
+    set_execution_status(True)
 
     task = MdpTask()
     task.mdp_spec = spec
