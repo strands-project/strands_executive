@@ -849,6 +849,10 @@ class MDPTaskExecutor(BaseTaskExecutor):
         """
 
         poll_time = rospy.Duration(5)
+        overtime = rospy.Duration(0)
+        # after an hour of overtime, give up
+        overtime_threshold = rospy.Duration(60 * 60)
+
         log_count = 0
 
         while not self.mdp_exec_client.wait_for_result(poll_time) and not rospy.is_shutdown():
@@ -858,6 +862,8 @@ class MDPTaskExecutor(BaseTaskExecutor):
             with self.state_lock:
                 now = rospy.get_rostime()
                 remaining_secs = (self.expected_completion_time - now).to_sec()
+
+
 
             if remaining_secs < 0:
 
@@ -872,8 +878,20 @@ class MDPTaskExecutor(BaseTaskExecutor):
                     else:
                         return GoalStatus.RECALLED
                 else:
-                    rospy.logwarn('Policy execution did not complete in expected time, but is non-interruptible, so waiting')
-                
+                    rospy.logwarn('Policy execution did not complete in expected time, but is non-interruptible, so waiting. Overtime: %ss' % ros_duration_to_string(overtime))
+                    overtime += poll_time
+
+                if overtime > overtime_threshold:
+                    rospy.logwarn('Policy execution has exceeded overtime threshold all execution flags ignored, preempting regardless')
+                    self.mdp_exec_client.cancel_all_goals()
+                    # give the policy execution some time to clean up
+                    complete = self.mdp_exec_client.wait_for_result(rospy.Duration(70))
+                    if not complete:
+                        rospy.logwarn('Policy execution did not service preempt request in a reasonable time')
+                        return GoalStatus.ACTIVE
+                    else:
+                        return GoalStatus.RECALLED
+
             else:
                 if log_count % 6 == 0:
                     rospy.loginfo('Another %.2f seconds until expected policy completion' % remaining_secs)
