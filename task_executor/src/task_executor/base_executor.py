@@ -61,8 +61,6 @@ class BaseTaskExecutor(object):
         self.msg_store = MessageStoreProxy() 
         self.logging_msg_store = MessageStoreProxy(collection='task_events') 
 
-
-        self.last_task_id_store_id = '583806fa54a6f7f43eadb5cc'
         self.check_last_task_id()
 
 
@@ -277,9 +275,22 @@ class BaseTaskExecutor(object):
 
     def check_last_task_id(self):
         try:
-            ltid, meta = self.msg_store.query_id(self.last_task_id_store_id, LastTaskID._type)
-            # print ltid, meta
-            rospy.loginfo('Retrieving task id from: %s' % self.last_task_id_store_id)           
+            results = self.msg_store.query(LastTaskID._type)
+
+            self.last_task_id = -1        
+            for msg, meta in results:
+                if msg.last_task_id > self.last_task_id:
+                    self.last_task_id = msg.last_task_id
+                    self.last_task_id_store_id = meta['_id']
+
+            
+
+            if self.last_task_id < 0:
+                self.last_task_id_store_id = self.msg_store.insert(LastTaskID(last_task_id = 0))
+                rospy.loginfo('Storing task id persistently at: %s' % self.last_task_id_store_id)           
+            else:
+                rospy.loginfo('Retrieving task id from: %s' % self.last_task_id_store_id)           
+
         except Exception as e: 
             self.last_task_id_store_id = self.msg_store.insert(LastTaskID(last_task_id = 0))
             rospy.loginfo('Storing task id persistently at: %s' % self.last_task_id_store_id)           
