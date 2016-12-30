@@ -828,7 +828,8 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
         if self.cancel_at_window_end:
             for mdp_task in self.active_batch:
-                if mdp_task.task.end_before < expected_completion_time:
+                # only curtail tasks to window for non-time critical tasks
+                if mdp_task.task.start_after != mdp_task.task.end_before and mdp_task.task.end_before < expected_completion_time:
                     # rospy.logwarn('Curtailing execution with end of task window')
                     expected_completion_time = mdp_task.task.end_before
 
