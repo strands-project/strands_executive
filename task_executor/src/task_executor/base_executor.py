@@ -2,7 +2,7 @@
 
 import rospy
 
-from strands_executive_msgs.msg import Task, TaskEvent
+from strands_executive_msgs.msg import Task, TaskEvent, LastTaskID
 
 import mongodb_store.util as dc_util
 import actionlib
@@ -57,9 +57,13 @@ class BaseTaskExecutor(object):
     MDP_NAV=1
 
     def __init__(self):
-        self.task_counter = 1
+        self.last_task_id = 0
         self.msg_store = MessageStoreProxy() 
         self.logging_msg_store = MessageStoreProxy(collection='task_events') 
+
+        self.check_last_task_id()
+
+
 
         self.nav_service = BaseTaskExecutor.MDP_NAV
 
@@ -269,9 +273,47 @@ class BaseTaskExecutor(object):
         return rv
     get_ids_ros_srv.type=GetIDs
 
+    def check_last_task_id(self):
+        try:
+            results = self.msg_store.query(LastTaskID._type)
+
+            self.last_task_id = -1        
+            for msg, meta in results:
+                if msg.last_task_id > self.last_task_id:
+                    self.last_task_id = msg.last_task_id
+                    self.last_task_id_store_id = meta['_id']
+
+            
+
+            if self.last_task_id < 0:
+                self.last_task_id_store_id = self.msg_store.insert(LastTaskID(last_task_id = 0))
+                rospy.loginfo('Storing task id persistently at: %s' % self.last_task_id_store_id)           
+            else:
+                rospy.loginfo('Retrieving task id from: %s' % self.last_task_id_store_id)           
+
+        except Exception as e: 
+            self.last_task_id_store_id = self.msg_store.insert(LastTaskID(last_task_id = 0))
+            rospy.loginfo('Storing task id persistently at: %s' % self.last_task_id_store_id)           
+        
     def get_next_id(self):
-        rv = self.task_counter
-        self.task_counter += 1        
+        try:
+            ltid, meta = self.msg_store.query_id(self.last_task_id_store_id, LastTaskID._type)
+            # print ltid, meta
+            # sanity check
+            if ltid.last_task_id != self.last_task_id:
+                rospy.logwarn('Persistent task id was not consistent with local version %s vs %s' % (ltid.last_task_id, self.last_task_id))
+                ltid.last_task_id = max(ltid.last_task_id, self.last_task_id)
+
+            ltid.last_task_id = ltid.last_task_id + 1
+            rv = ltid.last_task_id
+            self.last_task_id = rv
+            self.msg_store.update_id(self.last_task_id_store_id, ltid)
+
+            # rospy.loginfo('Retrieving task id from: %s' % self.last_task_id_store_id)         
+        except Exception as e:          
+            rospy.logwarn('Persistent task id could not be retrieved: %s' % e)          
+            rv = self.last_task_id
+            self.last_task_id += 1        
         return rv
 
     def add_tasks_ros_srv(self, req):
@@ -317,7 +359,7 @@ class BaseTaskExecutor(object):
         try:            
             self.service_lock.acquire()
 
-            if not self.are_tasks_interruptible(self.active_tasks):
+            if not self.are_active_tasks_interruptible():
                 return [False, 0, self.active_task_completes_by - rospy.get_rostime()]
 
             if req.task.task_id < 1:
@@ -421,7 +463,7 @@ class BaseTaskExecutor(object):
         
         self.service_lock.acquire()        
 
-        if self.are_tasks_interruptible(self.active_tasks):
+        if self.are_active_tasks_interruptible():
 
             self.clear_schedule()
 
@@ -453,7 +495,7 @@ class BaseTaskExecutor(object):
             previous = self.executing
             
 
-            if self.are_tasks_interruptible(self.active_tasks):
+            if self.are_active_tasks_interruptible():
                 self.pause_execution()
                 self.executing = False
                 success = True            
@@ -520,8 +562,8 @@ class BaseTaskExecutor(object):
         return map(self.instantiate_from_string_pair, argument_list)
 
 
-    def are_tasks_interruptible(self, tasks):
-        for task in tasks:
+    def are_active_tasks_interruptible(self):
+        for task in self.active_tasks:
             if not self.is_task_interruptible(task):
                 return False
 

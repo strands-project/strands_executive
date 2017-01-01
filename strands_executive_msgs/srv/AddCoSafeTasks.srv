@@ -1,8 +1,4 @@
 # A list of domain specs to execute
-strands_executive_msgs/MdpDomainSpec[] domain_specs
-# Time after which to start the ith domain spec. If secs == 0 now is used
-time[] start_after
-# Time before which to end the ith domain spec
-time[] end_before
+strands_executive_msgs/MdpTask[] mdp_tasks
 ---
 uint64[] task_ids

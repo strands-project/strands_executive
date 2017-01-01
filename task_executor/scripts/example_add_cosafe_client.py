@@ -4,7 +4,7 @@ import rospy
 import actionlib
 
 from actionlib_msgs.msg import GoalStatus
-from strands_executive_msgs.msg import ExecutePolicyExtendedAction, ExecutePolicyExtendedFeedback, ExecutePolicyExtendedGoal, MdpStateVar, StringIntPair, StringTriple, MdpAction, MdpActionOutcome, MdpDomainSpec
+from strands_executive_msgs.msg import ExecutePolicyExtendedAction, ExecutePolicyExtendedFeedback, ExecutePolicyExtendedGoal, MdpStateVar, StringIntPair, StringTriple, MdpAction, MdpActionOutcome, MdpDomainSpec, MdpTask, Task
 from strands_executive_msgs.srv import GetGuaranteesForCoSafeTask, GetGuaranteesForCoSafeTaskRequest
 import strands_executive_msgs.mdp_action_utils as mau
 from strands_executive_msgs.srv import AddCoSafeTasks, SetExecutionStatus, DemandCoSafeTask
@@ -63,7 +63,7 @@ def get_services():
 if __name__ == '__main__':
     rospy.init_node('mdp_client_test')
     
-    n_waypoints=1
+    n_waypoints=3
     
       # get services to call into execution framework
     add_tasks, demand_task, set_execution_status = get_services()
@@ -81,6 +81,12 @@ if __name__ == '__main__':
     spec.ltl_task=ltl_task[:-3]
     
     # print add_tasks([spec],[rospy.Time()], [rospy.get_rostime() + rospy.Duration(60 * 60)])
-    # set_execution_status(True)
+    set_execution_status(True)
 
-    print demand_task(spec,rospy.Time(), rospy.get_rostime() + rospy.Duration(60 * 60))
+    task = MdpTask()
+    task.mdp_spec = spec
+    task.start_after = rospy.get_rostime()
+    task.end_before = task.start_after + rospy.Duration(60 * 60)
+    task.priority = Task.HIGH_PRIORITY
+    task.is_interruptible = True
+    print add_tasks([task])
