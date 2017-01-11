@@ -40,8 +40,8 @@ class TopMapMdp(Mdp):
         self.get_edge_estimates=rospy.ServiceProxy("topological_prediction/predict_edges", PredictEdgeState)        
         
         self.nav_actions=[]
-        self.door_pass_actions=rospy.get_param("~door_pass_actions", ["door_wait_and_pass", "door_wait_and_move_base"])
-        door_wait_params_file = rospy.get_param("~door_wait_params_file", None)
+        self.door_pass_actions=rospy.get_param("/door_pass_actions", ["door_wait_and_pass", "door_wait_and_move_base"])
+        door_wait_params_file = rospy.get_param("/door_wait_params_file", None)
         self.door_wait_params = {'types': ["int", "int", "float"], 'default':[15, 2, 60]} #[n_closed_door, consecutive_open_secs, wait_timeout] - timeout is a float and needs to be the last element of the msg type. TODO make all this less hacky.
         self.door_timeouts={}
         if door_wait_params_file is not None:
@@ -61,7 +61,7 @@ class TopMapMdp(Mdp):
             stream = open(file_name, 'r')
             yaml_config=yaml.load(stream)
         except Exception, e:
-            rospy.logwarn("Error loading yaml config for door waits: " + str(e))
+            rospy.logwarn("Error loading yaml config for door waits: " + str(e) + ". Using default values for all doors.")
             return
         self.door_wait_params.update(yaml_config)
         print self.door_wait_params

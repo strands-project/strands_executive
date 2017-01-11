@@ -1,4 +1,7 @@
 <launch>
+    <arg name="door_config_file" default=""/>
+    <param name="door_wait_params_file" type="string" value="$(arg door_config_file)"/>
+
     <node pkg="mdp_plan_exec" type="mdp_task_guarantees_estimator.py" name="mdp_task_guarantees_estimator"  output="screen"/>
     <node pkg="mdp_plan_exec" type="mdp_policy_executor_extended.py" name="mdp_policy_executor_extended"  output="screen"/>
 </launch>
