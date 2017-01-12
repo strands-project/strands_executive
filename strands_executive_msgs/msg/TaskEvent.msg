@@ -32,6 +32,7 @@ uint8 TASK_STOPPED=18
 # Used for the routine
 uint8 ROUTINE_STARTED=30
 uint8 ROUTINE_STOPPED=31
+uint8 ROUTINE_ADDED=32
 
 Task task
 uint8 event
