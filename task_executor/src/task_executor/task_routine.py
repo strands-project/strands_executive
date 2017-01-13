@@ -482,7 +482,7 @@ class DailyRoutineRunner(object):
 
         rospy.loginfo('Trying to insert an extra %s tasks into the running routine' % len(tasks))
         with self._state_lock:
-            self._log_task_event(tasks, TaskEvent.ROUTINE_ADDED, rospy.get_rostime(), "Task was added to the routine.")
+            self._log_task_events(tasks, TaskEvent.ROUTINE_ADDED, rospy.get_rostime(), "Task was added to the routine.")
         
         extra_tasks = []
         dropped_tasks = []
