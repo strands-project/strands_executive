@@ -877,7 +877,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                         rospy.logwarn('Policy execution did not service preempt request in a reasonable time')
                         return GoalStatus.ACTIVE
                     else:
-                        return GoalStatus.RECALLED
+                        return GoalStatus.PREEMPTED
                 else:
                     rospy.logwarn('Policy execution did not complete in expected time, but is non-interruptible, so waiting. Overtime: %ss' % ros_duration_to_string(overtime))
                     overtime += poll_time
@@ -911,7 +911,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                             rospy.logwarn('Policy execution did not service preempt request in a reasonable time')
                             return GoalStatus.ACTIVE
                         else:
-                            return GoalStatus.RECALLED
+                            return GoalStatus.PREEMPTED
 
         return self.mdp_exec_client.get_state()
 
