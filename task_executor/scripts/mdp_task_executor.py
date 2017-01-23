@@ -1012,7 +1012,8 @@ class MDPTaskExecutor(BaseTaskExecutor):
                                 self.on_demand_active = False                                
 
                                 # policy execution finished everything
-                                if final_status == GoalStatus.SUCCEEDED or final_status == GoalStatus.PREEMPTED:                                
+                                #if final_status == GoalStatus.SUCCEEDED or final_status == GoalStatus.PREEMPTED:
+                                if True: #This way tasks arent dropped when navigation failures occur. TODO see whether the stuff under the else statement is needed for some cases.                                
                                     self.deactivate_active_batch(goal_status = final_status)
                                 
                                 # here we may have cancelled an overrunning policy or had some other problem
