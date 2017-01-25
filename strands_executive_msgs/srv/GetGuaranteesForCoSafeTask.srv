@@ -5,3 +5,5 @@ time epoch
 float64 probability
 float64 prog_reward
 duration expected_time
+string[] plan #sequence of waypoints to visit
+duration[] durations #durations[i] is the duration between plan[i] and plan[i+1]. len(durations) = len(plan) - 1
