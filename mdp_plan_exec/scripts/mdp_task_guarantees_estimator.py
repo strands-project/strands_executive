@@ -84,6 +84,8 @@ class MdpTaskGuaranteesEstimator(object):
                 plan.append(wp)
                 duration = predictions.durations[predictions.edge_ids.index(action)]
                 durations.append(duration)
+            if not policy_mdp.flat_state_policy.has_key(current_flat_state):
+                break
             action = self.policy_mdp.flat_state_policy[current_flat_state]
             flat_succs = policy_mdp.flat_state_sucs[current_flat_state]
             for flat_succ in flat_succs:
@@ -92,8 +94,7 @@ class MdpTaskGuaranteesEstimator(object):
                     current_flat_state = flat_succ
                     current_state_def = policy_mdp.flat_state_defs[flat_succ]
                     break
-            if not policy_mdp.flat_state_policy.has_key(current_flat_state):
-                break
+
         response.plan = plan
         response.durations = durations
             

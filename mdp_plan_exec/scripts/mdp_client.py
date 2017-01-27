@@ -104,20 +104,22 @@ if __name__ == '__main__':
     
     spec=MdpDomainSpec()
     ltl_task=''
-    for i in waypoints:
-        waypoint_name="WayPoint" + str(i)
-        (var, action)=create_metric_map_action(waypoint_name)
-        spec.vars.append(var)
-        spec.actions.append(action)
-        ltl_task+='(F executed_metric_map_at_' + waypoint_name + '=1) & '
-    spec.ltl_task=ltl_task[:-3]
+    #for i in waypoints:
+        #waypoint_name="WayPoint" + str(i)
+        #(var, action)=create_metric_map_action(waypoint_name)
+        #spec.vars.append(var)
+        #spec.actions.append(action)
+        #ltl_task+='(F executed_metric_map_at_' + waypoint_name + '=1) & '
+    #spec.ltl_task=ltl_task[:-3]
     #spec.ltl_task='(F executed_metric_map_at_WayPoint10=1) & (F executed_metric_map_at_WayPoint5=1) & (F executed_metric_map_at_WayPoint7=1) & (F executed_metric_map_at_WayPoint1=1)'
     
     #spec.ltl_task='(F ("WayPoint3" & (X "WayPoint4"))) & ((!"WayPoint3") U executed_metric_map_at_WayPoint1=1) & (F executed_metric_map_at_WayPoint2=1) & (F executed_metric_map_at_WayPoint3=1) & (F executed_metric_map_at_WayPoint4=1)'
-    spec.ltl_task='(F executed_metric_map_at_WayPoint2=1) & (F executed_metric_map_at_WayPoint3=1) & (F executed_metric_map_at_WayPoint21=1)'
+   # spec.ltl_task='(F executed_metric_map_at_WayPoint2=1) & (F executed_metric_map_at_WayPoint3=1) & (F executed_metric_map_at_WayPoint21=1)'
+    spec.ltl_task='(F "ChargingPoint")'
+
     
     request.spec=spec
-    request.initial_waypoint="WayPoint4"
+    request.initial_waypoint="WayPoint5"
     service_response=mdp_estimates(request)
     print(service_response)
     
