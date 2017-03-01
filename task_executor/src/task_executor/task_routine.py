@@ -166,8 +166,11 @@ class DailyRoutine(object):
             tasks = [tasks]
 
         if daily_start < self.daily_start:
-            rospy.logwarn('Provided daily start %s is less than overall daily start %s. Clamping to daily start.' % (daily_start, self.daily_start))
-            daily_start = self.daily_start
+            rospy.logwarn('Provided daily start %s is less than overall daily start %s. Dropping.' % (daily_start, self.daily_start))
+            return 
+            # rospy.logwarn('Provided daily start %s is less than overall daily start %s. Clamping to daily start.' % (daily_start, self.daily_start))
+            # daily_start = self.daily_start
+            
 
 
         daily_end = datetime.combine(date.today(), daily_start) + daily_duration
@@ -175,8 +178,10 @@ class DailyRoutine(object):
   
 
         if daily_end > overall_end:
-            rospy.logwarn('Provided duration %s takes task past daily end %s for tasks %s. Clamping to daily end' % (daily_end, overall_end, tasks))
-            daily_duration = daily_end - datetime.combine(date.today(), daily_start)
+            rospy.logwarn('Provided duration %s takes task past daily end %s for task. Dropping' % (daily_end, overall_end))
+            # rospy.logwarn('Provided duration %s takes task past daily end %s for task. Clamping to daily end' % (daily_end, overall_end))
+            # daily_duration = daily_end - datetime.combine(date.today(), daily_start)
+            return
 
         self.routine_tasks += [(tasks, (daily_start, daily_duration))] * times
 
