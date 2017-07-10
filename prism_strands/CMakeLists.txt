@@ -26,7 +26,7 @@ catkin_package(
 ExternalProject_add(prism
 	URL https://www.github.com/bfalacerda/prism-svn/archive/v1.0.tar.gz
 	PREFIX "${CMAKE_CURRENT_BINARY_DIR}/prism"
-	BUILD_IN_SOURCE 1
+	BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/prism/src/prism/prism"
 	#PREFIX mongo_cxx_driver
 	UPDATE_COMMAND ""
 	CONFIGURE_COMMAND ""

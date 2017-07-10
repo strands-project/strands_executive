@@ -15,19 +15,20 @@ from random import choice
 
 class MdpTaskGuaranteesEstimator(object):
 
-    def __init__(self):
+    def __init__(self, port, file_dir, file_name):
         
         self.top_map_mdp=TopMapMdp(explicit_doors=True, forget_doors=True, model_fatal_fails=True)
         self.current_extended_mdp=None
         self.policy_mdp=None
-        self.directory = os.path.expanduser("~") + '/tmp/prism/guarantees_estimator/'
+        self.directory = file_dir
+        self.file_name=file_name
+
         self.service_lock = threading.Lock()
         try:
             os.makedirs(self.directory)
         except OSError as ex:
             print 'error creating PRISM directory:',  ex
-        self.file_name="topo_map.mdp"
-        self.prism_estimator=PartialSatPrismJavaTalker(8087,self.directory, self.file_name)
+        self.prism_estimator=PartialSatPrismJavaTalker(port,self.directory, self.file_name)
         self.get_guarantees_service = rospy.Service('/mdp_plan_exec/get_guarantees_for_co_safe_task',
                                                               GetGuaranteesForCoSafeTask,
                                                               self.get_guarantees_cb)
@@ -110,8 +111,18 @@ class MdpTaskGuaranteesEstimator(object):
 
 if __name__ == '__main__':
     rospy.init_node('mdp_task_guarantees_estimator')
+    
+    filtered_argv=rospy.myargv(argv=sys.argv)
+    
+    if len(filtered_argv)<4:
+        rospy.logerr("Usage: rosrun mdp_plan_exec mdp_task_guarantees_estimator port file_dir model_file")
+    else:
+        
+        port = filtered_argv[1]
+        file_dir= filtered_argv[2]
+        model_file = filtered_argv[3] 
 
-    mdp_estimator =  MdpTaskGuaranteesEstimator()
-    mdp_estimator.main()
+        mdp_estimator =  MdpTaskGuaranteesEstimator(int(port), file_dir, model_file)
+        mdp_estimator.main()
     
     
