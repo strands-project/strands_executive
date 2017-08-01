@@ -52,8 +52,25 @@ class TopMapMdp(Mdp):
         self.door_timeouts={}
         self.action_descriptions={}
         self.create_top_map_mdp_structure()
+        
+        #save nav mdp structure for reset
+        self.nav_template={'n_state_vars':self.n_state_vars,
+                            'state_vars':deepcopy(self.state_vars),
+                            'initial_state':deepcopy(self.initial_state),
+                            'action_descriptions':deepcopy(self.action_descriptions),
+                            'transitions':deepcopy(self.transitions)}
+        
               
         rospy.loginfo("Topological MDP initialised")
+
+
+    def reset_structure(self):
+        self.n_state_vars = self.nav_template['n_state_vars']
+        self.state_vars = deepcopy(self.nav_template['state_vars'])
+        self.initial_state = deepcopy(self.nav_template['initial_state'])
+        self.action_descriptions = deepcopy(self.nav_template['action_descriptions'])
+        self.transitions = deepcopy(self.nav_template['transitions'])
+
 
 
     def read_door_wait_params(self, file_name):
@@ -141,7 +158,9 @@ class TopMapMdp(Mdp):
                 self.n_door_edges=0
                 self.edge_to_door_dict={}
                 self.add_door_model(self.forget_doors)
-                self.get_door_estimates=rospy.ServiceProxy("/door_prediction/predict_doors", PredictDoorState) 
+                self.get_door_estimates=rospy.ServiceProxy("/door_prediction/predict_doors", PredictDoorState)
+        else:
+            self.reset_structure()
                     
             
 
@@ -363,7 +382,8 @@ class TopMapMdp(Mdp):
         if self.explicit_doors:
             self.add_door_predictions(epoch)
         self.write_prism_model(file_name, set_initial_state)
-        
+    
+
     
     def add_nav_predictions(self, epoch):
         try:
