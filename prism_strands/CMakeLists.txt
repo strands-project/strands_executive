@@ -24,16 +24,16 @@ catkin_package(
 )
 
 ExternalProject_add(prism
-	URL http://www.prismmodelchecker.org/dl/prism-4.3.1-src.tar.gz
+	URL https://www.github.com/bfalacerda/prism-svn/archive/v1.0.tar.gz
 	PREFIX "${CMAKE_CURRENT_BINARY_DIR}/prism"
-	BUILD_IN_SOURCE 1
+	BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/prism/src/prism/prism"
 	#PREFIX mongo_cxx_driver
 	UPDATE_COMMAND ""
 	CONFIGURE_COMMAND ""
 #	CONFIGURE_COMMAND "cp -R ${CMAKE_CURRENT_BINARY_DIR}/mongocxx/include ${libmongocxx_ros_SOURCE_DIR}/include"
 	BUILD_COMMAND make
 #scons -j 8 --ssl --sharedclient --disable-warnings-as-errors --prefix=${CATKIN_DEVEL_PREFIX} install && mkdir -p ${CMAKE_CURRENT_SOURCE_DIR}/include &&  cp -R ${CATKIN_DEVEL_PREFIX}/include/. ${CMAKE_CURRENT_SOURCE_DIR}/include
-	INSTALL_COMMAND rsync -a ${CMAKE_CURRENT_BINARY_DIR}/prism/src/prism/lib ${CMAKE_CURRENT_BINARY_DIR}/prism/src/prism/classes ${CATKIN_DEVEL_PREFIX}/lib/prism
+	INSTALL_COMMAND rsync -a ${CMAKE_CURRENT_BINARY_DIR}/prism/src/prism/prism/lib ${CMAKE_CURRENT_BINARY_DIR}/prism/src/prism/prism/classes ${CATKIN_DEVEL_PREFIX}/lib/prism
 	#CONFIGURE_COMMAND "scons -C ${CMAKE_CURRENT_BINARY_DIR}/libmongocxx"
 )
 

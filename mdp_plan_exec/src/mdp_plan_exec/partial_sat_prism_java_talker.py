@@ -24,14 +24,15 @@ class PartialSatPrismJavaTalker(object):
     
     
     def start(self):
-        os.chdir(self.prism_dir)
-        os.environ['PRISM_MAINCLASS'] = 'prism.PartialSatPrismPythonTalker'
-        self.java_server=subprocess.Popen(["bin/prism", str(self.PORT), self.directory, self.file_name,  '-javamaxmem', '4g'])
+        #os.chdir(self.prism_dir)
+        #os.environ['PRISM_MAINCLASS'] = 'prism.PartialSatPrismPythonTalker'
+        #self.java_server=subprocess.Popen(["bin/prism", str(self.PORT), self.directory, self.file_name,  '-javamaxmem', '4g'])
         rospy.sleep(1)
         
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.HOST, self.PORT))
         self.sock.settimeout(self.timeout)
+
     
     def call_prism(self,specification):
         command='partial_sat_guarantees\n'
@@ -63,5 +64,4 @@ class PartialSatPrismJavaTalker(object):
         self.sock.close()
         #
         rospy.loginfo("Socket closed")
-        os.kill(self.java_server.pid, signal.SIGKILL)
         os.system("fuser -k  " + str(self.PORT) + "/tcp")

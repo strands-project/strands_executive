@@ -20,7 +20,7 @@ from strands_executive_msgs.msg import ExecutePolicyExtendedAction, ExecutePolic
 
    
 class MdpPolicyExecutor(object):
-    def __init__(self): 
+    def __init__(self, port, file_dir, file_name): 
 
         self.wait_for_result_dur=rospy.Duration(0.1)
         self.top_nav_policy_exec= SimpleActionClient('/topological_navigation/execute_policy_mode', ExecutePolicyModeAction)
@@ -31,18 +31,17 @@ class MdpPolicyExecutor(object):
             if rospy.is_shutdown():
                 return
         
-        self.top_map_mdp=TopMapMdp(explicit_doors=True, forget_doors=True, model_fatal_fails=True)
-        self.current_extended_mdp=None
+        self.mdp=TopMapMdp(explicit_doors=True, forget_doors=True, model_fatal_fails=True)
         self.policy_mdp=None
         self.current_nav_policy_state_defs={}
         
-        self.directory = os.path.expanduser("~") + '/tmp/prism/policy_executor_extended/'
+        self.directory = file_dir
+        self.file_name = file_name
         try:
             os.makedirs(self.directory)
         except OSError as ex:
             print 'error creating PRISM directory:',  ex
-        self.file_name="topo_map.mdp"
-        self.prism_policy_generator=PartialSatPrismJavaTalker(8088,self.directory, self.file_name)
+        self.prism_policy_generator=PartialSatPrismJavaTalker(port,self.directory, self.file_name)
         
                
         self.current_waypoint=None
@@ -77,11 +76,11 @@ class MdpPolicyExecutor(object):
     
     def generate_policy_mdp(self,specification):
         #update initial state
-        self.current_extended_mdp.set_initial_state_from_waypoint(self.closest_waypoint)
-        self.current_extended_mdp.add_predictions(self.directory+self.file_name,rospy.Time.now())
+        self.mdp.set_initial_state_from_waypoint(self.closest_waypoint)
+        self.mdp.add_predictions(self.directory+self.file_name,rospy.Time.now())
         prism_call_success=self.prism_policy_generator.call_prism(specification)
         if prism_call_success:
-            self.policy_mdp=PolicyMdp(self.current_extended_mdp,
+            self.policy_mdp=PolicyMdp(self.mdp,
                                       self.directory + 'prod.sta',
                                       self.directory + 'prod.lab',
                                       self.directory + 'adv.tra',
@@ -107,8 +106,8 @@ class MdpPolicyExecutor(object):
             current_state_def=self.policy_mdp.flat_state_defs[new_flat_state]
             if self.policy_mdp.flat_state_policy.has_key(new_flat_state):
                 action=self.policy_mdp.flat_state_policy[new_flat_state]
-                if action in self.current_extended_mdp.nav_actions and current_state_def["_da"]==current_dfa_state:
-                    source = self.current_extended_mdp.get_waypoint_prop(current_state_def["waypoint"])
+                if action in self.mdp.nav_actions and current_state_def["_da"]==current_dfa_state:
+                    source = self.mdp.get_waypoint_prop(current_state_def["waypoint"])
                     policy_msg.source.append(source)
                     policy_msg.edge_id.append(action)
                     for suc_state in self.policy_mdp.flat_state_sucs[new_flat_state]:
@@ -138,7 +137,7 @@ class MdpPolicyExecutor(object):
         
     def get_next_nav_policy_state(self, current_waypoint):
         executed_action=self.get_current_action()
-        waypoint_val=self.current_extended_mdp.get_waypoint_var_val(current_waypoint)
+        waypoint_val=self.mdp.get_waypoint_var_val(current_waypoint)
         current_state_def=self.current_nav_policy_state_defs[self.current_flat_state]
         
         #waypoint didnt change
@@ -160,7 +159,7 @@ class MdpPolicyExecutor(object):
             new_state_def=deepcopy(current_state_def)
             new_state_def["waypoint"]=waypoint_val
             for (flat_state, flat_state_def) in self.policy_mdp.flat_state_defs.items():
-                if self.current_extended_mdp.check_cond_sat(new_state_def, flat_state_def):
+                if self.mdp.check_cond_sat(new_state_def, flat_state_def):
                     rospy.loginfo("Found state " + str(flat_state_def) + ". Updating.")
                     self.current_flat_state=flat_state
                     found_next_state=True
@@ -194,9 +193,8 @@ class MdpPolicyExecutor(object):
 
     def execute_policy_cb(self,goal):
         specification=self.generate_prism_specification(goal.spec.ltl_task)
-        self.top_map_mdp.create_top_map_mdp_structure()
-        self.current_extended_mdp=deepcopy(self.top_map_mdp)
-        self.current_extended_mdp.add_extra_domain(goal.spec.vars, goal.spec.actions)
+        self.mdp.create_top_map_mdp_structure()
+        self.mdp.add_extra_domain(goal.spec.vars, goal.spec.actions)
         
         rospy.loginfo("The specification is: " + specification)
         self.generate_policy_mdp(specification)
@@ -211,7 +209,7 @@ class MdpPolicyExecutor(object):
         status=self.execute_nav_policy(current_nav_policy)
         while self.policy_mdp.flat_state_policy.has_key(self.current_flat_state) and not self.cancelled:
             next_action=self.get_current_action()
-            if next_action in self.current_extended_mdp.nav_actions:
+            if next_action in self.mdp.nav_actions:
                 current_nav_policy=self.generate_current_nav_policy()
                 status=self.execute_nav_policy(current_nav_policy)
                 rospy.loginfo("Topological navigation execute policy action server exited with status: " + GoalStatus.to_string(status))                
@@ -232,7 +230,7 @@ class MdpPolicyExecutor(object):
                     return
             else:
                 print("EXECUTE ACTION")
-                (status, state_update)=self.action_executor.execute_action(self.current_extended_mdp.action_descriptions[next_action])
+                (status, state_update)=self.action_executor.execute_action(self.mdp.action_descriptions[next_action])
                 executed_action=next_action
                 print(executed_action)
                 if not self.cancelled:
@@ -279,8 +277,17 @@ class MdpPolicyExecutor(object):
 
 if __name__ == '__main__':
     rospy.init_node('mdp_policy_executor_extended')
+    
+    filtered_argv=rospy.myargv(argv=sys.argv)
+    
+    if len(filtered_argv)!=4:
+        rospy.logerr("Usage: rosrun mdp_plan_exec mdp_policy_executor_extended port file_dir model_file")
+    else:
+        port = filtered_argv[1]
+        file_dir= filtered_argv[2]
+        model_file = filtered_argv[3] 
 
-    mdp_executor =  MdpPolicyExecutor()
-    mdp_executor.main()
+        mdp_executor =  MdpPolicyExecutor(int(port), file_dir, model_file)
+        mdp_executor.main()
         
     

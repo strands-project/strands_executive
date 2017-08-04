@@ -1,7 +1,18 @@
 <launch>
     <arg name="door_config_file" default=""/>
-    <param name="door_wait_params_file" type="string" value="$(arg door_config_file)"/>
+    <arg name="estimator_port" default="8087"/>
+    <arg name="executor_port" default="8088"/>
+    <arg name="estimator_dir" default="/tmp/prism-robots/guarantees_estimator/"/>
+    <arg name="executor_dir" default="/tmp/prism-robots/policy_executor_extended/"/>
+    <arg name="prism_model_file" default="topo_map.mdp"/>
+    <arg name="javamaxmem" default="4g"/>
+    
 
-    <node pkg="mdp_plan_exec" type="mdp_task_guarantees_estimator.py" name="mdp_task_guarantees_estimator"  output="screen"/>
-    <node pkg="mdp_plan_exec" type="mdp_policy_executor_extended.py" name="mdp_policy_executor_extended"  output="screen"/>
+    <param name="door_wait_params_file" type="string" value="$(arg door_config_file)"/>
+    
+    <node pkg="prism_strands" type="prism" name="prism_estimator"  output="screen" args="$(arg estimator_port) $(arg estimator_dir) $(arg prism_model_file) -javamaxmem $(arg javamaxmem)" respawn="true"/>
+    <node pkg="prism_strands" type="prism" name="prism_executor"  output="screen" args="$(arg executor_port) $(arg executor_dir) $(arg prism_model_file) -javamaxmem $(arg javamaxmem)" respawn="true"/>
+
+    <node pkg="mdp_plan_exec" type="mdp_task_guarantees_estimator.py" name="mdp_task_guarantees_estimator"  output="screen" args="$(arg estimator_port) $(arg estimator_dir) $(arg prism_model_file)"/>
+    <node pkg="mdp_plan_exec" type="mdp_policy_executor_extended.py" name="mdp_policy_executor_extended"  output="screen" args="$(arg executor_port) $(arg executor_dir) $(arg prism_model_file)"/>
 </launch>
