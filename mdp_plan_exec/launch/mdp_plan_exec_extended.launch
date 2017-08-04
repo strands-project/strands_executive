@@ -2,8 +2,8 @@
     <arg name="door_config_file" default=""/>
     <arg name="estimator_port" default="8087"/>
     <arg name="executor_port" default="8088"/>
-    <arg name="estimator_dir" default="/opt/prism-robots/guarantees_estimator/"/>
-    <arg name="executor_dir" default="/opt/prism-robots/policy_executor_extended/"/>
+    <arg name="estimator_dir" default="/tmp/prism-robots/guarantees_estimator/"/>
+    <arg name="executor_dir" default="/tmp/prism-robots/policy_executor_extended/"/>
     <arg name="prism_model_file" default="topo_map.mdp"/>
     <arg name="javamaxmem" default="4g"/>
     

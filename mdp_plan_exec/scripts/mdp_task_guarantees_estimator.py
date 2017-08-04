@@ -63,7 +63,7 @@ class MdpTaskGuaranteesEstimator(object):
                 return response
     
     def get_waypoint(self, state_def):
-        return self.current_extended_mdp.get_waypoint_prop(state_def["waypoint"])
+        return self.mdp.get_waypoint_prop(state_def["waypoint"])
     
     def check_closed_doors(self, state_def):
         for (state_var, state_val) in state_def.iteritems():
@@ -77,7 +77,7 @@ class MdpTaskGuaranteesEstimator(object):
         current_state_def=policy_mdp.flat_state_defs[current_flat_state]
         plan = [self.get_waypoint(current_state_def)]
         durations = []
-        predictions=self.top_map_mdp.get_edge_estimates(epoch)
+        predictions=self.mdp.get_edge_estimates(epoch)
         while True:
             wp = self.get_waypoint(current_state_def)
             if plan[-1] != wp:
