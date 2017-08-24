@@ -2,8 +2,8 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.0 (2017-08-24)
+------------------
 * made routine more conservative with out of range tasks
 * stop dropping tasks when robot fails navigation
 * Switched recalled to preempted on task time-outs

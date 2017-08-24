@@ -2,8 +2,8 @@
 Changelog for package wait_action
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.0 (2017-08-24)
+------------------
 * Using expected nav time before window opens.
   This fixes `#281 <https://github.com/strands-project/strands_executive/issues/281>`_
 * Contributors: Nick Hawes

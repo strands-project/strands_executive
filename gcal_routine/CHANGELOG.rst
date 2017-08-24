@@ -2,8 +2,8 @@
 Changelog for package gcal_routine
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.0 (2017-08-24)
+------------------
 * Use requests package instead of urllib to do request
   Fixes `strands-project/g4s_deployment#165 <https://github.com/strands-project/g4s_deployment/issues/165>`_
 * Gcal tools add description to yaml instead of processing separately

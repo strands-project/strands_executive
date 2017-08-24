@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>sim_clock</name>
-  <version>1.0.6</version>
+  <version>1.1.0</version>
 
   <description>A package to run rostime at a configurable rate.</description>
 

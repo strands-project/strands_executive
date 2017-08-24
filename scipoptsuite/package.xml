@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>scipoptsuite</name>
-  <version>1.0.6</version>
+  <version>1.1.0</version>
   <description>This installs version 3.0.2 of SCIP optimisation suite.</description>
 
 

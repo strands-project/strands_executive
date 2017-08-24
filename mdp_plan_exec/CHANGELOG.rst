@@ -2,8 +2,8 @@
 Changelog for package mdp_plan_exec
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.0 (2017-08-24)
+------------------
 * stop doing a full mdp deepcopy
 * add params for doors
 * allowing to define door wait params via yaml
