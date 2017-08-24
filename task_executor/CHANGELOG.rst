@@ -2,6 +2,85 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* made routine more conservative with out of range tasks
+* stop dropping tasks when robot fails navigation
+* Switched recalled to preempted on task time-outs
+* typo
+* correct indent
+* log adding of tasks to the routine
+* add params for doors
+* Fixed bug which curtailed execution of time-critical tasks
+* Tidied up initialisation.
+* Added summary script
+* Added script to make task events unique from a previous db
+* Added approach for db task id persistence
+* Added locks to get ids method
+* Added a service to get new task ids for use in other processes.
+* Monitor exeuction for overtime. Kill if over an hour.
+* is_interruptible flag is respected for MdpTasks
+  Also refactored a bit of the logging code for sanity.
+* Made active task check more sefl-contained.
+  Also added more inforamtion to logging for ltl tasks.
+* Fixed bug trying to log the wrong type of task after cancellation
+* adding cossafe task now uses the mdptask format
+* added parameter allowable_lateness to launch file
+* made allowable_lateness a parameter and ignore probability for time_critical tasks
+  closes https://github.com/strands-project/aaf_deployment/issues/382
+* Removed duplicate lock release.
+  Fixes `#284 <https://github.com/strands-project/strands_executive/issues/284>`_
+* Added option to terminate execution of a batch of task when the lowest time window has passed.
+  To use this option add `close_windows:=true` to the command of launching the system, e.g.
+  ```
+  roslaunch --wait task_executor mdp-executor.launch close_windows:=true
+  ```
+* Using expected nav time before window opens.
+  This fixes `#281 <https://github.com/strands-project/strands_executive/issues/281>`_
+* Get daily_start into datetime.datetime format
+* Fix incorrect reference to self.daily end in DailyRoutine
+* Dropping normal tasks given expected close of window.
+  Also added more detail to task status output.
+* Setting default expected duration.
+* Prevents time-critical tasks from interrupting on-demand tasks.
+* Adds service to demand co-safe tasks.
+  This has been tested on local examples, but could use some more extreme tests.
+  This closes `#271 <https://github.com/strands-project/strands_executive/issues/271>`_
+* Removed some of the longer tests.
+  This is in order to let CI testing complete in a sane time.
+* Added new combined sort criterion for choosing next tasks.
+  The new combined sort criterion is priority*p(success)/expected_time (i.e. reward per unit time) as requested in `#272 <https://github.com/strands-project/strands_executive/issues/272>`_. The old sort criterion criterio is still the default behaviour. To use the new sorting, add `combined_sort:=true` when launching the executive launch file.
+  This closes `#272 <https://github.com/strands-project/strands_executive/issues/272>`_
+* Bug fixes.
+* Added locks to get ids method
+* Added a service to get new task ids for use in other processes.
+* expected_duration is now being used in mdp executor.
+  If a task does not have expected_duration set, max_duration is used instead.
+* Added new combined sort criterion for choosing next tasks.
+  The new combined sort criterion is priority*p(success)/expected_time (i.e. reward per unit time) as requested in `#272 <https://github.com/strands-project/strands_executive/issues/272>`_. The old sort criterion criterio is still the default behaviour. To use the new sorting, add `combined_sort:=true` when launching the executive launch file.
+  This closes `#272 <https://github.com/strands-project/strands_executive/issues/272>`_
+* Bug fixes.
+* Added locks to get ids method
+* Added a service to get new task ids for use in other processes.
+* expected_duration is now being used in mdp executor.
+  If a task does not have expected_duration set, max_duration is used instead.
+* First pass on ability to add "mdp tasks" (i.e. domain spec and some constraints) to the executor.
+  This is for `#263 <https://github.com/strands-project/strands_executive/issues/263>`_
+* Now using travel time on its own to calculate travel time to start of time-critical task.
+* Updates to analysis tools for AAF Y3.
+* Printing expected time.
+* Dealing with failures a little better, and adding more logging on task insertion
+* Dropping time critical too.
+* More fixiin
+* Now checking against correct variables.
+* This makes the routine tougher about out of window tasks.
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_executive into indigo-devel
+* Tasks which are disallowed by the provided tasks_allowed function are now delayed rather than dropped. This means they will be checked until they pass  now + max_duration > end_before
+* Re-publishing schedule after clear.
+* Merge branch 'indigo-devel' of https://github.com/hawesie/strands_executive into indigo-devel
+* Interrupt current task when needs to start time critical
+* Contributors: Bruno Lacerda, Marc Hanheide, Michal Staniaszek, Nick Hawes
+
 1.0.6 (2016-06-06)
 ------------------
 

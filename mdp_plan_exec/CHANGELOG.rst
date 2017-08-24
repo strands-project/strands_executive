@@ -2,6 +2,23 @@
 Changelog for package mdp_plan_exec
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* stop doing a full mdp deepcopy
+* add params for doors
+* allowing to define door wait params via yaml
+* small bug
+* another small bug
+* add max duration to MdpAction
+* cope with prism timeouts by killing and restarting it
+* Ensure mdp executor respects is_interruptible flag for action execution.
+  Needed for aaf_deployment/`#344 <https://github.com/strands-project/strands_executive/issues/344>`_
+* fixing bug with getting action outcome based on GoalStatus
+* subscribe to tpopological map topic, and update MDP structure when a new topo map is published
+* cope with negative travel expectations
+* Edges to be considerered door edges is now a param
+* Contributors: Bruno Lacerda, Nick Hawes
+
 1.0.6 (2016-06-06)
 ------------------
 * made dependency on door_pass explicit

@@ -2,6 +2,25 @@
 Changelog for package gcal_routine
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use requests package instead of urllib to do request
+  Fixes `strands-project/g4s_deployment#165 <https://github.com/strands-project/g4s_deployment/issues/165>`_
+* Gcal tools add description to yaml instead of processing separately
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_executive into gcal_timecritical
+  Conflicts:
+  gcal_routine/src/gcal_routine/tools.py
+* fixed a number of bugs in the handling of timecritical for the new scheduler
+  all stemming from the "abuse" of end_before = start_after solution...
+* Add python-requests to package xml
+* Use requests package instead of urllib to do request
+  Fixes `strands-project/g4s_deployment#165 <https://github.com/strands-project/g4s_deployment/issues/165>`_
+* a first go at submitting time-critical tasks
+  this contributes to fixing https://github.com/strands-project/aaf_deployment/issues/372
+* Fixed indentation for exception case. Removed forced time-critical change.
+* Dealing with failures a little better, and adding more logging on task insertion
+* Contributors: Marc Hanheide, Michal Staniaszek, Nick Hawes
+
 1.0.6 (2016-06-06)
 ------------------
 

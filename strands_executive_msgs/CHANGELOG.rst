@@ -3,6 +3,25 @@ Changelog for package strands_executive_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* add 'added to routine' constant
+* Added approach for db task id persistence
+* add MdpTasks
+* add max duration to MdpAction
+* Added missing service defn.
+* Adds service to demand co-safe tasks.
+  This has been tested on local examples, but could use some more extreme tests.
+  This closes `#271 <https://github.com/strands-project/strands_executive/issues/271>`_
+* Added a service to get new task ids for use in other processes.
+* fixing bug with getting action outcome based on GoalStatus
+* Added a service to get new task ids for use in other processes.
+* First pass on ability to add "mdp tasks" (i.e. domain spec and some constraints) to the executor.
+  This is for `#263 <https://github.com/strands-project/strands_executive/issues/263>`_
+* Added expected time to task definition.
+  This closes `#262 <https://github.com/strands-project/strands_executive/issues/262>`_
+* Contributors: Bruno Lacerda, Nick Hawes
+
 1.0.6 (2016-06-06)
 ------------------
 
