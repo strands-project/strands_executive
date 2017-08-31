@@ -2,6 +2,9 @@
 Changelog for package wait_action
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 1.1.0 (2017-08-24)
 ------------------
 * Using expected nav time before window opens.

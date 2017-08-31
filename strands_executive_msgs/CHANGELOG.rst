@@ -3,6 +3,11 @@ Changelog for package strands_executive_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* add plan and durations to guarantees service
+* Contributors: Bruno Lacerda
+
 1.1.0 (2017-08-24)
 ------------------
 * add 'added to routine' constant

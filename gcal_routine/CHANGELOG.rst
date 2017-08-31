@@ -2,6 +2,9 @@
 Changelog for package gcal_routine
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 1.1.0 (2017-08-24)
 ------------------
 * Use requests package instead of urllib to do request

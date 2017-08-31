@@ -2,6 +2,18 @@
 Changelog for package mdp_plan_exec
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#302 <https://github.com/strands-project/strands_executive/issues/302>`_ from strands-project/prism_embed
+  Prism embed
+* bug fixes
+* Merge branch 'indigo-devel' into prism_embed
+* using prism_strands package
+* prism included in this now for kinetic
+* add last node to plan
+* add plan and durations to guarantees service
+* Contributors: Bruno Lacerda, Marc Hanheide, Nick Hawes
+
 1.1.0 (2017-08-24)
 ------------------
 * stop doing a full mdp deepcopy
