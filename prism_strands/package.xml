@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>prism_strands</name>
-  <version>1.1.1</version>
+  <version>1.1.2</version>
   <description>The PRISM model checker adapted for use in the STRANDS system. Note you require Java 8 to be set as your default runtime to use this pacakge.</description>
 
   <maintainer email="b.lacerda@cs.bham.ac.uk">Bruno Lacerda</maintainer>
