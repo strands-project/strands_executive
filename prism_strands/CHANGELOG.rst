@@ -2,8 +2,8 @@
 Changelog for package prism_strands
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.1 (2017-08-31)
+------------------
 * Updated package.xml
 * Forcing prism compile to use java 8
 * Added openjdk-8 dependency

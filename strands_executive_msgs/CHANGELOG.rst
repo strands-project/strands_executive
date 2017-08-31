@@ -3,8 +3,8 @@ Changelog for package strands_executive_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Forthcoming
------------
+1.1.1 (2017-08-31)
+------------------
 * add plan and durations to guarantees service
 * Contributors: Bruno Lacerda
 

@@ -2,8 +2,8 @@
 Changelog for package mdp_plan_exec
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.1 (2017-08-31)
+------------------
 * Merge pull request `#302 <https://github.com/strands-project/strands_executive/issues/302>`_ from strands-project/prism_embed
   Prism embed
 * bug fixes
