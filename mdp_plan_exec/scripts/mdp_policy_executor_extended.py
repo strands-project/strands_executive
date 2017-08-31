@@ -20,7 +20,7 @@ from strands_executive_msgs.msg import ExecutePolicyExtendedAction, ExecutePolic
 
    
 class MdpPolicyExecutor(object):
-    def __init__(self): 
+    def __init__(self, port, file_dir, file_name): 
 
         self.wait_for_result_dur=rospy.Duration(0.1)
         self.top_nav_policy_exec= SimpleActionClient('/topological_navigation/execute_policy_mode', ExecutePolicyModeAction)
@@ -35,13 +35,13 @@ class MdpPolicyExecutor(object):
         self.policy_mdp=None
         self.current_nav_policy_state_defs={}
         
-        self.directory = os.path.expanduser("~") + '/tmp/prism/policy_executor_extended/'
+        self.directory = file_dir
+        self.file_name = file_name
         try:
             os.makedirs(self.directory)
         except OSError as ex:
             print 'error creating PRISM directory:',  ex
-        self.file_name="topo_map.mdp"
-        self.prism_policy_generator=PartialSatPrismJavaTalker(8088,self.directory, self.file_name)
+        self.prism_policy_generator=PartialSatPrismJavaTalker(port,self.directory, self.file_name)
         
                
         self.current_waypoint=None
@@ -277,8 +277,17 @@ class MdpPolicyExecutor(object):
 
 if __name__ == '__main__':
     rospy.init_node('mdp_policy_executor_extended')
+    
+    filtered_argv=rospy.myargv(argv=sys.argv)
+    
+    if len(filtered_argv)!=4:
+        rospy.logerr("Usage: rosrun mdp_plan_exec mdp_policy_executor_extended port file_dir model_file")
+    else:
+        port = filtered_argv[1]
+        file_dir= filtered_argv[2]
+        model_file = filtered_argv[3] 
 
-    mdp_executor =  MdpPolicyExecutor()
-    mdp_executor.main()
+        mdp_executor =  MdpPolicyExecutor(int(port), file_dir, model_file)
+        mdp_executor.main()
         
     

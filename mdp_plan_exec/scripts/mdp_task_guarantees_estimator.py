@@ -11,23 +11,24 @@ from mdp_plan_exec.policy_mdp import PolicyMdp
 from mdp_plan_exec.partial_sat_prism_java_talker import PartialSatPrismJavaTalker
 
 from strands_executive_msgs.srv import GetGuaranteesForCoSafeTask, GetGuaranteesForCoSafeTaskResponse
-
+from random import choice
 
 class MdpTaskGuaranteesEstimator(object):
 
-    def __init__(self):
+    def __init__(self, port, file_dir, file_name):
         
         
         self.mdp=TopMapMdp(explicit_doors=True, forget_doors=True, model_fatal_fails=True)
         self.policy_mdp=None
-        self.directory = os.path.expanduser("~") + '/tmp/prism/guarantees_estimator/'
+        self.directory = file_dir
+        self.file_name=file_name
+
         self.service_lock = threading.Lock()
         try:
             os.makedirs(self.directory)
         except OSError as ex:
             print 'error creating PRISM directory:',  ex
-        self.file_name="topo_map.mdp"
-        self.prism_estimator=PartialSatPrismJavaTalker(8087,self.directory, self.file_name)
+        self.prism_estimator=PartialSatPrismJavaTalker(port,self.directory, self.file_name)
         self.get_guarantees_service = rospy.Service('/mdp_plan_exec/get_guarantees_for_co_safe_task',
                                                               GetGuaranteesForCoSafeTask,
                                                               self.get_guarantees_cb)
@@ -55,10 +56,50 @@ class MdpTaskGuaranteesEstimator(object):
                                           self.directory+'guarantees2.vect',
                                           self.directory+'guarantees3.vect')
                 (response.probability, response.prog_reward, response.expected_time)=self.policy_mdp.get_guarantees_at_flat_state(self.policy_mdp.initial_flat_state)
+                self.add_plan(self.policy_mdp, response, req.epoch)
                 return response
             else:
                 rospy.logwarn("Error calling PRISM, guarantees extimator service returning empty response")
                 return response
+    
+    def get_waypoint(self, state_def):
+        return self.mdp.get_waypoint_prop(state_def["waypoint"])
+    
+    def check_closed_doors(self, state_def):
+        for (state_var, state_val) in state_def.iteritems():
+            if 'door' in state_var:
+                if state_val == 0:
+                    return True
+        return False
+    
+    def add_plan(self, policy_mdp, response, epoch):
+        current_flat_state = policy_mdp.initial_flat_state
+        current_state_def=policy_mdp.flat_state_defs[current_flat_state]
+        plan = [self.get_waypoint(current_state_def)]
+        durations = []
+        predictions=self.mdp.get_edge_estimates(epoch)
+        while True:
+            wp = self.get_waypoint(current_state_def)
+            if plan[-1] != wp:
+                plan.append(wp)
+                duration = predictions.durations[predictions.edge_ids.index(action)]
+                durations.append(duration)
+            if not policy_mdp.flat_state_policy.has_key(current_flat_state):
+                break
+            action = self.policy_mdp.flat_state_policy[current_flat_state]
+            flat_succs = policy_mdp.flat_state_sucs[current_flat_state]
+            for flat_succ in flat_succs:
+                succ_def = policy_mdp.flat_state_defs[flat_succ]
+                if succ_def['waypoint'] != -1 and not self.check_closed_doors(succ_def):
+                    current_flat_state = flat_succ
+                    current_state_def = policy_mdp.flat_state_defs[flat_succ]
+                    break
+
+        response.plan = plan
+        response.durations = durations
+            
+            
+       
 
     def main(self):
        # Wait for control-c
@@ -69,8 +110,18 @@ class MdpTaskGuaranteesEstimator(object):
 
 if __name__ == '__main__':
     rospy.init_node('mdp_task_guarantees_estimator')
+    
+    filtered_argv=rospy.myargv(argv=sys.argv)
+    
+    if len(filtered_argv)<4:
+        rospy.logerr("Usage: rosrun mdp_plan_exec mdp_task_guarantees_estimator port file_dir model_file")
+    else:
+        
+        port = filtered_argv[1]
+        file_dir= filtered_argv[2]
+        model_file = filtered_argv[3] 
 
-    mdp_estimator =  MdpTaskGuaranteesEstimator()
-    mdp_estimator.main()
+        mdp_estimator =  MdpTaskGuaranteesEstimator(int(port), file_dir, model_file)
+        mdp_estimator.main()
     
     
