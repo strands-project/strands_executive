@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>scheduler</name>
-  <version>1.1.2</version>
+  <version>1.2.0</version>
   <description>A task scheduler implemented using mixed integer programming.</description>
 
   <maintainer email="n.a.hawes@cs.bham.ac.uk">Nick Hawes</maintainer>
