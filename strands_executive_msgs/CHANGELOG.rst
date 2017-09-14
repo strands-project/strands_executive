@@ -3,6 +3,9 @@ Changelog for package strands_executive_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+
 1.0.7 (2017-09-14)
 ------------------
 * Merge pull request `#299 <https://github.com/strands-project/strands_executive/issues/299>`_ from bfalacerda/indigo-devel

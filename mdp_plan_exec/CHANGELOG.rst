@@ -2,6 +2,9 @@
 Changelog for package mdp_plan_exec
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 1.0.7 (2017-09-14)
 ------------------
 * Merge pull request `#304 <https://github.com/strands-project/strands_executive/issues/304>`_ from bfalacerda/indigo-devel
