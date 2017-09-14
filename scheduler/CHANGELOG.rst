@@ -3,8 +3,8 @@ Changelog for package scheduler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Forthcoming
------------
+1.0.7 (2017-09-14)
+------------------
 * Merge branch 'indigo-devel' of https://github.com/strands-project/strands_executive into indigo-devel
 * Contributors: Bruno Lacerda
 

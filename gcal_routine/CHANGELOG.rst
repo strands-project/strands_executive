@@ -2,8 +2,8 @@
 Changelog for package gcal_routine
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.7 (2017-09-14)
+------------------
 * Merge pull request `#292 <https://github.com/strands-project/strands_executive/issues/292>`_ from hawesie/task_id_persistence
   Task id persistence
 * Use requests package instead of urllib to do request

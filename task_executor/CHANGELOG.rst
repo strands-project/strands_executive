@@ -2,8 +2,8 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.7 (2017-09-14)
+------------------
 * made routine more conservative with out of range tasks
 * Merge pull request `#301 <https://github.com/strands-project/strands_executive/issues/301>`_ from bfalacerda/indigo-devel
   stop dropping tasks when robot fails navigation
