@@ -2,6 +2,11 @@
 Changelog for package scipoptsuite
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_executive into indigo-devel
+* Contributors: Bruno Lacerda
+
 1.0.6 (2016-06-06)
 ------------------
 

@@ -3,6 +3,50 @@ Changelog for package strands_executive_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+* Merge pull request `#299 <https://github.com/strands-project/strands_executive/issues/299>`_ from bfalacerda/indigo-devel
+  logging adding of tasks to the routine
+* add 'added to routine' constant
+* Merge pull request `#292 <https://github.com/strands-project/strands_executive/issues/292>`_ from hawesie/task_id_persistence
+  Task id persistence
+* Added approach for db task id persistence
+* Merge pull request `#289 <https://github.com/strands-project/strands_executive/issues/289>`_ from bfalacerda/indigo-devel
+  add MdpTasks
+* Merge pull request `#288 <https://github.com/strands-project/strands_executive/issues/288>`_ from bfalacerda/indigo-devel
+  cope with prism timeouts by killing and restarting it
+* add MdpTasks
+* add max duration to MdpAction
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_executive into indigo-devel
+* Merge pull request `#276 <https://github.com/strands-project/strands_executive/issues/276>`_ from hawesie/cosafe_demand
+  Adds service to demand co-safe tasks.
+* Merge pull request `#270 <https://github.com/strands-project/strands_executive/issues/270>`_ from hawesie/ids_service
+  Expected duration + task ids
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_executive into gcal_timecritical
+  Conflicts:
+  gcal_routine/src/gcal_routine/tools.py
+* Added missing service defn.
+* Adds service to demand co-safe tasks.
+  This has been tested on local examples, but could use some more extreme tests.
+  This closes `#271 <https://github.com/strands-project/strands_executive/issues/271>`_
+* Added a service to get new task ids for use in other processes.
+* Merge pull request `#273 <https://github.com/strands-project/strands_executive/issues/273>`_ from bfalacerda/indigo-devel
+  fixing bug with getting action outcome based on GoalStatus
+* fixing bug with getting action outcome based on GoalStatus
+* Added a service to get new task ids for use in other processes.
+* Merge pull request `#267 <https://github.com/strands-project/strands_executive/issues/267>`_ from hawesie/exp_time_in_task
+  Added expected time to task definition.
+* Merge pull request `#265 <https://github.com/strands-project/strands_executive/issues/265>`_ from hawesie/add_mdp_tasks
+  Add mdp tasks service
+* Merge branch 'add_mdp_tasks' of https://github.com/hawesie/strands_executive into indigo-devel
+* First pass on ability to add "mdp tasks" (i.e. domain spec and some constraints) to the executor.
+  This is for `#263 <https://github.com/strands-project/strands_executive/issues/263>`_
+* Added expected time to task definition.
+  This closes `#262 <https://github.com/strands-project/strands_executive/issues/262>`_
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_executive into indigo-devel
+* Merge branch 'indigo-devel' of https://github.com/hawesie/strands_executive into indigo-devel
+* Contributors: Bruno Lacerda, Marc Hanheide, Nick Hawes
+
 1.0.6 (2016-06-06)
 ------------------
 

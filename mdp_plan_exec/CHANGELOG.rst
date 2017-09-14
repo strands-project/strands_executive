@@ -2,6 +2,42 @@
 Changelog for package mdp_plan_exec
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#304 <https://github.com/strands-project/strands_executive/issues/304>`_ from bfalacerda/indigo-devel
+  stop doing a full mdp deepcopy
+* stop doing a full mdp deepcopy
+* Merge pull request `#298 <https://github.com/strands-project/strands_executive/issues/298>`_ from bfalacerda/indigo-devel
+  door waiting params
+* add params for doors
+* allowing to define door wait params via yaml
+* Merge pull request `#288 <https://github.com/strands-project/strands_executive/issues/288>`_ from bfalacerda/indigo-devel
+  cope with prism timeouts by killing and restarting it
+* small bug
+* another small bug
+* add max duration to MdpAction
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_executive into indigo-devel
+* cope with prism timeouts by killing and restarting it
+* Merge pull request `#282 <https://github.com/strands-project/strands_executive/issues/282>`_ from hawesie/nav_time_before_window
+  Dealing with windows more actively
+* Ensure mdp executor respects is_interruptible flag for action execution.
+  Needed for aaf_deployment/`#344 <https://github.com/strands-project/strands_executive/issues/344>`_
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_executive into gcal_timecritical
+  Conflicts:
+  gcal_routine/src/gcal_routine/tools.py
+* Merge pull request `#273 <https://github.com/strands-project/strands_executive/issues/273>`_ from bfalacerda/indigo-devel
+  fixing bug with getting action outcome based on GoalStatus
+* fixing bug with getting action outcome based on GoalStatus
+* Merge pull request `#264 <https://github.com/strands-project/strands_executive/issues/264>`_ from bfalacerda/indigo-devel
+  subscribe to topological map topic, and update MDP structure when a …
+* subscribe to tpopological map topic, and update MDP structure when a new topo map is published
+* Merge pull request `#261 <https://github.com/strands-project/strands_executive/issues/261>`_ from bfalacerda/indigo-devel
+  cope with negative travel expectations
+* cope with negative travel expectations
+* Edges to be considerered door edges is now a param
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_executive into indigo-devel
+* Contributors: Bruno Lacerda, Marc Hanheide, Nick Hawes
+
 1.0.6 (2016-06-06)
 ------------------
 * made dependency on door_pass explicit

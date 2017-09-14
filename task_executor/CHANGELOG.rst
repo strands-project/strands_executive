@@ -2,6 +2,127 @@
 Changelog for package task_executor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* made routine more conservative with out of range tasks
+* Merge pull request `#301 <https://github.com/strands-project/strands_executive/issues/301>`_ from bfalacerda/indigo-devel
+  stop dropping tasks when robot fails navigation
+* stop dropping tasks when robot fails navigation
+* Merge pull request `#300 <https://github.com/strands-project/strands_executive/issues/300>`_ from strands-project/change_exit_on_time_out
+  Switched recalled to preempted on task time-outs
+* Switched recalled to preempted on task time-outs
+* Merge pull request `#299 <https://github.com/strands-project/strands_executive/issues/299>`_ from bfalacerda/indigo-devel
+  logging adding of tasks to the routine
+* typo
+* correct indent
+* log adding of tasks to the routine
+* Merge pull request `#298 <https://github.com/strands-project/strands_executive/issues/298>`_ from bfalacerda/indigo-devel
+  door waiting params
+* add params for doors
+* Merge pull request `#295 <https://github.com/strands-project/strands_executive/issues/295>`_ from strands-project/aaf_dep_385
+  Fixed bug which curtailed execution of time-critical tasks
+* Fixed bug which curtailed execution of time-critical tasks
+* Merge pull request `#292 <https://github.com/strands-project/strands_executive/issues/292>`_ from hawesie/task_id_persistence
+  Task id persistence
+* Tidied up initialisation.
+* Added summary script
+* Added script to make task events unique from a previous db
+* Added approach for db task id persistence
+* Added locks to get ids method
+* Added a service to get new task ids for use in other processes.
+* Merge pull request `#291 <https://github.com/strands-project/strands_executive/issues/291>`_ from hawesie/mdp_task_uninterruptible
+  Mdp task now respects interruptible flag
+* Merge pull request `#290 <https://github.com/strands-project/strands_executive/issues/290>`_ from hawesie/log_type_fix
+  Fixed bug trying to log the wrong type of task after cancellation
+* Monitor exeuction for overtime. Kill if over an hour.
+* is_interruptible flag is respected for MdpTasks
+  Also refactored a bit of the logging code for sanity.
+* Made active task check more sefl-contained.
+  Also added more inforamtion to logging for ltl tasks.
+* Fixed bug trying to log the wrong type of task after cancellation
+* Merge pull request `#289 <https://github.com/strands-project/strands_executive/issues/289>`_ from bfalacerda/indigo-devel
+  add MdpTasks
+* Merge pull request `#22 <https://github.com/strands-project/strands_executive/issues/22>`_ from hawesie/mdp_task
+  adding cossafe task now uses the mdptask format
+* adding cossafe task now uses the mdptask format
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_executive into indigo-devel
+* Merge pull request `#287 <https://github.com/strands-project/strands_executive/issues/287>`_ from strands-project/ignore_probs
+  allowable_lateness as parameter and ignore probability for time-critical task
+* added parameter allowable_lateness to launch file
+* made allowable_lateness a parameter and ignore probability for time_critical tasks
+  closes https://github.com/strands-project/aaf_deployment/issues/382
+* Merge pull request `#282 <https://github.com/strands-project/strands_executive/issues/282>`_ from hawesie/nav_time_before_window
+  Dealing with windows more actively
+* Removed duplicate lock release.
+  Fixes `#284 <https://github.com/strands-project/strands_executive/issues/284>`_
+* Added option to terminate execution of a batch of task when the lowest time window has passed.
+  To use this option add `close_windows:=true` to the command of launching the system, e.g.
+  ```
+  roslaunch --wait task_executor mdp-executor.launch close_windows:=true
+  ```
+* Using expected nav time before window opens.
+  This fixes `#281 <https://github.com/strands-project/strands_executive/issues/281>`_
+* Merge pull request `#280 <https://github.com/strands-project/strands_executive/issues/280>`_ from heuristicus/indigo-devel
+  Fix incorrect reference to self.daily end in DailyRoutine
+* Get daily_start into datetime.datetime format
+* Fix incorrect reference to self.daily end in DailyRoutine
+* Merge pull request `#278 <https://github.com/strands-project/strands_executive/issues/278>`_ from hawesie/window_closing
+  Dropping normal tasks given expected close of window.
+* Dropping normal tasks given expected close of window.
+  Also added more detail to task status output.
+* Setting default expected duration.
+* Merge pull request `#276 <https://github.com/strands-project/strands_executive/issues/276>`_ from hawesie/cosafe_demand
+  Adds service to demand co-safe tasks.
+* Merge pull request `#275 <https://github.com/strands-project/strands_executive/issues/275>`_ from hawesie/fewer_tests
+  Fewer tests
+* Merge pull request `#270 <https://github.com/strands-project/strands_executive/issues/270>`_ from hawesie/ids_service
+  Expected duration + task ids
+* Prevents time-critical tasks from interrupting on-demand tasks.
+* Adds service to demand co-safe tasks.
+  This has been tested on local examples, but could use some more extreme tests.
+  This closes `#271 <https://github.com/strands-project/strands_executive/issues/271>`_
+* Removed some of the longer tests.
+  This is in order to let CI testing complete in a sane time.
+* Added new combined sort criterion for choosing next tasks.
+  The new combined sort criterion is priority*p(success)/expected_time (i.e. reward per unit time) as requested in `#272 <https://github.com/strands-project/strands_executive/issues/272>`_. The old sort criterion criterio is still the default behaviour. To use the new sorting, add `combined_sort:=true` when launching the executive launch file.
+  This closes `#272 <https://github.com/strands-project/strands_executive/issues/272>`_
+* Bug fixes.
+* Added locks to get ids method
+* Added a service to get new task ids for use in other processes.
+* expected_duration is now being used in mdp executor.
+  If a task does not have expected_duration set, max_duration is used instead.
+* Added new combined sort criterion for choosing next tasks.
+  The new combined sort criterion is priority*p(success)/expected_time (i.e. reward per unit time) as requested in `#272 <https://github.com/strands-project/strands_executive/issues/272>`_. The old sort criterion criterio is still the default behaviour. To use the new sorting, add `combined_sort:=true` when launching the executive launch file.
+  This closes `#272 <https://github.com/strands-project/strands_executive/issues/272>`_
+* Bug fixes.
+* Added locks to get ids method
+* Added a service to get new task ids for use in other processes.
+* expected_duration is now being used in mdp executor.
+  If a task does not have expected_duration set, max_duration is used instead.
+* Merge pull request `#265 <https://github.com/strands-project/strands_executive/issues/265>`_ from hawesie/add_mdp_tasks
+  Add mdp tasks service
+* Merge branch 'add_mdp_tasks' of https://github.com/hawesie/strands_executive into indigo-devel
+* First pass on ability to add "mdp tasks" (i.e. domain spec and some constraints) to the executor.
+  This is for `#263 <https://github.com/strands-project/strands_executive/issues/263>`_
+* Now using travel time on its own to calculate travel time to start of time-critical task.
+* Updates to analysis tools for AAF Y3.
+* Printing expected time.
+* Dealing with failures a little better, and adding more logging on task insertion
+* Dropping time critical too.
+* More fixiin
+* Merge branch 'indigo-devel' of https://github.com/hawesie/strands_executive into hawesie-indigo-devel
+* Now checking against correct variables.
+* Merge branch 'indigo-devel' of https://github.com/hawesie/strands_executive into hawesie-indigo-devel
+* This makes the routine tougher about out of window tasks.
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_executive into indigo-devel
+* Merge pull request `#259 <https://github.com/strands-project/strands_executive/issues/259>`_ from hawesie/indigo-devel
+  Updates for routine improvements.
+* Tasks which are disallowed by the provided tasks_allowed function are now delayed rather than dropped. This means they will be checked until they pass  now + max_duration > end_before
+* Re-publishing schedule after clear.
+* Merge branch 'indigo-devel' of https://github.com/hawesie/strands_executive into indigo-devel
+* Interrupt current task when needs to start time critical
+* Contributors: Bruno Lacerda, Marc Hanheide, Michal Staniaszek, Nick Hawes
+
 1.0.6 (2016-06-06)
 ------------------
 

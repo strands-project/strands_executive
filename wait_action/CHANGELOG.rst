@@ -2,6 +2,16 @@
 Changelog for package wait_action
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_executive into indigo-devel
+* Merge pull request `#282 <https://github.com/strands-project/strands_executive/issues/282>`_ from hawesie/nav_time_before_window
+  Dealing with windows more actively
+* Using expected nav time before window opens.
+  This fixes `#281 <https://github.com/strands-project/strands_executive/issues/281>`_
+* Merge branch 'indigo-devel' of https://github.com/strands-project/strands_executive into indigo-devel
+* Contributors: Bruno Lacerda, Nick Hawes
+
 1.0.6 (2016-06-06)
 ------------------
 
