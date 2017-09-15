@@ -5,6 +5,12 @@ Changelog for package gcal_routine
 1.0.8 (2017-09-14)
 ------------------
 
+Forthcoming
+-----------
+* indigo-1.0.8
+* Updated changelogs
+* Contributors: Nick Hawes
+
 1.0.7 (2017-09-14)
 ------------------
 * Merge pull request `#292 <https://github.com/strands-project/strands_executive/issues/292>`_ from hawesie/task_id_persistence

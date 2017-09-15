@@ -5,6 +5,13 @@ Changelog for package mdp_plan_exec
 1.0.8 (2017-09-14)
 ------------------
 
+Forthcoming
+-----------
+* Removed stray prism-robots dependency.
+* indigo-1.0.8
+* Updated changelogs
+* Contributors: Nick Hawes
+
 1.0.7 (2017-09-14)
 ------------------
 * Merge pull request `#304 <https://github.com/strands-project/strands_executive/issues/304>`_ from bfalacerda/indigo-devel

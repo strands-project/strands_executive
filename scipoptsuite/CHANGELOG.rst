@@ -5,6 +5,12 @@ Changelog for package scipoptsuite
 1.0.8 (2017-09-14)
 ------------------
 
+Forthcoming
+-----------
+* indigo-1.0.8
+* Updated changelogs
+* Contributors: Nick Hawes
+
 1.0.7 (2017-09-14)
 ------------------
 * Merge branch 'indigo-devel' of https://github.com/strands-project/strands_executive into indigo-devel
