@@ -6,8 +6,8 @@ Changelog for package strands_executive_msgs
 1.0.8 (2017-09-14)
 ------------------
 
-Forthcoming
------------
+1.0.9 (2017-09-15)
+------------------
 * indigo-1.0.8
 * Updated changelogs
 * Contributors: Nick Hawes
