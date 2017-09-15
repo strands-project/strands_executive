@@ -2,6 +2,9 @@
 Changelog for package scipoptsuite
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 1.2.0 (2017-09-03)
 ------------------
 

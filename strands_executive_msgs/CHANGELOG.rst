@@ -3,6 +3,9 @@ Changelog for package strands_executive_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Forthcoming
+-----------
+
 1.2.0 (2017-09-03)
 ------------------
 
