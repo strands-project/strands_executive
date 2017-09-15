@@ -7,11 +7,11 @@ An executive framework for a mobile robot. The basic unit of behaviour for the f
 
 ### Binary
 
-If you are using Ubuntu, the easiest way to install the executive framework is to [add the STRANDS apt releases repository](https://github.com/strands-project-releases/strands-releases/wiki#using-the-strands-repository). You can then run `sudo apt-get install ros-indigo-task-executor`. This will install the framework and it's dependencies alongside your existing ROS install under `/opt/ros/indigo`.
+If you are using Ubuntu, the easiest way to install the executive framework is to [add the LCAS apt releases repository](https://github.com/lcas/rosdistro/wiki). You can then run `sudo apt-get install ros-indigo-task-executor` or `ros-kinetic-task-executor`. This will install the framework and it's dependencies alongside your existing ROS install under `/opt/ros/indigo`. Note that due to java versions, the indigo version is running an older version of prism and many of the components, **we therefore recommend using kinetic if possible**. If you want to run the latest version of the framework under indigo then you need to install from source and install a Java 8 package.
 
 ### Source
 
-To compile from source you should clone this repository into your catkin workspace and compile as normal. For dependencies you will also need (at least) the following repsositories: [strands_navigation](https://github.com/strands-project/strands_navigation) and [mongodb_store](https://github.com/strands-project/mongodb_store). Source installs have been tested on Ubuntu 12.04, 14.04 and OS X.
+To compile from source you should clone this repository into your catkin workspace and compile as normal. For dependencies you will also need (at least) the following repsositories: [strands_navigation](https://github.com/strands-project/strands_navigation) and [mongodb_store](https://github.com/strands-project/mongodb_store), and Java 8 or greater (which is the default on 16.04)/ Source installs have been tested on Ubuntu 14.04 and 16.04.
 
 ## Runtime Dependencies
 
@@ -162,12 +162,12 @@ add_tasks_srv = rospy.ServiceProxy(add_tasks_srv_name, strands_executive_msgs.sr
 set_execution_status = rospy.ServiceProxy(set_exe_stat_srv_name, strands_executive_msgs.srv.SetExecutionStatus)
     
 try:
-	# add task to the execution framework
+    # add task to the execution framework
     task_id = add_tasks_srv([task])
     # make sure the executive is running -- this only needs to be done once for the whole system not for every task
     set_execution_status(True)
 except rospy.ServiceException, e: 
-	print "Service call failed: %s"%e		
+    print "Service call failed: %s"%e       
 ```
 
 ### Demanding a Task
@@ -228,7 +228,7 @@ class WaitServer:
 Our use case for task execution is that the robot has a *daily routine* which is a list of tasks which it carries out every day. Such are routine can be created with the `task_routine.DailyRoutine` object which is configured with start and end times for the robot's daily activities:
 
 ```python
-	# some useful times
+    # some useful times
     localtz = tzlocal()
     # the time the robot will be active
     start = time(8,30, tzinfo=localtz)
@@ -244,7 +244,7 @@ Our use case for task execution is that the robot has a *daily routine* which is
 Tasks are then added using the `repeat_every*` methods. These take the given task and store it such that it can be correctly instantiated with start and end times every day:
 
 ```python
-	# do this task every day
+    # do this task every day
     routine.repeat_every_day(task)
     # and every two hours during the day
     routine.repeat_every_hour(task, hours=2)
@@ -260,12 +260,12 @@ The `DailyRoutine` declares the structure of the routine. The routine tasks must
 
 ```python
 
-	# this uses the newer AddTasks service which excepts tasks as a batch
-	add_tasks_srv_name = '/task_executor/add_tasks'
-	add_tasks_srv = rospy.ServiceProxy(add_tasks_srv_name, AddTasks)
+    # this uses the newer AddTasks service which excepts tasks as a batch
+    add_tasks_srv_name = '/task_executor/add_tasks'
+    add_tasks_srv = rospy.ServiceProxy(add_tasks_srv_name, AddTasks)
 
 
-	# create the object which will talk to the scheduler
+    # create the object which will talk to the scheduler
     runner = task_routine.DailyRoutineRunner(start, end, add_tasks_srv)
     # pass the routine tasks on to the runner which handles the daily instantiation of actual tasks
     runner.add_tasks(routine.get_routine_tasks())
