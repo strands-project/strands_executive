@@ -7,11 +7,11 @@ An executive framework for a mobile robot. The basic unit of behaviour for the f
 
 ### Binary
 
-If you are using Ubuntu, the easiest way to install the executive framework is to [add the STRANDS apt releases repository](https://github.com/strands-project-releases/strands-releases/wiki#using-the-strands-repository). You can then run `sudo apt-get install ros-indigo-task-executor`. This will install the framework and it's dependencies alongside your existing ROS install under `/opt/ros/indigo`.
+If you are using Ubuntu, the easiest way to install the executive framework is to [add the LCAS apt releases repository](https://github.com/lcas/rosdistro/wiki). You can then run `sudo apt-get install ros-indigo-task-executor` or `ros-kinetic-task-executor`. This will install the framework and it's dependencies alongside your existing ROS install under `/opt/ros/indigo`. Note that due to java versions, the indigo version is running an older version of prism and many of the components, **we therefore recommend using kinetic if possible**. If you want to run the latest version of the framework under indigo then you need to install from source and install a Java 8 package.
 
 ### Source
 
-To compile from source you should clone this repository into your catkin workspace and compile as normal. For dependencies you will also need (at least) the following repsositories: [strands_navigation](https://github.com/strands-project/strands_navigation) and [mongodb_store](https://github.com/strands-project/mongodb_store). Source installs have been tested on Ubuntu 12.04, 14.04 and OS X.
+To compile from source you should clone this repository into your catkin workspace and compile as normal. For dependencies you will also need (at least) the following repsositories: [strands_navigation](https://github.com/strands-project/strands_navigation) and [mongodb_store](https://github.com/strands-project/mongodb_store), and Java 8 or greater (which is the default on 16.04)/ Source installs have been tested on Ubuntu 14.04 and 16.04.
 
 ## Runtime Dependencies
 
