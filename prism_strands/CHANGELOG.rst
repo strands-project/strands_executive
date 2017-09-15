@@ -2,8 +2,8 @@
 Changelog for package prism_strands
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.2.1 (2017-09-15)
+------------------
 * remove bad dependency
 * Contributors: Bruno Lacerda
 
