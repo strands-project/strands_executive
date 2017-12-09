@@ -5,6 +5,12 @@ Changelog for package mdp_plan_exec
 1.2.1 (2017-09-15)
 ------------------
 
+Forthcoming
+-----------
+* kinetic-1.2.1
+* updated changelogs
+* Contributors: Nick Hawes
+
 1.2.0 (2017-09-03)
 ------------------
 
