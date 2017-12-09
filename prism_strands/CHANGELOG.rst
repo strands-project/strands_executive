@@ -7,8 +7,8 @@ Changelog for package prism_strands
 * remove bad dependency
 * Contributors: Bruno Lacerda
 
-Forthcoming
------------
+1.2.2 (2017-12-09)
+------------------
 * kinetic-1.2.1
 * updated changelogs
 * remove bad dependency
