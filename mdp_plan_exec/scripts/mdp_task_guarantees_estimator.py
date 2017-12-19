@@ -29,7 +29,7 @@ class MdpTaskGuaranteesEstimator(object):
         except OSError as ex:
             print 'error creating PRISM directory:',  ex
         self.prism_estimator=PartialSatPrismJavaTalker(port,self.directory, self.file_name)
-        self.get_guarantees_service = rospy.Service('/mdp_plan_exec/get_guarantees_for_co_safe_task',
+        self.get_guarantees_service = rospy.Service('mdp_plan_exec/get_guarantees_for_co_safe_task',
                                                               GetGuaranteesForCoSafeTask,
                                                               self.get_guarantees_cb)
         rospy.loginfo("MDP task guarantees estimator initialised.")

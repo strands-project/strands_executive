@@ -23,7 +23,7 @@ class MdpPolicyExecutor(object):
     def __init__(self, port, file_dir, file_name): 
 
         self.wait_for_result_dur=rospy.Duration(0.1)
-        self.top_nav_policy_exec= SimpleActionClient('/topological_navigation/execute_policy_mode', ExecutePolicyModeAction)
+        self.top_nav_policy_exec= SimpleActionClient('topological_navigation/execute_policy_mode', ExecutePolicyModeAction)
         got_server=self.top_nav_policy_exec.wait_for_server(rospy.Duration(1))
         while not got_server:
             rospy.loginfo("Waiting for topological navigation execute policy mode action server.")
@@ -46,10 +46,10 @@ class MdpPolicyExecutor(object):
                
         self.current_waypoint=None
         self.closest_waypoint=None
-        self.current_waypoint_sub=rospy.Subscriber("/current_node", String, self.current_waypoint_cb)
-        self.closest_waypoint_sub=rospy.Subscriber("/closest_node", String, self.closest_waypoint_cb)       
+        self.current_waypoint_sub=rospy.Subscriber("current_node", String, self.current_waypoint_cb)
+        self.closest_waypoint_sub=rospy.Subscriber("closest_node", String, self.closest_waypoint_cb)       
         self.regenerate_policy=True
-        self.policy_mode_pub=rospy.Publisher("/mdp_plan_exec/current_policy_mode", NavRoute,queue_size=1)
+        self.policy_mode_pub=rospy.Publisher("mdp_plan_exec/current_policy_mode", NavRoute,queue_size=1)
         
         self.action_executor=ActionExecutor()
         
