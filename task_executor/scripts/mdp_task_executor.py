@@ -17,7 +17,7 @@ from task_executor.utils import rostime_to_python, rostime_close, get_start_node
 from dateutil.tz import tzlocal
 from copy import copy, deepcopy
 from actionlib_msgs.msg import GoalStatus
-
+from rosgraph_msgs.msg import Clock
 
 
 ZERO = rospy.Duration(0)
@@ -69,6 +69,11 @@ class MDPTaskExecutor(BaseTaskExecutor):
     def __init__(self):
         # init node first, must be done before call to super init for service advertising to work
         rospy.init_node("task_executor", log_level=rospy.INFO)
+
+        if rospy.get_param('use_sim_time'):
+            rospy.loginfo('Using sim time, waiting for time update')
+            rospy.wait_for_message('clock', Clock)
+
 
         # init superclasses
         super( MDPTaskExecutor, self ).__init__()
@@ -1288,6 +1293,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
 
 if __name__ == '__main__':
+    
     executor = MDPTaskExecutor()        
     rospy.spin()
 

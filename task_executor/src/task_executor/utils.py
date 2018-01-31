@@ -103,6 +103,13 @@ class CheckTaskActionServer(object):
         self.task_server.start()
 
 
+def ros_today():
+    """ 
+    Replaces date.today() for the ROS world
+    """
+    return rostime_to_python(rospy.get_rostime()).date()
+
+
 def rostime_to_python(rtime, tz = None):
     return datetime.fromtimestamp(rtime.to_sec(), tz)        
 
