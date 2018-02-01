@@ -14,9 +14,14 @@ if [ "$NOTIFY" = "" ]; then
 	NOTIFY=$NOTIFY_DEFAULT
 fi;
 
+echo 'IN OIAJSDLKJASL:DKJAS'
+pwd
+
 # Command to launch Java
-if [ "$PRISM_JAVA" = "" ]; then
-	PRISM_JAVA=java
+if [ -x /usr/libexec/java_home ]; then
+    PRISM_JAVA=`/usr/libexec/java_home`/bin/java
+else
+    PRISM_JAVA=java
 fi
 
 # If there is a -javamaxmem switch, use it for PRISM_JAVAMAXMEM
