@@ -82,8 +82,8 @@ class BaseTaskExecutor(object):
         self.current_node = 'WayPoint1'
         self.closest_node = 'WayPoint1'
         self.received_a_node = False
-        rospy.Subscriber('/current_node', String, self.update_topological_location)
-        rospy.Subscriber('/closest_node', String, self.update_topological_closest_node)
+        rospy.Subscriber('current_node', String, self.update_topological_location)
+        rospy.Subscriber('closest_node', String, self.update_topological_closest_node)
         self.active_tasks = []
         self.active_task_completes_by = rospy.get_rostime()
         self.logging_lock = threading.Lock()
@@ -112,7 +112,7 @@ class BaseTaskExecutor(object):
         for attr in dir(self):
             if attr.endswith("_ros_srv"):
                 service=getattr(self, attr)                
-                rospy.Service("/task_executor/" + attr[:-8], service.type, service)
+                rospy.Service("task_executor/" + attr[:-8], service.type, service)
 
     def get_task_types(self, action_name):
         """ 
@@ -148,7 +148,7 @@ class BaseTaskExecutor(object):
         if self.expected_time_srv is None:
             if self.nav_service == BaseTaskExecutor.TOPOLOGICAL_NAV:
                 from strands_navigation_msgs.srv import EstimateTravelTime
-                expected_time_srv_name = 'topological_navigation/travel_time_estimator'
+                expected_time_srv_name = '/topological_navigation/travel_time_estimator'
                 rospy.loginfo('Waiting for %s' % expected_time_srv_name)
                 rospy.wait_for_service(expected_time_srv_name)
                 rospy.loginfo('... and got %s' % expected_time_srv_name)

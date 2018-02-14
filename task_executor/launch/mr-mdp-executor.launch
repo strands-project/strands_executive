@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<launch>
+  <arg name="robot_id" default="robot_0" />
+  <arg name="interruptible_wait" default="true"/>
+  <arg name="combined_sort" default="false"/>
+  <arg name="close_windows" default="true"/>
+  <arg name="allowable_lateness" default="300"/>
+  <arg name="door_config_file" default=""/>
+  
+  <group ns="$(arg robot_id)"> 
+      <include file="$(find task_executor)/launch/mdp-executor.launch">
+            <arg name="interruptible_wait" value="$(arg interruptible_wait)"/>
+            <arg name="combined_sort" value="$(arg combined_sort)"/>
+            <arg name="close_windows" value="$(arg close_windows)"/>
+            <arg name="allowable_lateness" value="$(arg allowable_lateness)"/>
+            <arg name="door_config_file" value="$(arg door_config_file)"/>
+      </include>
+  </group>
+
+</launch>

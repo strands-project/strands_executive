@@ -72,7 +72,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
         if rospy.get_param('use_sim_time'):
             rospy.loginfo('Using sim time, waiting for time update')
-            rospy.wait_for_message('clock', Clock)
+            rospy.wait_for_message('/clock', Clock)
 
 
         # init superclasses
