@@ -441,7 +441,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
             # drop the task if there's not enough time for expected duration to occur before the window closes
             # this ignores the navigation time for this task, making task dropping more permissive than it should be. this is ok for now.
             if now > (next_normal_task.task.end_before -  next_normal_task.task.expected_duration):
-                log_string = 'Dropping normal task %s as time window closed at %s ' % (next_normal_task.task.action, next_normal_task.task.end_before)
+                log_string = 'Dropping queued normal task %s as its time window closed at %s ' % (next_normal_task.task.action, rostime_to_python(next_normal_task.task.end_before))
                 rospy.loginfo(log_string)
                 self.normal_tasks = SortedCollection(self.normal_tasks[1:], key=(lambda t: t.task.end_before))                
                 self.log_task_event(next_normal_task.task, TaskEvent.DROPPED, now, description = log_string)        
@@ -587,12 +587,13 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
                 nav_time = max_duration(guarantees.expected_time - mdp_task.task.max_duration, ZERO)
 
-                # print 'timing details'
-                # print ros_time_to_string(now)
-                # print ros_time_to_string(mdp_task.task.start_after)
-                # print ros_duration_to_string(guarantees.expected_time)
-                # print ros_duration_to_string(mdp_task.task.max_duration)
-                # print "Start by: %s" % ros_time_to_string(mdp_task.task.start_after - nav_time)
+                if False:
+                    print 'timing details'
+                    print ros_time_to_string(now)
+                    print ros_time_to_string(mdp_task.task.start_after)
+                    print ros_duration_to_string(guarantees.expected_time)
+                    print ros_duration_to_string(mdp_task.task.max_duration)
+                    print "Start by: %s" % ros_time_to_string(mdp_task.task.start_after - nav_time)
 
                 if now > (mdp_task.task.start_after - nav_time):
                     if guarantees.expected_time <= execution_window:                        

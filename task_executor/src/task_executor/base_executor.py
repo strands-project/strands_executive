@@ -13,7 +13,7 @@ from mongodb_store.message_store import MessageStoreProxy
 from strands_executive_msgs.srv import *
 
 from std_srvs.srv import Empty, EmptyResponse
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 import threading
 
 class BaseTaskExecutor(object):
@@ -78,6 +78,11 @@ class BaseTaskExecutor(object):
         self.expected_time_srv = None
 
         self.executing = False
+        self._execution_status_publisher = rospy.Publisher('task_executor/is_executing', Bool, latch = True)
+        self._publish_execution_status()
+
+
+
         # start with some faked but likely one in case of problems
         self.current_node = 'WayPoint1'
         self.closest_node = 'WayPoint1'
@@ -480,6 +485,14 @@ class BaseTaskExecutor(object):
         return self.executing
     get_execution_status_ros_srv.type = GetExecutionStatus
 
+
+    def _publish_execution_status(self):
+        try:
+            self._execution_status_publisher.publish(self.executing)
+        except Exception as e:
+            rospy.logwarn('Caught exception in _publish_execution_status: %s' % e)      
+
+
     def set_execution_status_ros_srv(self, req):
         
         self.service_lock.acquire()
@@ -515,6 +528,8 @@ class BaseTaskExecutor(object):
             success = True
 
         self.service_lock.release()
+
+        self._publish_execution_status()
 
         return [previous, success, remaining_time]
     set_execution_status_ros_srv.type = SetExecutionStatus
