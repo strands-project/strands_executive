@@ -130,8 +130,6 @@ class PolicyMdp(Mdp):
             self.flat_state_defs[state_id]=flat_state_dict
             self.n_flat_states+=1
         f.close()
-        
-    
     
     def set_n_aut_states(self, dfa_file_name):
         f=open(dfa_file_name, 'r')
@@ -144,9 +142,12 @@ class PolicyMdp(Mdp):
 
 
     def get_guarantees_at_flat_state(self, flat_state):
-        return (self.guarantees_probs[flat_state], 
-                self.guarantees_progs[flat_state], 
-                rospy.Duration(self.guarantees_times[flat_state]))
+        if flat_state is None:
+            return (0, 0, rospy.Duration(0))
+        else:
+            return (self.guarantees_probs[flat_state], 
+                    self.guarantees_progs[flat_state], 
+                    rospy.Duration(self.guarantees_times[flat_state]))
 
 
     def simulate_random(self):

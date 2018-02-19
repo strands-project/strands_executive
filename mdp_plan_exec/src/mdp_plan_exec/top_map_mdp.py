@@ -213,8 +213,10 @@ class TopMapMdp(Mdp):
         rospy.logerr("Waypoint not found!")
         
     def get_waypoint_var_val(self, waypoint_prop):
-        return self.props_def[waypoint_prop].conds['waypoint']
-    
+        try:
+            return self.props_def[waypoint_prop].conds['waypoint']
+        except Exception:
+            return -1
 
     def get_waypoint_pose_argument(self, waypoint):
         for node in self.top_map.nodes:

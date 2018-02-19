@@ -17,6 +17,7 @@ from actionlib_msgs.msg import GoalStatus
 from strands_navigation_msgs.msg import NavRoute, ExecutePolicyModeAction, ExecutePolicyModeFeedback, ExecutePolicyModeGoal
 from strands_executive_msgs.msg import ExecutePolicyAction, ExecutePolicyFeedback, ExecutePolicyGoal
 from strands_executive_msgs.msg import ExecutePolicyExtendedAction, ExecutePolicyExtendedFeedback, ExecutePolicyExtendedGoal
+from strands_executive_msgs.msg import TaskExecutionStat, ActionExecutionStat
 
    
 class MdpPolicyExecutor(object):
@@ -128,55 +129,58 @@ class MdpPolicyExecutor(object):
                 print(nav_policy_msg)
                 self.top_nav_policy_exec.send_goal(ExecutePolicyModeGoal(route = nav_policy_msg), feedback_cb = self.top_nav_feedback_cb)
             nav_policy_finished=self.top_nav_policy_exec.wait_for_result(self.wait_for_result_dur)
-        status=self.top_nav_policy_exec.get_state()  
+        status=self.top_nav_policy_exec.get_state()
         return status
     
-    def top_nav_feedback_cb(self,feedback):
-        rospy.loginfo("Reached waypoint " + feedback.route_status)
-        self.get_next_nav_policy_state(feedback.route_status)
+    def  top_nav_feedback_cb(self, feedback):
+        #if feedback.status == GoalStatus.SUCCEDED:
+            self.get_next_nav_policy_state(feedback.current_wp, feedback.status)
         
-    def get_next_nav_policy_state(self, current_waypoint):
+    def get_next_nav_policy_state(self, current_waypoint, nav_action_status):
+        publish = True
         executed_action=self.get_current_action()
+        next_action = None
         waypoint_val=self.mdp.get_waypoint_var_val(current_waypoint)
-        current_state_def=self.current_nav_policy_state_defs[self.current_flat_state]
-        
-        #waypoint didnt change
-        if waypoint_val==current_state_def["waypoint"]:
-            return
-        
-        found_next_state=False
-        
-        #waypoint change is on the MDP transition model
-        for (flat_state, flat_state_def) in self.current_nav_policy_state_defs.items():
-            print(flat_state_def)           
-            if flat_state_def["waypoint"]==waypoint_val:
-                self.current_flat_state=flat_state
-                found_next_state=True
-                break
-                
-        if not found_next_state: 
-            rospy.logwarn("Error getting MDP next state: There is no transition modelling the state evolution. Looking for state in full state list...")
-            new_state_def=deepcopy(current_state_def)
-            new_state_def["waypoint"]=waypoint_val
-            for (flat_state, flat_state_def) in self.policy_mdp.flat_state_defs.items():
-                if self.mdp.check_cond_sat(new_state_def, flat_state_def):
-                    rospy.loginfo("Found state " + str(flat_state_def) + ". Updating.")
-                    self.current_flat_state=flat_state
-                    found_next_state=True
-                    self.regenerate_policy=True #Assumes full policy export. In case we stop exporting full policy, change this so that replan is triggered when the new state doesnt have an action associated to it.
-                    break
-            
-        if found_next_state:    
-            next_action=self.get_current_action()
-            if self.policy_mdp.flat_state_defs[self.current_flat_state]['waypoint']==-1:
-                outcome=GoalStatus.ABORTED
+        #if got feedback from topo nav in a waypoint, check if need to update state
+        if waypoint_val > -1 and nav_action_status == GoalStatus.SUCCEEDED:
+            current_state_def=self.current_nav_policy_state_defs[self.current_flat_state]
+            #only update state if waypoint changed
+            if waypoint_val==current_state_def["waypoint"]:
+                publish = False
             else:
-                outcome=GoalStatus.SUCCEEDED
-            self.publish_feedback(executed_action, outcome, next_action)
+                rospy.loginfo("Reached waypoint " + current_waypoint)
+                #update state
+                found_next_state=False
+                #waypoint change is on the MDP transition model
+                for (flat_state, flat_state_def) in self.current_nav_policy_state_defs.items():
+                    print(flat_state_def)           
+                    if flat_state_def["waypoint"]==waypoint_val:
+                        self.current_flat_state=flat_state
+                        found_next_state=True
+                        break
+                        
+                if not found_next_state:
+                    rospy.logwarn("Error getting MDP next state: There is no transition modelling the state evolution. Looking for state in full state list...")
+                    new_state_def=deepcopy(current_state_def)
+                    new_state_def["waypoint"]=waypoint_val
+                    for (flat_state, flat_state_def) in self.policy_mdp.flat_state_defs.items():
+                        if self.mdp.check_cond_sat(new_state_def, flat_state_def):
+                            rospy.loginfo("Found state " + str(flat_state_def) + ". Updating.")
+                            self.current_flat_state=flat_state
+                            found_next_state=True
+                            self.regenerate_policy=True #Assumes full policy export. In case we stop exporting full policy, change this so that replan is triggered when the new state doesnt have an action associated to it.
+                            break
+                    
+                if found_next_state:    
+                    next_action=self.get_current_action()
+                else:
+                    rospy.logerr("Couldn't update state. Aborting...")
+                    self.current_flat_state=None
+                    self.top_nav_policy_exec.cancel_all_goals()
         else:
-            rospy.logerr("Couldn't update state. Aborting...")
             self.current_flat_state=None
-            self.top_nav_policy_exec.cancel_all_goals()
+        if publish:
+            self.publish_feedback(executed_action, nav_action_status, next_action)
        
     def get_mdp_state_update_from_action_outcome(self, state_update):
         #current_state_def=self.current_nav_policy_state_defs[self.current_flat_state]
@@ -205,11 +209,11 @@ class MdpPolicyExecutor(object):
         self.current_flat_state=self.policy_mdp.initial_flat_state
         self.publish_feedback(None, None, self.get_current_action())
         
-        current_nav_policy=self.generate_current_nav_policy()
-        status=self.execute_nav_policy(current_nav_policy)
-        while self.policy_mdp.flat_state_policy.has_key(self.current_flat_state) and not self.cancelled:
+        starting_exec = True #used to make sure the robot executes calls topological navigation at least once before executing non-nav actions. This is too ensure the robot navigates to the exact pose of a waypoint before executing an action there
+        while (self.policy_mdp.flat_state_policy.has_key(self.current_flat_state) and not self.cancelled) or starting_exec:
             next_action=self.get_current_action()
-            if next_action in self.mdp.nav_actions:
+            if next_action in self.mdp.nav_actions or starting_exec:
+                starting_exec = False
                 current_nav_policy=self.generate_current_nav_policy()
                 status=self.execute_nav_policy(current_nav_policy)
                 rospy.loginfo("Topological navigation execute policy action server exited with status: " + GoalStatus.to_string(status))                
@@ -220,10 +224,10 @@ class MdpPolicyExecutor(object):
                     # as it won't reach line 218 where it is otherwise reset.
                     self.cancelled=False
 
-                    if status==GoalStatus.ABORTED or self.current_flat_state is None:
-                        self.mdp_as.set_aborted()
-                    elif status==GoalStatus.PREEMPTED:
+                    if status==GoalStatus.PREEMPTED:
                         self.mdp_as.set_preempted()
+                    elif status==GoalStatus.ABORTED or self.current_flat_state is None:
+                        self.mdp_as.set_aborted()
                     else:
                         rospy.logwarn("Unexpected outcome from the topological navigaton execute policy action server. Setting as aborted")
                         self.mdp_as.set_aborted()
