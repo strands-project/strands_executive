@@ -5,7 +5,7 @@ project(strands_executive_msgs)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  message_generation mongodb_store_msgs geometry_msgs actionlib std_msgs
+  message_generation mongodb_store_msgs geometry_msgs actionlib std_msgs strands_navigation_msgs sensor_msgs
 )
 
 catkin_python_setup()
@@ -30,6 +30,7 @@ add_message_files(
   MdpDomainSpec.msg
   MdpTask.msg
   LastTaskID.msg
+  NavExecutionStat.msg
   TaskExecutionStat.msg
 )
 
@@ -71,6 +72,8 @@ generate_messages(
   mongodb_store_msgs
   std_msgs
   actionlib_msgs
+  strands_navigation_msgs
+  sensor_msgs
 )
 
 ###################################
@@ -85,7 +88,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES strands_executive_msgs
- CATKIN_DEPENDS mongodb_store_msgs geometry_msgs actionlib
+ CATKIN_DEPENDS mongodb_store_msgs geometry_msgs actionlib strands_navigation_msgs sensor_msgs
 #  DEPENDS system_lib
 )
 
