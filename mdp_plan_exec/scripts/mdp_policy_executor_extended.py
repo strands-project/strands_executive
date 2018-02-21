@@ -17,7 +17,6 @@ from actionlib_msgs.msg import GoalStatus
 from strands_navigation_msgs.msg import NavRoute, ExecutePolicyModeAction, ExecutePolicyModeFeedback, ExecutePolicyModeGoal
 from strands_executive_msgs.msg import ExecutePolicyAction, ExecutePolicyFeedback, ExecutePolicyGoal
 from strands_executive_msgs.msg import ExecutePolicyExtendedAction, ExecutePolicyExtendedFeedback, ExecutePolicyExtendedGoal
-from strands_executive_msgs.msg import TaskExecutionStat, ActionExecutionStat
 
    
 class MdpPolicyExecutor(object):
@@ -247,8 +246,6 @@ class MdpPolicyExecutor(object):
                 else:
                     break
 
-        
-        
         if self.cancelled:
             self.cancelled=False
             rospy.loginfo("Policy execution preempted.")
