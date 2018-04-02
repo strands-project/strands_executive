@@ -6,7 +6,7 @@
   <arg name="door_config_file" default=""/>
   
   <!-- run mdp plan exec -->
-  <include file="$(find mdp_plan_exec)/launch/mdp_plan_exec_extended.launch">
+  <include file="$(find mdp_plan_exec)/launch/mdp_plan_exec.launch">
     <arg name="door_config_file" value="$(arg door_config_file)"/>
   </include>
 

@@ -46,10 +46,7 @@ add_service_files(
   SetExecutionStatus.srv 
   GetExecutionStatus.srv
   GetSchedule.srv
-  GetExpectedTravelTimesToWaypoint.srv
   UpdateNavStatistics.srv
-  AddDeleteSpecialWaypoint.srv
-  GetSpecialWaypoints.srv
   IsTaskInterruptible.srv
   GetActiveTasks.srv
   GetGuaranteesForCoSafeTask.srv
@@ -63,7 +60,6 @@ find_package(catkin REQUIRED genmsg actionlib_msgs)
 add_action_files(
   FILES
   ExecutePolicy.action
-  ExecutePolicyExtended.action
 )
 
 # Generate added messages and services with any dependencies listed here

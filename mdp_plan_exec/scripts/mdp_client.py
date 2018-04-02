@@ -4,7 +4,7 @@ import rospy
 import actionlib
 
 from actionlib_msgs.msg import GoalStatus
-from strands_executive_msgs.msg import ExecutePolicyExtendedAction, ExecutePolicyExtendedFeedback, ExecutePolicyExtendedGoal, MdpStateVar, StringIntPair, StringTriple, MdpAction, MdpActionOutcome, MdpDomainSpec
+from strands_executive_msgs.msg import ExecutePolicyAction, ExecutePolicyFeedback, ExecutePolicyGoal, MdpStateVar, StringIntPair, StringTriple, MdpAction, MdpActionOutcome, MdpDomainSpec
 from strands_executive_msgs.srv import GetGuaranteesForCoSafeTask, GetGuaranteesForCoSafeTaskRequest
 import strands_executive_msgs.mdp_action_utils as mau
 
@@ -92,10 +92,10 @@ if __name__ == '__main__':
     
     waypoints = [2, 3, 21]
     
-    mdp_ac=actionlib.SimpleActionClient("mdp_plan_exec/execute_policy_extended", ExecutePolicyExtendedAction)
+    mdp_ac=actionlib.SimpleActionClient("mdp_plan_exec/execute_policy", ExecutePolicyAction)
     
     mdp_ac.wait_for_server()
-    goal=ExecutePolicyExtendedGoal()
+    goal=ExecutePolicyGoal()
     
     mdp_estimates=rospy.ServiceProxy("mdp_plan_exec/get_guarantees_for_co_safe_task", GetGuaranteesForCoSafeTask)
     request=GetGuaranteesForCoSafeTaskRequest()

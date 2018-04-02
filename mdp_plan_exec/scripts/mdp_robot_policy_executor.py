@@ -14,7 +14,6 @@ from actionlib import SimpleActionServer, SimpleActionClient
 from actionlib_msgs.msg import GoalStatus
 
 from strands_executive_msgs.msg import ExecutePolicyAction, ExecutePolicyFeedback, ExecutePolicyGoal
-from strands_executive_msgs.msg import ExecutePolicyExtendedAction, ExecutePolicyExtendedFeedback, ExecutePolicyExtendedGoal
 
    
 class RobotPolicyExecutor():
@@ -37,7 +36,7 @@ class RobotPolicyExecutor():
         self.action_executor=ActionExecutor()
     
         self.cancelled=False
-        self.mdp_as=SimpleActionServer('mdp_plan_exec/execute_policy_extended', ExecutePolicyExtendedAction, execute_cb = self.execute_policy_cb, auto_start = False)
+        self.mdp_as=SimpleActionServer('mdp_plan_exec/execute_policy', ExecutePolicyAction, execute_cb = self.execute_policy_cb, auto_start = False)
         self.mdp_as.register_preempt_callback(self.preempt_policy_execution_cb)
         self.mdp_as.start()
 
@@ -129,13 +128,13 @@ class RobotPolicyExecutor():
 
     def publish_feedback(self, executed_action, status, next_action):
         (probability, prog_reward, expected_time)=self.policy_mdp.get_guarantees_at_current_state()
-        self.mdp_as.publish_feedback(ExecutePolicyExtendedFeedback(probability=probability,
-                                                                expected_time=expected_time,
-                                                                prog_reward=prog_reward,
-                                                                current_waypoint=self.current_waypoint,
-                                                                executed_action=executed_action,
-                                                                execution_status=status,
-                                                                next_action=next_action))
+        self.mdp_as.publish_feedback(ExecutePolicyFeedback(probability=probability,
+                                                            expected_time=expected_time,
+                                                            prog_reward=prog_reward,
+                                                            current_waypoint=self.current_waypoint,
+                                                            executed_action=executed_action,
+                                                            execution_status=status,
+                                                            next_action=next_action))
 
     def preempt_policy_execution_cb(self):
         self.top_nav_policy_exec.cancel_all_goals()

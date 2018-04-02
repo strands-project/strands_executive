@@ -3,7 +3,7 @@
 from __future__ import with_statement 
 import rospy
 from Queue import Queue, Empty
-from strands_executive_msgs.msg import Task, ExecutionStatus, DurationMatrix, DurationList, ExecutePolicyExtendedAction, ExecutePolicyExtendedFeedback, ExecutePolicyExtendedGoal, MdpStateVar, StringIntPair, StringTriple, MdpAction, MdpActionOutcome, MdpDomainSpec, TaskEvent
+from strands_executive_msgs.msg import Task, ExecutionStatus, DurationMatrix, DurationList, ExecutePolicyAction, ExecutePolicyFeedback, ExecutePolicyGoal, MdpStateVar, StringIntPair, StringTriple, MdpAction, MdpActionOutcome, MdpDomainSpec, TaskEvent
 from strands_executive_msgs.srv import GetGuaranteesForCoSafeTask, GetGuaranteesForCoSafeTaskRequest, AddCoSafeTasks, DemandCoSafeTask
 from task_executor.base_executor import BaseTaskExecutor
 from threading import Thread, Condition
@@ -475,7 +475,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
     def _mdp_single_task_to_goal(self, mdp_task):
         mdp_spec = self._mdp_tasks_to_spec([mdp_task])
-        return ExecutePolicyExtendedGoal(spec = mdp_spec)
+        return ExecutePolicyGoal(spec = mdp_spec)
              
 
     def _mdp_tasks_to_spec(self, mdp_tasks):
@@ -793,7 +793,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
                         self.normal_tasks = SortedCollection(new_normal_tasks, key=(lambda t: t.task.end_before))                
                         
-                        mdp_goal = ExecutePolicyExtendedGoal(spec = new_active_spec)
+                        mdp_goal = ExecutePolicyGoal(spec = new_active_spec)
                         rospy.loginfo('Executing normal batch: %s' % mdp_goal.spec.ltl_task)
                         self.mdp_exec_queue.put((mdp_goal, new_active_batch, new_active_guarantees))
                     
@@ -951,7 +951,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                             # execution status could have changed while acquiring the lock
                             if self.executing:            
 
-                                self.mdp_exec_client = actionlib.SimpleActionClient('mdp_plan_exec/execute_policy_extended', ExecutePolicyExtendedAction)
+                                self.mdp_exec_client = actionlib.SimpleActionClient('mdp_plan_exec/execute_policy', ExecutePolicyAction)
                                 self.mdp_exec_client.wait_for_server()                                
                                 # last chance! -- if there was a change during wait
                                 if self.executing:            

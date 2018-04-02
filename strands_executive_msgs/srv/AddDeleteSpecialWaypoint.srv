@@ -1,7 +1,0 @@
-uint8 FORBIDDEN=0 
-uint8 SAFE=1
-uint8 waypoint_type
-bool is_addition #true->add waypoint; false->delete waypoint
-string waypoint
----
-bool success

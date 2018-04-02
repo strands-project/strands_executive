@@ -8,7 +8,7 @@
   	<arg name="simulate_time" default="true" />
   </include>
 
-  <include file="$(find task_executor)/launch/task-scheduler-top.launch" />
+  <include file="$(find task_executor)/launch/mdp-executor.launch" />
   
   <test test-name="time_tester" pkg="task_executor" type="time_tester.py" time-limit="40" />
 

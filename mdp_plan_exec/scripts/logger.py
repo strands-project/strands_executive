@@ -5,7 +5,7 @@ from mongodb_store.message_store import MessageStoreProxy
 from actionlib_msgs.msg import GoalStatus, GoalStatusArray
 from strands_navigation_msgs.msg import NavStatistics
 from strands_navigation_msgs.srv import PredictEdgeState
-from strands_executive_msgs.msg import ExecutePolicyExtendedActionFeedback, ExecutePolicyExtendedActionGoal
+from strands_executive_msgs.msg import ExecutePolicyActionFeedback, ExecutePolicyActionGoal
 from strands_executive_msgs.msg import TaskExecutionStat, NavExecutionStat
 
    
@@ -18,9 +18,9 @@ class Logger(object):
         self.active_nav_stats = {}
         self.terminal_states= [GoalStatus.PREEMPTED, GoalStatus.SUCCEEDED, GoalStatus.ABORTED, GoalStatus.REJECTED, GoalStatus.RECALLED, GoalStatus.LOST]
         
-        mdp_goal_sub = rospy.Subscriber("mdp_plan_exec/execute_policy_extended/goal", ExecutePolicyExtendedActionGoal, self.mdp_goal_cb)
-        mdp_feedback_sub = rospy.Subscriber("mdp_plan_exec/execute_policy_extended/feedback", ExecutePolicyExtendedActionFeedback, self.mdp_feedback_cb)
-        mdp_status_sub = rospy.Subscriber("mdp_plan_exec/execute_policy_extended/status", GoalStatusArray, self.mdp_status_cb)
+        mdp_goal_sub = rospy.Subscriber("mdp_plan_exec/execute_policy/goal", ExecutePolicyActionGoal, self.mdp_goal_cb)
+        mdp_feedback_sub = rospy.Subscriber("mdp_plan_exec/execute_policy/feedback", ExecutePolicyActionFeedback, self.mdp_feedback_cb)
+        mdp_status_sub = rospy.Subscriber("mdp_plan_exec/execute_policy/status", GoalStatusArray, self.mdp_status_cb)
         
         self.nav_stat_sub = rospy.Subscriber("topological_navigation/Statistics", NavStatistics, self.nav_stats_cb)
         self.get_edge_estimates=rospy.ServiceProxy("/topological_prediction/predict_edges", PredictEdgeState)
