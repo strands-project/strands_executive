@@ -2,7 +2,7 @@ import os
 from copy import deepcopy
 import rospy
 
-from strands_navigation_msgs.msg import NavRoute #TODO: remove this ependency and create a nav route that is not tied to this msg definition. 
+from strands_navigation_msgs.msg import NavRoute
 
 from mdp_plan_exec.policy_mdp import PolicyMdp
 from mdp_plan_exec.partial_sat_prism_java_talker import PartialSatPrismJavaTalker
@@ -10,7 +10,7 @@ from mdp_plan_exec.partial_sat_prism_java_talker import PartialSatPrismJavaTalke
 
    
 class PolicyExecutionUtils(object): 
-    def __init__(self, port, file_dir, file_name, mdp): 
+    def __init__(self, port, file_dir, file_name, mdp):
         
         self.mdp = mdp
         self.current_nav_policy_state_defs={}
@@ -22,19 +22,14 @@ class PolicyExecutionUtils(object):
             print 'error creating PRISM directory:',  ex
         self.prism_policy_generator=PartialSatPrismJavaTalker(port, file_dir, file_name)
 
-        self.regenerate_policy=True
-
-
-
-    def generate_prism_specification(self, ltl_spec):       
+    def generate_prism_specification(self, ltl_spec):
         return 'partial(R{"time"}min=? [ (' + ltl_spec + ') ])'
     
-    # Returns True iff the policy was generated correctly
+    # Returns the parsed policy obtained by prism, or None is there is an error generating the policy.
     def generate_policy_mdp(self, spec, initial_waypoint):
         specification=self.generate_prism_specification(spec.ltl_task)
         self.mdp.create_top_map_mdp_structure()
         self.mdp.add_extra_domain(spec.vars, spec.actions)
-        
         rospy.loginfo("The specification is: " + specification)
     
         #update initial state
@@ -79,39 +74,37 @@ class PolicyExecutionUtils(object):
                         if not self.current_nav_policy_state_defs.has_key(suc_state):
                             queue.append(suc_state)
                             self.current_nav_policy_state_defs[suc_state] = policy_mdp.flat_state_defs[suc_state]
-        self.regenerate_policy=False #TODO:CHECK WHAT THIS IS DOING
         return policy_msg
 
-    
-    def get_next_nav_policy_state(self, current_waypoint, nav_action_status, policy_mdp):
-        waypoint_val=self.mdp.get_waypoint_var_val(current_waypoint)
+    def get_next_nav_policy_state(self, waypoint, policy_mdp):
+        waypoint_val=self.mdp.get_waypoint_var_val(waypoint)
         next_state = None
         #if got feedback from topo nav in a waypoint, check if need to update state
-        if waypoint_val > -1 and nav_action_status == GoalStatus.SUCCEEDED:
-            rospy.loginfo("Reached waypoint " + current_waypoint)
-            #update state
+        if waypoint_val is not None:
+            rospy.loginfo("Reached waypoint " + waypoint)
             #waypoint change is on the MDP transition model
             for (flat_state, flat_state_def) in self.current_nav_policy_state_defs.items():
-                print(flat_state_def)           
+                print(flat_state_def)
                 if flat_state_def["waypoint"]==waypoint_val:
                     next_state = flat_state
                     break
-                    
-            if next_state is None:
-                rospy.logwarn("Error getting MDP next state: There is no transition modelling the state evolution. Looking for state in full state list...")
-                new_state_def=deepcopy(self.current_nav_policy_state_defs[policy_mdp.current_flat_state])
-                new_state_def["waypoint"]=waypoint_val
-                for (flat_state, flat_state_def) in policy_mdp.flat_state_defs.items():
-                    if self.mdp.check_cond_sat(new_state_def, flat_state_def):
-                        rospy.loginfo("Found state " + str(flat_state_def) + ". Updating.")
-                        next_state = flat_state
-                        self.regenerate_policy=True #Assumes full policy export. In case we stop exporting full policy, change this so that replan is triggered when the new state doesnt have an action associated to it.
-                        break
         return next_state
 
+    def get_next_state_from_wp_update(self, waypoint, policy_mdp):
+        waypoint_val=self.mdp.get_waypoint_var_val(waypoint)
+        next_state = None
+        if waypoint_val is not None:
+            new_state_def=deepcopy(self.current_nav_policy_state_defs[policy_mdp.current_flat_state])
+            new_state_def["waypoint"]=waypoint_val
+            for (flat_state, flat_state_def) in policy_mdp.flat_state_defs.items():
+                if policy_mdp.check_cond_sat(new_state_def, flat_state_def):
+                    rospy.loginfo("Found state " + str(flat_state_def) + ". Updating.")
+                    next_state = flat_state
+                    break
+        return next_state
 
     def get_next_state_from_action_outcome(self, action_outcome, policy_mdp):
-        current_state_def=deepcopy(policy_mdp.current_flat_state)
+        current_state_def=deepcopy(policy_mdp.flat_state_defs[policy_mdp.current_flat_state])
         current_state_def.update(action_outcome)
         next_state = None
         del current_state_def["_da"]
@@ -120,4 +113,3 @@ class PolicyExecutionUtils(object):
                 next_state = flat_suc
                 break
         return next_state
-

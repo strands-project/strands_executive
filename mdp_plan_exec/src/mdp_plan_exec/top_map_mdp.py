@@ -173,7 +173,7 @@ class TopMapMdp(Mdp):
             state_vector_names[int(line[0])]=self.get_waypoint_prop(int(line[1][1:-2]))
         return state_vector_names
     
-    def map_state_vectors_to_waypoint_expectations(self, sta_file, exp_time_state_vector, prob_state_vector=None, exp_prog_state_vector=None): #TODO  also use probs and progs - needs update to PRISM
+    def map_state_vectors_to_waypoint_expectations(self, sta_file, exp_time_state_vector, prob_state_vector=None, exp_prog_state_vector=None):
         waypoint_names=[]
         waypoint_probs=[]
         waypoint_progs=[]

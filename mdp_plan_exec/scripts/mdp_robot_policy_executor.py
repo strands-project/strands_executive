@@ -18,9 +18,7 @@ from strands_executive_msgs.msg import ExecutePolicyExtendedAction, ExecutePolic
 
    
 class RobotPolicyExecutor():
-    def __init__(self, port, file_dir, file_name): 
-        
-        
+    def __init__(self, port, file_dir, file_name):
         self.wait_for_result_dur=rospy.Duration(0.1)
         self.top_nav_policy_exec= SimpleActionClient('topological_navigation/execute_policy_mode', ExecutePolicyModeAction)
         got_server=self.top_nav_policy_exec.wait_for_server(rospy.Duration(1))
@@ -42,7 +40,6 @@ class RobotPolicyExecutor():
         self.mdp_as=SimpleActionServer('mdp_plan_exec/execute_policy_extended', ExecutePolicyExtendedAction, execute_cb = self.execute_policy_cb, auto_start = False)
         self.mdp_as.register_preempt_callback(self.preempt_policy_execution_cb)
         self.mdp_as.start()
-        
 
     def current_waypoint_cb(self,msg):
         self.current_waypoint=msg.data
@@ -52,30 +49,38 @@ class RobotPolicyExecutor():
 
     def execute_nav_policy(self, nav_policy_msg):
         self.policy_mode_pub.publish(nav_policy_msg)
+        self.regenerated_nav_policy = False
         self.top_nav_policy_exec.send_goal(ExecutePolicyModeGoal(route = nav_policy_msg), feedback_cb = self.top_nav_feedback_cb)
-        nav_policy_finished=self.top_nav_policy_exec.wait_for_result(self.wait_for_result_dur)
-        while not nav_policy_finished:
-            #if self.regenerate_policy: TODO: Figure out where to put this
-                #nav_policy_msg=self.policy_utils.generate_current_nav_policy()
-                #print(nav_policy_msg)
-                #self.top_nav_policy_exec.send_goal(ExecutePolicyModeGoal(route = nav_policy_msg), feedback_cb = self.top_nav_feedback_cb)
-            nav_policy_finished=self.top_nav_policy_exec.wait_for_result(self.wait_for_result_dur)
-        status=self.top_nav_policy_exec.get_state()
+        top_nav_running = True
+        while top_nav_running:
+            top_nav_running = not self.top_nav_policy_exec.wait_for_result(self.wait_for_result_dur)
+            if not top_nav_running:
+                if self.regenerated_nav_policy:
+                    nav_policy_msg=self.policy_utils.generate_current_nav_policy()
+                    print(nav_policy_msg)
+                    self.top_nav_policy_exec.send_goal(ExecutePolicyModeGoal(route = nav_policy_msg), feedback_cb = self.top_nav_feedback_cb)
+                    top_nav_running = True
+                    self.regenerated_nav_policy = False
+                else:
+                    status = self.top_nav_policy_exec.get_state()
         return status
     
-    
     def top_nav_feedback_cb(self, feedback):
-        executed_action=self.policy_mdp.get_current_action()
-        next_flat_state = self.policy_utils.get_next_nav_policy_state(feedback.current_wp, feedback.status, self.policy_mdp)
+        executed_action = self.policy_mdp.get_current_action()
+        next_flat_state = None
+        if feedback.status == GoalStatus.SUCCEEDED:
+            next_flat_state = self.policy_utils.get_next_nav_policy_state(feedback.current_wp, self.policy_mdp)
+            if next_flat_state is None:
+                rospy.logwarn("Error getting MDP next state: There is no transition modelling the state evolution. Looking for state in full state list...")
+                next_flat_state = self.policy_utils.get_next_state_from_wp_update(self.policy_mdp, feedback.current_wp)
+                self.top_nav_policy_exec.cancel_all_goals()
+                if next_flat_state is not None:
+                    self.regenerated_nav_policy = True
         publish = next_flat_state != self.policy_mdp.current_flat_state
         self.policy_mdp.set_current_state(next_flat_state)
-        if next_flat_state is None:
-            rospy.logerr("Couldn't update state. Aborting...") #TODO:make sure action server returns aborted when this happens
-            self.top_nav_policy_exec.cancel_all_goals()
         if publish:
             next_action=self.policy_mdp.get_current_action()
             self.publish_feedback(executed_action, feedback.status, next_action)
-
 
 
     def execute_policy_cb(self, goal):
@@ -83,55 +88,41 @@ class RobotPolicyExecutor():
         self.policy_mdp = self.policy_utils.generate_policy_mdp(goal.spec, self.closest_waypoint)
         
         if self.policy_mdp is None:
-            print "OH NO" #TODO abort action server properly
-        else:
-            self.publish_feedback(None, None, self.policy_mdp.get_current_action())
-            
-            starting_exec = True #used to make sure the robot executes calls topological navigation at least once before executing non-nav actions. This is too ensure the robot navigates to the exact pose of a waypoint before executing an action there
-            
-            while (self.policy_mdp.has_action_defined() and not self.cancelled) or starting_exec:
-                next_action=self.policy_mdp.get_current_action()
-                if next_action in self.mdp.nav_actions or starting_exec:
-                    starting_exec = False
-                    current_nav_policy=self.policy_utils.generate_current_nav_policy(self.policy_mdp)
-                    status=self.execute_nav_policy(current_nav_policy)
-                    rospy.loginfo("Topological navigation execute policy action server exited with status: " + GoalStatus.to_string(status))
-                    if status!=GoalStatus.SUCCEEDED:
-
-                        # If mdp exec was preempted, this may cause the top nav to be preempted
-                        # Therefore we need to make sure that the cancellation flag is switched off 
-                        # as it won't reach line 218 where it is otherwise reset.
-                        self.cancelled=False
-
-                        if status==GoalStatus.PREEMPTED:
-                            self.mdp_as.set_preempted()
-                        elif status==GoalStatus.ABORTED or self.policy_mdp.current_flat_state is None:
-                            self.mdp_as.set_aborted()
-                        else:
-                            rospy.logwarn("Unexpected outcome from the topological navigaton execute policy action server. Setting as aborted")
-                            self.mdp_as.set_aborted()
-                        return
-                else:
-                    print("EXECUTE ACTION")
-                    (status, state_update)=self.action_executor.execute_action(self.mdp.action_descriptions[next_action])
-                    executed_action=next_action
-                    print(executed_action)
-                    if not self.cancelled:
-                        next_flat_state = self.policy_utils.get_next_state_from_action_outcome(state_update, self.policy_mdp)
-                        policy_mdp.set_current_state(next_flat_state)
-                        if next_flat_state is None:
-                            rospy.logerr("Error finding next state after action execution. Aborting...")
-                            self.mdp_as.set_aborted()
-                        next_action=self.policy_mdp.get_current_action()
-                        self.publish_feedback(executed_action, status, next_action)
-                    else:
+            rospy.logerr("Failure to build policy for specification: " + goal.spec.ltl_task)
+            self.mdp_as.set_aborted()
+            return
+        
+        self.publish_feedback(None, None, self.policy_mdp.get_current_action())
+        starting_exec = True #used to make sure the robot executes calls topological navigation at least once before executing non-nav actions. This is too ensure the robot navigates to the exact pose of a waypoint before executing an action there
+        while (self.policy_mdp.has_action_defined() and not self.cancelled) or starting_exec:
+            next_action=self.policy_mdp.get_current_action()
+            if next_action in self.mdp.nav_actions or starting_exec:
+                starting_exec = False
+                current_nav_policy=self.policy_utils.generate_current_nav_policy(self.policy_mdp)
+                status = self.execute_nav_policy(current_nav_policy)
+                rospy.loginfo("Topological navigation execute policy action server exited with status: " + GoalStatus.to_string(status))
+                if status!=GoalStatus.SUCCEEDED:
+                    break
+            else:
+                print("EXECUTE ACTION")
+                (status, state_update)=self.action_executor.execute_action(self.mdp.action_descriptions[next_action])
+                executed_action=next_action
+                print(executed_action)
+                if not self.cancelled:
+                    next_flat_state = self.policy_utils.get_next_state_from_action_outcome(state_update, self.policy_mdp)
+                    self.policy_mdp.set_current_state(next_flat_state)
+                    if next_flat_state is None:
+                        rospy.logerr("Error finding next state after action execution. Aborting...")
                         break
-            
-
+                    next_action=self.policy_mdp.get_current_action()
+                    self.publish_feedback(executed_action, status, next_action)
         if self.cancelled:
             self.cancelled=False
             rospy.loginfo("Policy execution preempted.")
             self.mdp_as.set_preempted()
+        elif self.policy_mdp.current_flat_state is None:
+            rospy.loginfo("Policy execution failed.")
+            self.mdp_as.set_aborted()
         else:
             rospy.loginfo("Policy execution successful.")
             self.mdp_as.set_succeeded()
@@ -146,15 +137,15 @@ class RobotPolicyExecutor():
                                                                 execution_status=status,
                                                                 next_action=next_action))
 
-    def preempt_policy_execution_cb(self):     
+    def preempt_policy_execution_cb(self):
         self.top_nav_policy_exec.cancel_all_goals()
         self.action_executor.cancel_all_goals()
-        self.cancelled=True
+        self.cancelled = True
 
      
     def main(self):
         # Wait for control-c
-        rospy.spin()       
+        rospy.spin()
         if rospy.is_shutdown():
             self.policy_utils.shutdown_prism(True)
 

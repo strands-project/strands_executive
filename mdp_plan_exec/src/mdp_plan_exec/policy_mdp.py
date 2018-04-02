@@ -158,11 +158,14 @@ class PolicyMdp(Mdp):
         return self.get_guarantees_at_flat_state(self.current_flat_state)
     
     def get_current_action(self):
-        if self.flat_state_policy.has_key(self.current_flat_state):
-            return self.flat_state_policy[self.current_flat_state]
+        return self.get_action_at_flat_state(self.current_flat_state)
+    
+    def get_action_at_flat_state(self, flat_state):
+        if self.flat_state_policy.has_key(flat_state):
+            return self.flat_state_policy[flat_state]
         else:
-            return ''
-        
+            return None
+    
     def set_current_state(self, flat_state):
         if flat_state is None:
             self.current_flat_state = None
