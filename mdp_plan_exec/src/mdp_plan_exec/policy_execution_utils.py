@@ -26,7 +26,7 @@ class PolicyExecutionUtils(object):
         return 'partial(R{"time"}min=? [ (' + ltl_spec + ') ])'
     
     # Returns the parsed policy obtained by prism, or None is there is an error generating the policy.
-    def generate_policy_mdp(self, spec, initial_waypoint):
+    def generate_policy_mdp(self, spec, initial_waypoint, epoch):
         specification=self.generate_prism_specification(spec.ltl_task)
         self.mdp.create_top_map_mdp_structure()
         self.mdp.add_extra_domain(spec.vars, spec.actions)
@@ -34,7 +34,7 @@ class PolicyExecutionUtils(object):
     
         #update initial state
         self.mdp.set_initial_state_from_waypoint(initial_waypoint)
-        self.mdp.add_predictions(self.file_dir+self.file_name,rospy.Time.now())
+        self.mdp.add_predictions(self.file_dir+self.file_name, epoch)
         prism_call_success=self.prism_policy_generator.call_prism(specification)
         if prism_call_success:
             policy_mdp=PolicyMdp(self.mdp,

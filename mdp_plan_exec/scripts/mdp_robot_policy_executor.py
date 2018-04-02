@@ -30,7 +30,7 @@ class RobotPolicyExecutor():
         self.policy_mode_pub=rospy.Publisher("mdp_plan_exec/current_policy_mode", NavRoute,queue_size=1)
 
         self.current_waypoint_sub=rospy.Subscriber("current_node", String, self.current_waypoint_cb)
-        self.closest_waypoint_sub=rospy.Subscriber("closest_node", String, self.closest_waypoint_cb)       
+        self.closest_waypoint_sub=rospy.Subscriber("closest_node", String, self.closest_waypoint_cb)
 
         self.mdp=TopMapMdp(explicit_doors=True, forget_doors=True, model_fatal_fails=True)
         self.policy_utils = PolicyExecutionUtils(port, file_dir, file_name, self.mdp)
@@ -85,7 +85,7 @@ class RobotPolicyExecutor():
 
     def execute_policy_cb(self, goal):
         self.cancelled=False
-        self.policy_mdp = self.policy_utils.generate_policy_mdp(goal.spec, self.closest_waypoint)
+        self.policy_mdp = self.policy_utils.generate_policy_mdp(goal.spec, self.closest_waypoint, rospy.Time.now())
         
         if self.policy_mdp is None:
             rospy.logerr("Failure to build policy for specification: " + goal.spec.ltl_task)

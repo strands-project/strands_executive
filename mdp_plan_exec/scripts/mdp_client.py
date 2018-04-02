@@ -92,12 +92,12 @@ if __name__ == '__main__':
     
     waypoints = [2, 3, 21]
     
-    mdp_ac=actionlib.SimpleActionClient("/mdp_plan_exec/execute_policy_extended", ExecutePolicyExtendedAction)
+    mdp_ac=actionlib.SimpleActionClient("mdp_plan_exec/execute_policy_extended", ExecutePolicyExtendedAction)
     
     mdp_ac.wait_for_server()
     goal=ExecutePolicyExtendedGoal()
     
-    mdp_estimates=rospy.ServiceProxy("/mdp_plan_exec/get_guarantees_for_co_safe_task", GetGuaranteesForCoSafeTask)
+    mdp_estimates=rospy.ServiceProxy("mdp_plan_exec/get_guarantees_for_co_safe_task", GetGuaranteesForCoSafeTask)
     request=GetGuaranteesForCoSafeTaskRequest()
     
     
@@ -117,7 +117,7 @@ if __name__ == '__main__':
    # spec.ltl_task='(F executed_metric_map_at_WayPoint2=1) & (F executed_metric_map_at_WayPoint3=1) & (F executed_metric_map_at_WayPoint21=1)'
     spec.ltl_task='(F "ChargingPoint")'
 
-    
+    request.epoch = rospy.Time.now()
     request.spec=spec
     request.initial_waypoint="WayPoint5"
     service_response=mdp_estimates(request)
