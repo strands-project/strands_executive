@@ -51,7 +51,7 @@ class RobotPolicyExecutor():
         self.regenerated_nav_policy = False
         self.top_nav_policy_exec.send_goal(ExecutePolicyModeGoal(route = nav_policy_msg), feedback_cb = self.top_nav_feedback_cb)
         top_nav_running = True
-        while top_nav_running:
+        while top_nav_running and not self.cancelled:
             top_nav_running = not self.top_nav_policy_exec.wait_for_result(self.wait_for_result_dur)
             if not top_nav_running:
                 if self.regenerated_nav_policy:
@@ -62,6 +62,8 @@ class RobotPolicyExecutor():
                     self.regenerated_nav_policy = False
                 else:
                     status = self.top_nav_policy_exec.get_state()
+        if self.cancelled:
+            status = GoalStatus.PREEMPTED
         return status
     
     def top_nav_feedback_cb(self, feedback):
@@ -101,6 +103,7 @@ class RobotPolicyExecutor():
                 status = self.execute_nav_policy(current_nav_policy)
                 rospy.loginfo("Topological navigation execute policy action server exited with status: " + GoalStatus.to_string(status))
                 if status!=GoalStatus.SUCCEEDED:
+                    self.policy_mdp.set_current_state(None)
                     break
             else:
                 print("EXECUTE ACTION")
