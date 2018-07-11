@@ -81,8 +81,8 @@ if __name__ == '__main__':
     rospy.init_node('schedule_status_printer')
 
     all_topics = rospy.get_published_topics()
-    all_tasks = '/task_executor/all_tasks'
-    current_schedule = '/current_schedule'
+    all_tasks = 'task_executor/all_tasks'
+    current_schedule = 'current_schedule'
 
     use_all_tasks = False
     for topic, type in all_topics:
@@ -95,7 +95,7 @@ if __name__ == '__main__':
         ts = TimeSynchronizer([Subscriber(all_tasks, ExecutionStatus), Subscriber(current_schedule, ExecutionStatus)], 1)
         ts.registerCallback(all_tasks_cb)
     else:
-        rospy.Subscriber('/current_schedule', ExecutionStatus, callback)
+        rospy.Subscriber('current_schedule', ExecutionStatus, callback)
  
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
