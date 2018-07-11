@@ -86,7 +86,7 @@ if __name__ == '__main__':
 
     use_all_tasks = False
     for topic, type in all_topics:
-        if topic == all_tasks:
+        if topic.endswith(all_tasks):
             use_all_tasks = True
             break
 
