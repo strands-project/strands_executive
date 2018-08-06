@@ -70,7 +70,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
         # init node first, must be done before call to super init for service advertising to work
         rospy.init_node("task_executor", log_level=rospy.INFO)
 
-        if rospy.get_param('use_sim_time'):
+        if rospy.get_param('use_sim_time', False):
             rospy.loginfo('Using sim time, waiting for time update')
             rospy.wait_for_message('clock', Clock)
 
