@@ -7,6 +7,11 @@ Changelog for package prism_strands
 * remove bad dependency
 * Contributors: Bruno Lacerda
 
+Forthcoming
+-----------
+* Added java exec check.
+* Contributors: Nick Hawes
+
 1.2.2 (2017-12-09)
 ------------------
 * kinetic-1.2.1

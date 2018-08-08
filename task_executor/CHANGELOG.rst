@@ -5,6 +5,12 @@ Changelog for package task_executor
 1.2.1 (2017-09-15)
 ------------------
 
+Forthcoming
+-----------
+* added default value for sim time
+* Updates to deal with simulated time more directly (since moving to stage), which includes coping with negative times.
+* Contributors: Nick Hawes
+
 1.2.2 (2017-12-09)
 ------------------
 * kinetic-1.2.1

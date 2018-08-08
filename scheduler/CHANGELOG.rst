@@ -6,6 +6,9 @@ Changelog for package scheduler
 1.2.1 (2017-09-15)
 ------------------
 
+Forthcoming
+-----------
+
 1.2.2 (2017-12-09)
 ------------------
 * kinetic-1.2.1
