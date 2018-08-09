@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
 
     # 
-    demanded_wait = Task(action='wait_action', max_duration=rospy.Duration(60), start_node_id='h_2')
+    demanded_wait = Task(action='wait_action', max_duration=rospy.Duration(60), start_node_id='WayPoint6')
     resp = demand_task(demanded_wait)
     print 'demanded task as id: %s' % resp.task_id
     rospy.loginfo('Success: %s' % resp.success)

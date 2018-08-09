@@ -395,7 +395,8 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
             # print("Got Feedback: " + str(feedback))
                         
-            rospy.loginfo('%s received feedback %s' % (feedback.executed_action, GoalStatus.to_string(feedback.execution_status)))
+            rospy.loginfo('%s received feedback %s, %s' % (feedback.executed_action, GoalStatus.to_string(feedback.execution_status), feedback.expected_time.to_sec()))
+
             self.expected_completion_time = self._expected_duration_to_completion_time(feedback.expected_time)
             
             # if feedback.execution_status >= GoalStatus.PREEMPTED:
@@ -441,7 +442,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
             # drop the task if there's not enough time for expected duration to occur before the window closes
             # this ignores the navigation time for this task, making task dropping more permissive than it should be. this is ok for now.
             if now > (next_normal_task.task.end_before -  next_normal_task.task.expected_duration):
-                log_string = 'Dropping normal task %s as time window closed at %s ' % (next_normal_task.task.action, next_normal_task.task.end_before)
+                log_string = 'Dropping normal task %s at %s as time window closed at %s ' % (next_normal_task.task.action, rostime_to_python(now), rostime_to_python(next_normal_task.task.end_before))
                 rospy.loginfo(log_string)
                 self.normal_tasks = SortedCollection(self.normal_tasks[1:], key=(lambda t: t.task.end_before))                
                 self.log_task_event(next_normal_task.task, TaskEvent.DROPPED, now, description = log_string)        
@@ -899,7 +900,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                         return GoalStatus.RECALLED
 
             else:
-                if log_count % 6 == 0:
+                if log_count % 3 == 0:
                     rospy.loginfo('Another %.2f seconds until expected policy completion' % remaining_secs)
             log_count += 1
 

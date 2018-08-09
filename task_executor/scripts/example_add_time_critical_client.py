@@ -24,14 +24,14 @@ def get_services():
 
 
 if __name__ == '__main__':
-    rospy.init_node("example_add_client")
+    rospy.init_node("example_add_time_critical_client")
 
     # get services to call into execution framework
     add_task, set_execution_status = get_services()
 
-    wp = 'ChargingPoint'
+    wp = 'WayPoint2'
     duration_secs = 30
-    wait_before = rospy.Duration(10)
+    wait_before = rospy.Duration(30)
 
     max_duration = rospy.Duration(duration_secs)
     wait_task = Task(action='wait_action',

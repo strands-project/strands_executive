@@ -33,16 +33,14 @@ if __name__ == '__main__':
     # get services to call into execution framework
     add_task, set_execution_status = get_services()
 
-    print 'Requesting wait at ', sys.argv[1]
+    print 'Requesting wait at %s for %s seconds' % (sys.argv[1], sys.argv[2])
 
     max_duration = rospy.Duration(int(sys.argv[2]))
     wait_task = Task(action='wait_action',start_node_id=sys.argv[1], max_duration=max_duration)
 
-
-    print rospy.get_rostime() 
-    print rospy.Time()
     wait_task.start_after = rospy.get_rostime() 
-    wait_task.end_before = wait_task.start_after + max_duration + max_duration
+    wait_task.end_before = wait_task.start_after + max_duration + max_duration + rospy.Duration(1200)
+
     task_utils.add_time_argument(wait_task, rospy.Time())
     task_utils.add_duration_argument(wait_task, max_duration)
     
