@@ -101,7 +101,7 @@ class ActionExecutor(object):
                 if action_msg.max_duration == rospy.Duration(0):
                     max_action_duration=self.get_max_action_duration(action_msg.outcomes)
                 else:
-                    max_action_duration = action_msg.max_duration.to_secs()
+                    max_action_duration = action_msg.max_duration.to_sec()
                 wiggle_room=30
                 action_client=actionlib.SimpleActionClient(action_msg.action_server, action_clz)
                 action_client.wait_for_server(poll_wait)
