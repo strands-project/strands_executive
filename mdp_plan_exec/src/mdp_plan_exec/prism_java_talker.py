@@ -8,72 +8,56 @@ from threading import Lock
 
 class PrismJavaTalker(object):
     
-    def __init__(self,port,dir_name,file_name):
-        HOST = "localhost"
-        PORT = port
-        os.chdir('/opt/prism-robots/prism')
-        os.environ['PRISM_MAINCLASS'] = 'prism.PrismPythonTalker'
-        self.java_server=subprocess.Popen(["bin/prism",str(PORT),dir_name, file_name])
+    def __init__(self,port,directory,file_name):
+        self.HOST = "localhost"
+        self.PORT = port
+        self.directory = directory
+        self.file_name = file_name
+        self.lock=Lock()
+        
+        self.java_server = None
+        self.sock = None
+        self.timeout=60*8
+        self.start()
+
+    
+    
+    def start(self):
         rospy.sleep(1)
         
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect((HOST, PORT))
-        self.directory = dir_name         
-        self.lock=Lock()
-        
-    def check_model(self,specification):
-        command='check\n'
-        command=command+specification+'\n'
-        self.lock.acquire()
-        self.sock.sendall(command)
-        data = self.sock.recv(1024)
-        self.lock.release()
-        return data
+        self.sock.connect((self.HOST, self.PORT))
+        self.sock.settimeout(self.timeout)
 
-    def get_policy(self,specification):
-        command='plan\n'
-        command=command+specification+'\n'
-        self.lock.acquire()
-        self.sock.sendall(command)
-        data = self.sock.recv(1024)
-        self.lock.release()
-        rospy.loginfo("Expected time from current node: " +  data)
-        return data
     
-    def get_state_vector(self,specification):
-        state_vector=[]
-        command='get_vector\n'
+    def call_prism(self,specification):
+        command='partial_sat_guarantees\n'
         command=command+specification+'\n'
         self.lock.acquire()
-        self.sock.sendall(command)
-        data = self.sock.recv(1024)
-        if data=="start\n":
-            self.sock.sendall("ack\n")
-        else:
-            rospy.logwarn("socket error while getting state vector")
-            self.sock.sendall("error")
-        while True:
-            data=self.sock.recv(1024)
-            if data=="end\n":
-                break
-            try:
-                state_vector.append(float(data))
-                self.sock.sendall("ack\n")
-            except ValueError, e:
-                rospy.logwarn("socket error while getting state vector")
-                self.sock.sendall("error\n")
-        self.lock.release()
-        rospy.loginfo("Expected times to target state: " + str(state_vector))
-        return state_vector       
+        data = None
+        try:
+            self.sock.sendall(command)
+            data = self.sock.recv(1024)
+            self.lock.release()
+        except Exception, e:
+            rospy.logwarn("Error in socket communication: " + str(e))
+            rospy.loginfo("Restarting PRISM")
+            self.shutdown(False)
+            rospy.sleep(5)
+            self.start()
+            self.lock.release()
+         
+        return data=="success\n"
+
         
     def shutdown(self,remove_dir=True):
         if remove_dir:
             shutil.rmtree(self.directory)        
             rospy.loginfo('prism temp dir removed')
-        command='shutdown\n'
-        self.lock.acquire()
-        self.sock.sendall(command)
+        #command='shutdown\n'
+        #
+        #self.sock.sendall(command)
         self.sock.close()
-        self.lock.release()
+        #
         rospy.loginfo("Socket closed")
-        os.kill(self.java_server.pid, signal.SIGHUP)
+        os.system("fuser -k  " + str(self.PORT) + "/tcp")

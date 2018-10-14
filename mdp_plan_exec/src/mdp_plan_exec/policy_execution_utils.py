@@ -5,7 +5,7 @@ import rospy
 from strands_navigation_msgs.msg import NavRoute
 
 from mdp_plan_exec.policy_mdp import PolicyMdp
-from mdp_plan_exec.partial_sat_prism_java_talker import PartialSatPrismJavaTalker
+from mdp_plan_exec.prism_java_talker import PrismJavaTalker
 
 
    
@@ -20,7 +20,7 @@ class PolicyExecutionUtils(object):
             os.makedirs(file_dir)
         except OSError as ex:
             print 'error creating PRISM directory:',  ex
-        self.prism_policy_generator=PartialSatPrismJavaTalker(port, file_dir, file_name)
+        self.prism_policy_generator = PrismJavaTalker(port, file_dir, file_name)
 
     def generate_prism_specification(self, ltl_spec):
         return 'partial(R{"time"}min=? [ (' + ltl_spec + ') ])'

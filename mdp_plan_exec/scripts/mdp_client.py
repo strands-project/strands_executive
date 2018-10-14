@@ -115,7 +115,7 @@ if __name__ == '__main__':
     
     #spec.ltl_task='(F ("WayPoint3" & (X "WayPoint4"))) & ((!"WayPoint3") U executed_metric_map_at_WayPoint1=1) & (F executed_metric_map_at_WayPoint2=1) & (F executed_metric_map_at_WayPoint3=1) & (F executed_metric_map_at_WayPoint4=1)'
    # spec.ltl_task='(F executed_metric_map_at_WayPoint2=1) & (F executed_metric_map_at_WayPoint3=1) & (F executed_metric_map_at_WayPoint21=1)'
-    spec.ltl_task='(F "ChargingPoint")'
+    spec.ltl_task='(F "WayPoint3")'
 
     request.epoch = rospy.Time.now()
     request.spec=spec
