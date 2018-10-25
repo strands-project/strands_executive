@@ -129,7 +129,7 @@ install(
 
 install(PROGRAMS 
     scripts/mdp_task_guarantees_estimator.py
-    scripts/mdp_policy_executor.py
+    scripts/mdp_robot_policy_executor.py
     scripts/mdp_client.py
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
