@@ -7,8 +7,8 @@ Changelog for package prism_strands
 * remove bad dependency
 * Contributors: Bruno Lacerda
 
-Forthcoming
------------
+1.2.4 (2018-11-07)
+------------------
 * merge
 * Contributors: Nick Hawes
 

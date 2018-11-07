@@ -5,8 +5,8 @@ Changelog for package scipoptsuite
 1.2.1 (2017-09-15)
 ------------------
 
-Forthcoming
------------
+1.2.4 (2018-11-07)
+------------------
 * merge
 * Contributors: Nick Hawes
 
