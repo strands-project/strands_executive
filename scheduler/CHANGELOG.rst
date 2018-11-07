@@ -6,6 +6,11 @@ Changelog for package scheduler
 1.2.1 (2017-09-15)
 ------------------
 
+Forthcoming
+-----------
+* merge
+* Contributors: Nick Hawes
+
 1.2.3 (2018-08-08)
 ------------------
 

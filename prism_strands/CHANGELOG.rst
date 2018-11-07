@@ -7,6 +7,11 @@ Changelog for package prism_strands
 * remove bad dependency
 * Contributors: Bruno Lacerda
 
+Forthcoming
+-----------
+* merge
+* Contributors: Nick Hawes
+
 1.2.3 (2018-08-08)
 ------------------
 * Added java exec check.
