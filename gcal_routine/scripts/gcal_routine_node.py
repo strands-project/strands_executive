@@ -59,7 +59,7 @@ if __name__ == '__main__':
                     update_wait=rospy.get_param('~gcal_poll_wait_sec', 60),
                     add_cb=runner.add_task, remove_cb=runner.remove_task,
                     minTimeDelta=minTimeDelta, maxTimeDelta=maxTimeDelta,
-                    time_critical=True
+                    time_critical=rospy.get_param('~time_critical', True)
                     )
     added = []
     removed = []
