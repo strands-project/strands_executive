@@ -31,7 +31,14 @@ class MdpPolicyExecutor(object):
             if rospy.is_shutdown():
                 return
         
-        self.mdp=TopMapMdp(explicit_doors=True, forget_doors=True, model_fatal_fails=True)
+        explicit_doors = rospy.get_param("mdp_plan_exec/explicit_doors", True)
+        forget_doors = rospy.get_param("mdp_plan_exec/forget_doors", True)
+        model_fatal_fails = rospy.get_param("mdp_plan_exec/model_fatal_fails", True)
+        
+        self.nav_before_action_exec = rospy.get_param("mdp_plan_exec/nav_before_action_exec", True) #If True the robot will always navigate to a waypoint before trying to execute an action; if False robot can execute actions anywhere, if they are added without waypoint constraints.
+        
+        
+        self.mdp=TopMapMdp(explicit_doors=explicit_doors, forget_doors=forget_doors, model_fatal_fails=model_fatal_fails)
         self.policy_mdp=None
         self.current_nav_policy_state_defs={}
         
@@ -47,7 +54,7 @@ class MdpPolicyExecutor(object):
         self.current_waypoint=None
         self.closest_waypoint=None
         self.current_waypoint_sub=rospy.Subscriber("current_node", String, self.current_waypoint_cb)
-        self.closest_waypoint_sub=rospy.Subscriber("closest_node", String, self.closest_waypoint_cb)       
+        self.closest_waypoint_sub=rospy.Subscriber("closest_node", String, self.closest_waypoint_cb)
         self.regenerate_policy=True
         self.policy_mode_pub=rospy.Publisher("mdp_plan_exec/current_policy_mode", NavRoute,queue_size=1)
         
@@ -205,8 +212,9 @@ class MdpPolicyExecutor(object):
         self.current_flat_state=self.policy_mdp.initial_flat_state
         self.publish_feedback(None, None, self.get_current_action())
         
-        current_nav_policy=self.generate_current_nav_policy()
-        status=self.execute_nav_policy(current_nav_policy)
+        if self.nav_before_action_exec:
+            current_nav_policy=self.generate_current_nav_policy()
+            status=self.execute_nav_policy(current_nav_policy)
         while self.policy_mdp.flat_state_policy.has_key(self.current_flat_state) and not self.cancelled:
             next_action=self.get_current_action()
             if next_action in self.mdp.nav_actions:

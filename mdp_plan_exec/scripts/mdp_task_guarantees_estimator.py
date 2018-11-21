@@ -17,8 +17,10 @@ class MdpTaskGuaranteesEstimator(object):
 
     def __init__(self, port, file_dir, file_name):
         
-        
-        self.mdp=TopMapMdp(explicit_doors=True, forget_doors=True, model_fatal_fails=True)
+        explicit_doors = rospy.get_param("mdp_plan_exec/explicit_doors", True)
+        forget_doors = rospy.get_param("mdp_plan_exec/forget_doors", True)
+        model_fatal_fails = rospy.get_param("mdp_plan_exec/model_fatal_fails", True)
+        self.mdp=TopMapMdp(explicit_doors=explicit_doors, forget_doors=forget_doors, model_fatal_fails=model_fatal_fails)
         self.policy_mdp=None
         self.directory = file_dir
         self.file_name=file_name

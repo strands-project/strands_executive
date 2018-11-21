@@ -44,7 +44,7 @@ class TopMapMdp(Mdp):
         door_wait_params_file = rospy.get_param("/door_wait_params_file", None)
         self.door_wait_params = {'types': ["int", "int", "float"], 'default':[15, 2, 60]} #[n_closed_door, consecutive_open_secs, wait_timeout] - timeout is a float and needs to be the last element of the msg type. TODO make all this less hacky.
         self.door_timeouts={}
-        if door_wait_params_file is not None:
+        if door_wait_params_file is not None and explicit_doors:
             self.read_door_wait_params(door_wait_params_file)
         
         self.door_transitions=[]
