@@ -8,7 +8,7 @@ from mongodb_store.message_store import MessageStoreProxy
 from strands_executive_msgs.msg import Task, TaskEvent
 from threading import Thread
 import threading
-from task_executor.utils import rostime_to_python
+from task_executor.utils import rostime_to_python, ros_today
 
 _epoch = datetime.utcfromtimestamp(0).replace(tzinfo=tzutc())
 
@@ -67,11 +67,11 @@ def delta_between(start, end):
         Returns
             datetime.timedelta: The delta of the window between start and end
     """
-    sdt = datetime.combine(date.today(), start)
+    sdt = datetime.combine(ros_today(), start)
     if time_less_than(start, end):
-        enddt = datetime.combine(date.today(), end)
+        enddt = datetime.combine(ros_today(), end)
     else: 
-        enddt = datetime.combine(date.today(), end) + timedelta(days=1)
+        enddt = datetime.combine(ros_today(), end) + timedelta(days=1)
     return enddt - sdt
 
 
@@ -120,7 +120,7 @@ class DailyRoutine(object):
             duration = self.routine_duration
 
         # this window is moved forward throughout the repeat
-        window_start = datetime.combine(date.today(), start_time)
+        window_start = datetime.combine(ros_today(), start_time)
         window_end =  window_start + delta 
         # the past which we don't move the window
         routine_end = window_start + duration
@@ -173,14 +173,14 @@ class DailyRoutine(object):
             
 
 
-        daily_end = datetime.combine(date.today(), daily_start) + daily_duration
-        overall_end = datetime.combine(date.today(), self.daily_start) + self.routine_duration
+        daily_end = datetime.combine(ros_today(), daily_start) + daily_duration
+        overall_end = datetime.combine(ros_today(), self.daily_start) + self.routine_duration
   
 
         if daily_end > overall_end:
             rospy.logwarn('Provided duration %s takes task past daily end %s for task. Dropping' % (daily_end, overall_end))
             # rospy.logwarn('Provided duration %s takes task past daily end %s for task. Clamping to daily end' % (daily_end, overall_end))
-            # daily_duration = daily_end - datetime.combine(date.today(), daily_start)
+            # daily_duration = daily_end - datetime.combine(ros_today(), daily_start)
             return
 
         self.routine_tasks += [(tasks, (daily_start, daily_duration))] * times
@@ -219,7 +219,7 @@ class DailyRoutineRunner(object):
         rostime_now = rospy.get_rostime()
         now = datetime.fromtimestamp(rostime_now.to_sec(), tzlocal()).time()
 
-        self.current_routine_start = datetime.combine(date.today(), self.daily_start)       
+        self.current_routine_start = datetime.combine(ros_today(), self.daily_start)       
 
         if time_less_than(daily_start, daily_end):
             # if we're past the day end then the current routine starts tomorrow
@@ -415,26 +415,33 @@ class DailyRoutineRunner(object):
 
         for task in tasks:
 
-            # print task.max_duration.secs
-            # print task.start_after.secs
-            # print task.end_before.secs
-            # print (now).secs
-            # print (now + task.max_duration).secs
+            try:
 
-            time_critical = task.start_after == task.end_before
+                # print task.max_duration.secs
+                # print task.start_after.secs
+                # print task.end_before.secs
+                # print (now).secs
+                # print (now + task.max_duration).secs
 
-            start_time = now if now > task.start_after else task.start_after
+                time_critical = task.start_after == task.end_before
 
-            # check we're not too late
-            if (time_critical and now > start_time + task.max_duration) or (not time_critical and start_time + task.max_duration > task.end_before):
-                rospy.logwarn('At %s it is not possible to schedule task %s. Ignoring task for today' % (datetime.fromtimestamp(now.secs), task))
-                self._log_task_events([task], TaskEvent.DROPPED, now, "Max duration of task would exceed end of time window at time %s " % datetime.fromtimestamp(now.secs))
-            else:
-                # if we're in the the window when this should be scheduled
-                if now > (task.start_after - self.pre_schedule_delay):
-                    schedule_now.append(task)
+                start_time = now if now > task.start_after else task.start_after
+
+                # check we're not too late
+                if (time_critical and now > start_time + task.max_duration) or (not time_critical and start_time + task.max_duration > task.end_before):
+                    rospy.logwarn('At %s it is not possible to schedule task %s. Ignoring task for today' % (datetime.fromtimestamp(now.secs), task))
+                    self._log_task_events([task], TaskEvent.DROPPED, now, "Max duration of task would exceed end of time window at time %s " % datetime.fromtimestamp(now.secs))
                 else:
-                    schedule_later.append(task)
+                    # if we're in the the window when this should be scheduled
+                    if now > (task.start_after - self.pre_schedule_delay):
+                        schedule_now.append(task)
+                    else:
+                        schedule_later.append(task)
+                    
+            except Exception as e:
+                rospy.logerr('Error in _queue_for_scheduling %s' % e)
+
+
 
         return schedule_now, schedule_later
 

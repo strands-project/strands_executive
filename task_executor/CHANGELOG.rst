@@ -5,6 +5,21 @@ Changelog for package task_executor
 1.2.1 (2017-09-15)
 ------------------
 
+1.2.4 (2018-11-07)
+------------------
+* Merge pull request `#305 <https://github.com/strands-project/strands_executive/issues/305>`_ from francescodelduchetto/pull-req
+  cancel_active_task service result message has a boolean to acknowledg…
+* cancel_active_task service result message has a boolean to acknowledge the termination of the task
+* merge
+* Updated examples and output
+* Contributors: Nick Hawes, francescodelduchetto
+
+1.2.3 (2018-08-08)
+------------------
+* added default value for sim time
+* Updates to deal with simulated time more directly (since moving to stage), which includes coping with negative times.
+* Contributors: Nick Hawes
+
 1.2.2 (2017-12-09)
 ------------------
 * kinetic-1.2.1

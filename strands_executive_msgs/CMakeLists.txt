@@ -41,7 +41,8 @@ add_service_files(
   CreateTask.srv
   DemandTask.srv
   CancelTask.srv
-  SetExecutionStatus.srv 
+  CancelActiveTask.srv
+  SetExecutionStatus.srv
   GetExecutionStatus.srv
   GetSchedule.srv
   GetExpectedTravelTimesToWaypoint.srv

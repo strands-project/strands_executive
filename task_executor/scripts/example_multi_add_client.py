@@ -20,10 +20,14 @@ def get_services():
     return add_tasks_srv, set_execution_status
 
 
-def create_wait_task(node, secs=rospy.Duration(10)):
+def create_wait_task(node, secs=rospy.Duration(5)):
     wait_task = Task(action='wait_action',start_node_id=node, end_node_id=node, max_duration=secs)
     task_utils.add_time_argument(wait_task, rospy.Time())
     task_utils.add_duration_argument(wait_task, secs)
+
+    wait_task.start_after = rospy.get_rostime() + rospy.Duration(2)
+    wait_task.end_before = rospy.get_rostime() + rospy.Duration(120)
+
     return wait_task
 
 if __name__ == '__main__':
@@ -32,7 +36,7 @@ if __name__ == '__main__':
     # get services to call into execution framework
     add_task, set_execution_status = get_services()
 
-    nodes = ['WayPoint1', 'WayPoint2', 'ChargingPoint']    
+    nodes = ['WayPoint%s' % i for i in range(1, 7)]    
     tasks = map(create_wait_task, nodes)
 
     # wait_task = Task(action='',start_node_id=sys.argv[1], max_duration=max_duration)

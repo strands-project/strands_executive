@@ -5,6 +5,17 @@ Changelog for package gcal_routine
 1.2.1 (2017-09-15)
 ------------------
 
+1.2.4 (2018-11-07)
+------------------
+* Merge pull request `#306 <https://github.com/strands-project/strands_executive/issues/306>`_ from strands-project/marc-hanheide-patch-1
+  making time-critical tasks a parameter
+* making time-critical tasks a parameter
+* merge
+* Contributors: Marc Hanheide, Nick Hawes
+
+1.2.3 (2018-08-08)
+------------------
+
 1.2.2 (2017-12-09)
 ------------------
 * kinetic-1.2.1
