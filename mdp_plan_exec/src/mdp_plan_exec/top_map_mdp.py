@@ -20,7 +20,7 @@ class TopMapMdp(Mdp):
         got_service=False
         while not got_service:
             try:
-                rospy.wait_for_service("topological_prediction/predict_edges", 1)
+                rospy.wait_for_service("/topological_prediction/predict_edges", 1)
                 got_service=True
             except rospy.ROSException,e:
                 rospy.loginfo("Waiting for predict_edges service...")
@@ -37,14 +37,14 @@ class TopMapMdp(Mdp):
         while not self.new_top_map:
             rospy.loginfo("Waiting for topological map...")
             rospy.sleep(1)
-        self.get_edge_estimates=rospy.ServiceProxy("topological_prediction/predict_edges", PredictEdgeState)        
+        self.get_edge_estimates=rospy.ServiceProxy("/topological_prediction/predict_edges", PredictEdgeState)        
         
         self.nav_actions=[]
         self.door_pass_actions=rospy.get_param("/door_pass_actions", ["door_wait_and_pass", "door_wait_and_move_base"])
         door_wait_params_file = rospy.get_param("/door_wait_params_file", None)
         self.door_wait_params = {'types': ["int", "int", "float"], 'default':[15, 2, 60]} #[n_closed_door, consecutive_open_secs, wait_timeout] - timeout is a float and needs to be the last element of the msg type. TODO make all this less hacky.
         self.door_timeouts={}
-        if door_wait_params_file is not None:
+        if door_wait_params_file is not None and explicit_doors:
             self.read_door_wait_params(door_wait_params_file)
         
         self.door_transitions=[]

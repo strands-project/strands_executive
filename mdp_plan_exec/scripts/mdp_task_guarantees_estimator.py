@@ -17,8 +17,10 @@ class MdpTaskGuaranteesEstimator(object):
 
     def __init__(self, port, file_dir, file_name):
         
-        
-        self.mdp=TopMapMdp(explicit_doors=True, forget_doors=True, model_fatal_fails=True)
+        explicit_doors = rospy.get_param("mdp_plan_exec/explicit_doors", True)
+        forget_doors = rospy.get_param("mdp_plan_exec/forget_doors", True)
+        model_fatal_fails = rospy.get_param("mdp_plan_exec/model_fatal_fails", True)
+        self.mdp=TopMapMdp(explicit_doors=explicit_doors, forget_doors=forget_doors, model_fatal_fails=model_fatal_fails)
         self.policy_mdp=None
         self.directory = file_dir
         self.file_name=file_name
@@ -29,7 +31,7 @@ class MdpTaskGuaranteesEstimator(object):
         except OSError as ex:
             print 'error creating PRISM directory:',  ex
         self.prism_estimator=PartialSatPrismJavaTalker(port,self.directory, self.file_name)
-        self.get_guarantees_service = rospy.Service('/mdp_plan_exec/get_guarantees_for_co_safe_task',
+        self.get_guarantees_service = rospy.Service('mdp_plan_exec/get_guarantees_for_co_safe_task',
                                                               GetGuaranteesForCoSafeTask,
                                                               self.get_guarantees_cb)
         rospy.loginfo("MDP task guarantees estimator initialised.")
