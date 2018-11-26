@@ -54,6 +54,7 @@ add_service_files(
   GetGuaranteesForCoSafeTask.srv
   GetIDs.srv
   DemandCoSafeTask.srv
+  GetBlacklistedNodes.srv
 )
 
 
