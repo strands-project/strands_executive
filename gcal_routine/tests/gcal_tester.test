@@ -4,7 +4,7 @@
   	<arg name="test_mode" value="true" />
   </include>
 
-  <include file="$(find task_executor)/launch/task-scheduler-top.launch" />
+  <include file="$(find task_executor)/launch/mdp-executor.launch" />
 
   <node name="test_action" pkg="gcal_routine" type="test_action_server.py" />
 

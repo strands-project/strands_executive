@@ -35,6 +35,11 @@ class PolicyMdp(Mdp):
         self.initial_flat_state=-1
         self.acc_flat_states=set()
         self.set_init_and_acc_states(product_lab)
+        
+        
+        self.current_flat_state = None
+        self.current_state_def = None
+        self.set_current_state(self.initial_flat_state)
 
         
         self.flat_state_policy={} #self.flat_state_policy[flat_state]=action to execute in flat_state
@@ -130,8 +135,6 @@ class PolicyMdp(Mdp):
             self.flat_state_defs[state_id]=flat_state_dict
             self.n_flat_states+=1
         f.close()
-        
-    
     
     def set_n_aut_states(self, dfa_file_name):
         f=open(dfa_file_name, 'r')
@@ -140,15 +143,42 @@ class PolicyMdp(Mdp):
         #read states
         self.n_aut_states=int(line[0])
         self.aut_initial_state=int(line[3].replace('),',''))
-    ######Parsing methods#######
-
-
+    
+    
+    ######methods for accessing and setting relevant atributes#######
     def get_guarantees_at_flat_state(self, flat_state):
-        return (self.guarantees_probs[flat_state], 
-                self.guarantees_progs[flat_state], 
-                rospy.Duration(self.guarantees_times[flat_state]))
+        if flat_state is None:
+            return (0, 0, rospy.Duration(0))
+        else:
+            return (self.guarantees_probs[flat_state], 
+                    self.guarantees_progs[flat_state], 
+                    rospy.Duration(self.guarantees_times[flat_state]))
+        
+    def get_guarantees_at_current_state(self):
+        return self.get_guarantees_at_flat_state(self.current_flat_state)
+    
+    def get_current_action(self):
+        return self.get_action_at_flat_state(self.current_flat_state)
+    
+    def get_action_at_flat_state(self, flat_state):
+        if self.flat_state_policy.has_key(flat_state):
+            return self.flat_state_policy[flat_state]
+        else:
+            return None
+    
+    def set_current_state(self, flat_state):
+        if flat_state is None:
+            self.current_flat_state = None
+            self.current_state_def = None
+        else:
+            self.current_flat_state = flat_state
+            self.current_state_def = self.flat_state_defs[flat_state]
+            
+    def has_action_defined(self):
+        return self.flat_state_policy.has_key(self.current_flat_state)
 
 
+     ######simulation (for debugging)#######
     def simulate_random(self):
         current_flat_state = self.initial_flat_state
         while True:

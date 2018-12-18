@@ -128,11 +128,8 @@ install(
 )
 
 install(PROGRAMS 
-    scripts/special_waypoints_manager.py
-    scripts/mdp_travel_time_estimator.py
-    scripts/mdp_policy_executor.py
     scripts/mdp_task_guarantees_estimator.py
-    scripts/mdp_policy_executor_extended.py
+    scripts/mdp_robot_policy_executor.py
     scripts/mdp_client.py
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

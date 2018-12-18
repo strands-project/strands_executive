@@ -2,6 +2,20 @@ import rospy
 from mongodb_store_msgs.msg import StringPair
 from strands_executive_msgs.msg import MdpAction, Task
 
+def add_argument(mdp_action, argument):
+    if type(argument) == str:
+        add_string_argument(mdp_action, argument)
+    elif type(argument) == int:
+        add_int_argument(mdp_action, argument)
+    elif type(argument) == float:
+        add_float_argument(mdp_action, argument)
+    elif type(argument) == rospy.rostime.Time:
+        add_time_argument(mdp_action, argument)
+    elif type(argument) == rospy.rostime.Duration:
+        add_duration_argument(mdp_action, argument)    
+    elif type(argument) == bool:
+        add_bool_argument(mdp_action, argument)
+
 def add_string_argument(mdp_action, string_arg):
 	mdp_action.arguments.append(StringPair(first=Task.STRING_TYPE, second=string_arg))
 

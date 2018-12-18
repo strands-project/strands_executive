@@ -3,7 +3,7 @@
 from __future__ import with_statement 
 import rospy
 from Queue import Queue, Empty
-from strands_executive_msgs.msg import Task, ExecutionStatus, DurationMatrix, DurationList, ExecutePolicyExtendedAction, ExecutePolicyExtendedFeedback, ExecutePolicyExtendedGoal, MdpStateVar, StringIntPair, StringTriple, MdpAction, MdpActionOutcome, MdpDomainSpec, TaskEvent
+from strands_executive_msgs.msg import Task, ExecutionStatus, DurationMatrix, DurationList, ExecutePolicyAction, ExecutePolicyFeedback, ExecutePolicyGoal, MdpStateVar, StringIntPair, StringTriple, MdpAction, MdpActionOutcome, MdpDomainSpec, TaskEvent
 from strands_executive_msgs.srv import GetGuaranteesForCoSafeTask, GetGuaranteesForCoSafeTaskRequest, AddCoSafeTasks, DemandCoSafeTask
 from task_executor.base_executor import BaseTaskExecutor
 from threading import Thread, Condition
@@ -72,7 +72,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
         if rospy.get_param('use_sim_time', False):
             rospy.loginfo('Using sim time, waiting for time update')
-            rospy.wait_for_message('clock', Clock)
+            rospy.wait_for_message('/clock', Clock)
 
 
         # init superclasses
@@ -442,7 +442,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
             # drop the task if there's not enough time for expected duration to occur before the window closes
             # this ignores the navigation time for this task, making task dropping more permissive than it should be. this is ok for now.
             if now > (next_normal_task.task.end_before -  next_normal_task.task.expected_duration):
-                log_string = 'Dropping normal task %s at %s as time window closed at %s ' % (next_normal_task.task.action, rostime_to_python(now), rostime_to_python(next_normal_task.task.end_before))
+                log_string = 'Dropping queued normal task %s at %s as time window closed at %s ' % (next_normal_task.task.action, rostime_to_python(now), rostime_to_python(next_normal_task.task.end_before))
                 rospy.loginfo(log_string)
                 self.normal_tasks = SortedCollection(self.normal_tasks[1:], key=(lambda t: t.task.end_before))                
                 self.log_task_event(next_normal_task.task, TaskEvent.DROPPED, now, description = log_string)        
@@ -476,7 +476,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
     def _mdp_single_task_to_goal(self, mdp_task):
         mdp_spec = self._mdp_tasks_to_spec([mdp_task])
-        return ExecutePolicyExtendedGoal(spec = mdp_spec)
+        return ExecutePolicyGoal(spec = mdp_spec)
              
 
     def _mdp_tasks_to_spec(self, mdp_tasks):
@@ -588,12 +588,13 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
                 nav_time = max_duration(guarantees.expected_time - mdp_task.task.max_duration, ZERO)
 
-                # print 'timing details'
-                # print ros_time_to_string(now)
-                # print ros_time_to_string(mdp_task.task.start_after)
-                # print ros_duration_to_string(guarantees.expected_time)
-                # print ros_duration_to_string(mdp_task.task.max_duration)
-                # print "Start by: %s" % ros_time_to_string(mdp_task.task.start_after - nav_time)
+                if False:
+                    print 'timing details'
+                    print ros_time_to_string(now)
+                    print ros_time_to_string(mdp_task.task.start_after)
+                    print ros_duration_to_string(guarantees.expected_time)
+                    print ros_duration_to_string(mdp_task.task.max_duration)
+                    print "Start by: %s" % ros_time_to_string(mdp_task.task.start_after - nav_time)
 
                 if now > (mdp_task.task.start_after - nav_time):
                     if guarantees.expected_time <= execution_window:                        
@@ -793,7 +794,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
                         self.normal_tasks = SortedCollection(new_normal_tasks, key=(lambda t: t.task.end_before))                
                         
-                        mdp_goal = ExecutePolicyExtendedGoal(spec = new_active_spec)
+                        mdp_goal = ExecutePolicyGoal(spec = new_active_spec)
                         rospy.loginfo('Executing normal batch: %s' % mdp_goal.spec.ltl_task)
                         self.mdp_exec_queue.put((mdp_goal, new_active_batch, new_active_guarantees))
                     
@@ -951,7 +952,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                             # execution status could have changed while acquiring the lock
                             if self.executing:            
 
-                                self.mdp_exec_client = actionlib.SimpleActionClient('mdp_plan_exec/execute_policy_extended', ExecutePolicyExtendedAction)
+                                self.mdp_exec_client = actionlib.SimpleActionClient('mdp_plan_exec/execute_policy', ExecutePolicyAction)
                                 self.mdp_exec_client.wait_for_server()                                
                                 # last chance! -- if there was a change during wait
                                 if self.executing:            

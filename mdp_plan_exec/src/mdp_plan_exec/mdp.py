@@ -17,7 +17,7 @@ class MdpPropDef(object):
         self.conds=conds
     
     
-class Mdp(object):  
+class Mdp(object):
     def __init__(self):
         #list of attributes of an MDP object
         self.n_state_vars=0 #numer of variables used to defined the mdp state
