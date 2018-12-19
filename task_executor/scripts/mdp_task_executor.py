@@ -4,7 +4,7 @@ from __future__ import with_statement
 import rospy
 from Queue import Queue, Empty
 from strands_executive_msgs.msg import Task, ExecutionStatus, DurationMatrix, DurationList, ExecutePolicyAction, ExecutePolicyFeedback, ExecutePolicyGoal, MdpStateVar, StringIntPair, StringTriple, MdpAction, MdpActionOutcome, MdpDomainSpec, TaskEvent
-from strands_executive_msgs.srv import GetGuaranteesForCoSafeTask, GetGuaranteesForCoSafeTaskRequest, AddCoSafeTasks, DemandCoSafeTask
+from strands_executive_msgs.srv import GetGuaranteesForCoSafeTask, GetGuaranteesForCoSafeTaskRequest, AddCoSafeTasks, DemandCoSafeTask, GetBlacklistedNodes
 from task_executor.base_executor import BaseTaskExecutor
 from threading import Thread, Condition
 from task_executor.execution_schedule import ExecutionSchedule
@@ -474,6 +474,18 @@ class MDPTaskExecutor(BaseTaskExecutor):
         return dropped
 
 
+    def _get_blacklisted_nodes(self):
+        """
+        Gets blacklisted nodes from service. If service does not exist, returns an empty list.
+        """
+        try:
+            get_blacklisted_nodes = rospy.ServiceProxy('task_executor/get_blacklisted_nodes', GetBlacklistedNodes)
+            resp = get_blacklisted_nodes()
+            return resp.nodes
+        except rospy.ServiceException, e:
+            print "Service call failed: %s"%e
+            return []
+
     def _mdp_single_task_to_goal(self, mdp_task):
         mdp_spec = self._mdp_tasks_to_spec([mdp_task])
         return ExecutePolicyGoal(spec = mdp_spec)
@@ -501,6 +513,8 @@ class MDPTaskExecutor(BaseTaskExecutor):
                 mdp_spec.actions.append(mdp_task.action)
 
 
+
+
         mdp_spec.ltl_task = ''
 
         if len(non_ltl_tasks) > 0:
@@ -526,7 +540,16 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
             mdp_spec.ltl_task = mdp_spec.ltl_task[:-3]
 
-        # print mdp_spec
+
+        # prevent the policy from visiting blacklisted nodes
+        blacklist = self._get_blacklisted_nodes()
+        if len(blacklist) > 0:
+            bl_spec = '(!\"%s\"' % blacklist[0]
+            for bn in blacklist[1:]:            
+                bl_spec += ' & !\"%s\"' % bn
+            bl_spec += ')'
+
+            mdp_spec.ltl_task = '(%s U (%s))' % (bl_spec, mdp_spec.ltl_task)
 
         return mdp_spec
 
