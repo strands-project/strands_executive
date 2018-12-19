@@ -15,7 +15,7 @@ class MdpTaskGuaranteesEstimator(object):
         forget_doors = rospy.get_param("mdp_plan_exec/forget_doors", True)
         model_fatal_fails = rospy.get_param("mdp_plan_exec/model_fatal_fails", True)
 
-        self.mdp=TopMapMdp(explicit_doors=explicit_doors, forget_doors=forget_doors, model_fatal_fails=model_fatal_fails)
+        mdp=TopMapMdp(explicit_doors=explicit_doors, forget_doors=forget_doors, model_fatal_fails=model_fatal_fails)
         self.policy_utils = PolicyExecutionUtils(port, file_dir, file_name, mdp)
 
         self.service_lock = threading.Lock()
