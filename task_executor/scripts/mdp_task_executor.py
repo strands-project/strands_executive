@@ -517,10 +517,25 @@ class MDPTaskExecutor(BaseTaskExecutor):
 
         mdp_spec.ltl_task = ''
 
+
+        task_prefix = 'F '
+
+        # prevent the policy from visiting blacklisted nodes
+        # short-term fix is to have (!X U Y) & (!X U Z), 
+        # but longer term is Bruno adding G !X so we can have global invariants 
+        blacklist = self._get_blacklisted_nodes()
+        if len(blacklist) > 0:
+            task_prefix = '(!\"%s\"' % blacklist[0]
+            for bn in blacklist[1:]:            
+                task_prefix += ' & !\"%s\"' % bn
+            task_prefix += ') U '
+
+
+
         if len(non_ltl_tasks) > 0:
 
             for mdp_task in non_ltl_tasks:
-                mdp_spec.ltl_task += '(F %s=1) & ' % mdp_task.state_var.name                
+                mdp_spec.ltl_task += '(%s %s=1) & ' % (task_prefix, mdp_task.state_var.name)
             
             mdp_spec.ltl_task = mdp_spec.ltl_task[:-3]
            # mdp_spec.ltl_task += '))'
@@ -541,15 +556,6 @@ class MDPTaskExecutor(BaseTaskExecutor):
             mdp_spec.ltl_task = mdp_spec.ltl_task[:-3]
 
 
-        # prevent the policy from visiting blacklisted nodes
-        blacklist = self._get_blacklisted_nodes()
-        if len(blacklist) > 0:
-            bl_spec = '(!\"%s\"' % blacklist[0]
-            for bn in blacklist[1:]:            
-                bl_spec += ' & !\"%s\"' % bn
-            bl_spec += ')'
-
-            mdp_spec.ltl_task = '(%s U (%s))' % (bl_spec, mdp_spec.ltl_task)
 
         return mdp_spec
 
@@ -620,7 +626,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                     print "Start by: %s" % ros_time_to_string(mdp_task.task.start_after - nav_time)
 
                 if now > (mdp_task.task.start_after - nav_time):
-                    if guarantees.expected_time <= execution_window:                        
+                    if guarantees.probability > 0 and guarantees.expected_time <= execution_window:                        
                         possibles_with_guarantees_in_time.append((mdp_task, mdp_spec, guarantees))
 
                     # keep all guarantees anyway, as we might need to report one if we can't find a task to execute
@@ -824,7 +830,7 @@ class MDPTaskExecutor(BaseTaskExecutor):
                     # if we couldn't fit a batch in, but there were normal tasks available 
                     elif evaluated_at_least_one_task:
                         # if the first available task won't fit into the available execution time window, and this is the max possible, then increase the window size accordingly
-                        if execution_window == self.execution_window:                        
+                        if execution_window == self.execution_window and new_active_guarantees.expected_time > self.execution_window:                        
                             # for now just increase to the expected time of last tested policy
                             self.execution_window = new_active_guarantees.expected_time 
                             rospy.loginfo('Extending default execution windown to %s' % self.execution_window.to_sec())
