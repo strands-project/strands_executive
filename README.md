@@ -39,7 +39,7 @@ This produces a map with 9 nodes: `ChargingPoint` in the centre, with `v_-2`, `v
 To start the executive framework, launch the following launch file.
 
 ```bash
-roslaunch task_executor task-scheduler-top.launch
+roslaunch task_executor mdp-executor.launch
 ```
 
 This launches using topolgical navigation for moving the robot. If you wish to use the MDP execution (which has additional runtime dependencies) replace `top` with `mdp` in the launch file name.
@@ -51,7 +51,7 @@ To test the executive framework you can try running the robot around the topolog
 Start the executive framework:
 
 ```bash
-roslaunch task_executor task-scheduler.launch
+roslaunch task_executor mdp-executor.launch
 ```
 
 With this up and running you can start the robot running continuous patrols using:

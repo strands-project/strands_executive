@@ -13,7 +13,7 @@ from mongodb_store.message_store import MessageStoreProxy
 from strands_executive_msgs.srv import *
 
 from std_srvs.srv import Empty, EmptyResponse
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 import threading
 
 class BaseTaskExecutor(object):
@@ -78,12 +78,17 @@ class BaseTaskExecutor(object):
         self.expected_time_srv = None
 
         self.executing = False
+        self._execution_status_publisher = rospy.Publisher('task_executor/is_executing', Bool, latch = True)
+        self._publish_execution_status()
+
+
+
         # start with some faked but likely one in case of problems
         self.current_node = 'WayPoint1'
         self.closest_node = 'WayPoint1'
         self.received_a_node = False
-        rospy.Subscriber('/current_node', String, self.update_topological_location)
-        rospy.Subscriber('/closest_node', String, self.update_topological_closest_node)
+        rospy.Subscriber('current_node', String, self.update_topological_location)
+        rospy.Subscriber('closest_node', String, self.update_topological_closest_node)
         self.active_tasks = []
         self.active_task_completes_by = rospy.get_rostime()
         self.logging_lock = threading.Lock()
@@ -111,8 +116,8 @@ class BaseTaskExecutor(object):
         # advertise ros services
         for attr in dir(self):
             if attr.endswith("_ros_srv"):
-                service=getattr(self, attr)
-                rospy.Service("/task_executor/" + attr[:-8], service.type, service)
+                service=getattr(self, attr)                
+                rospy.Service("task_executor/" + attr[:-8], service.type, service)
 
     def get_task_types(self, action_name):
         """
@@ -148,7 +153,7 @@ class BaseTaskExecutor(object):
         if self.expected_time_srv is None:
             if self.nav_service == BaseTaskExecutor.TOPOLOGICAL_NAV:
                 from strands_navigation_msgs.srv import EstimateTravelTime
-                expected_time_srv_name = 'topological_navigation/travel_time_estimator'
+                expected_time_srv_name = '/topological_navigation/travel_time_estimator'
                 rospy.loginfo('Waiting for %s' % expected_time_srv_name)
                 rospy.wait_for_service(expected_time_srv_name)
                 rospy.loginfo('... and got %s' % expected_time_srv_name)
@@ -480,6 +485,14 @@ class BaseTaskExecutor(object):
         return self.executing
     get_execution_status_ros_srv.type = GetExecutionStatus
 
+
+    def _publish_execution_status(self):
+        try:
+            self._execution_status_publisher.publish(self.executing)
+        except Exception as e:
+            rospy.logwarn('Caught exception in _publish_execution_status: %s' % e)      
+
+
     def set_execution_status_ros_srv(self, req):
 
         self.service_lock.acquire()
@@ -515,6 +528,8 @@ class BaseTaskExecutor(object):
             success = True
 
         self.service_lock.release()
+
+        self._publish_execution_status()
 
         return [previous, success, remaining_time]
     set_execution_status_ros_srv.type = SetExecutionStatus

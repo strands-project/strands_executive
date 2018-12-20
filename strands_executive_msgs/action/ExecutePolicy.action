@@ -1,10 +1,13 @@
-uint8 GOTO_WAYPOINT=0 #target_id is only taken into account for this task type.
-uint8 LEAVE_FORBIDDEN_AREA=1
-uint8 GOTO_CLOSEST_SAFE_WAYPOINT=2
-uint8 COSAFE_LTL=3
-uint8 task_type
-string target_id
+strands_executive_msgs/MdpDomainSpec spec
 ---
 
 ---
-float64 expected_time
+float64 probability
+float64 prog_reward
+duration expected_time
+string current_waypoint
+string executed_action
+uint8 execution_status # interpert using actionlib_msgs/GoalStatus
+string next_action
+string[] final_waypoints #to be filled
+float64[] final_waypoints_probabilities #to be filled

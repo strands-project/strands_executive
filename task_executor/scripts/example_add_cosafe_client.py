@@ -4,7 +4,7 @@ import rospy
 import actionlib
 
 from actionlib_msgs.msg import GoalStatus
-from strands_executive_msgs.msg import ExecutePolicyExtendedAction, ExecutePolicyExtendedFeedback, ExecutePolicyExtendedGoal, MdpStateVar, StringIntPair, StringTriple, MdpAction, MdpActionOutcome, MdpDomainSpec, MdpTask, Task
+from strands_executive_msgs.msg import ExecutePolicyAction, ExecutePolicyFeedback, ExecutePolicyGoal, MdpStateVar, StringIntPair, StringTriple, MdpAction, MdpActionOutcome, MdpDomainSpec, MdpTask, Task
 from strands_executive_msgs.srv import GetGuaranteesForCoSafeTask, GetGuaranteesForCoSafeTaskRequest
 import strands_executive_msgs.mdp_action_utils as mau
 from strands_executive_msgs.srv import AddCoSafeTasks, SetExecutionStatus, DemandCoSafeTask

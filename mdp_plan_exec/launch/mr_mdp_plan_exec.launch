@@ -1,0 +1,15 @@
+<launch>
+    <arg name="robot_id" default="robot_0" />
+    <arg name="estimator_port"/>
+    <arg name="executor_port"/>
+    <arg name="estimator_dir" default="/tmp/prism-robots/$(arg robot_id)/guarantees_estimator/"/>
+    <arg name="executor_dir" default="/tmp/prism-robots/$(arg robot_id)/policy_executor/"/>
+    <group ns="$(arg robot_id)">
+        <include file="$(find mdp_plan_exec)/launch/mdp_plan_exec.launch" >
+            <arg name="estimator_port" value="$(arg estimator_port)"/>
+            <arg name="executor_port" value="$(arg executor_port)"/>
+            <arg name="estimator_dir" value="$(arg estimator_dir)"/>
+            <arg name="executor_dir" value="$(arg executor_dir)"/>
+        </include>
+    </group>
+</launch>

@@ -10,7 +10,7 @@
   <arg name="nav_before_action_exec" default="true"/>
 
   <!-- run mdp plan exec -->
-  <include file="$(find mdp_plan_exec)/launch/mdp_plan_exec_extended.launch">
+  <include file="$(find mdp_plan_exec)/launch/mdp_plan_exec.launch">
     <arg name="explicit_doors" value="$(arg explicit_doors)"/>
     <arg name="forget_doors" value="$(arg forget_doors)"/>
     <arg name="model_fatal_fails" value="$(arg model_fatal_fails)"/>

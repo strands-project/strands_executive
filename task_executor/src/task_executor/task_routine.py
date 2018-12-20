@@ -8,7 +8,7 @@ from mongodb_store.message_store import MessageStoreProxy
 from strands_executive_msgs.msg import Task, TaskEvent
 from threading import Thread
 import threading
-from task_executor.utils import rostime_to_python, ros_today
+from task_executor.utils import rostime_to_python, ros_today, ros_time_to_string
 
 _epoch = datetime.utcfromtimestamp(0).replace(tzinfo=tzutc())
 
@@ -425,21 +425,31 @@ class DailyRoutineRunner(object):
 
                 time_critical = task.start_after == task.end_before
 
+                # print(1, time_critical)
+
                 start_time = now if now > task.start_after else task.start_after
+
+                # print(2, ros_time_to_string(start_time))
+                # print(2, ros_time_to_string(now))
+
 
                 # check we're not too late
                 if (time_critical and now > start_time + task.max_duration) or (not time_critical and start_time + task.max_duration > task.end_before):
                     rospy.logwarn('At %s it is not possible to schedule task %s. Ignoring task for today' % (datetime.fromtimestamp(now.secs), task))
                     self._log_task_events([task], TaskEvent.DROPPED, now, "Max duration of task would exceed end of time window at time %s " % datetime.fromtimestamp(now.secs))
                 else:
+
+                    # print(3)
                     # if we're in the the window when this should be scheduled
                     if now > (task.start_after - self.pre_schedule_delay):
                         schedule_now.append(task)
                     else:
                         schedule_later.append(task)
+                    # print(4)
+
                     
             except Exception as e:
-                rospy.logerr('Error in _queue_for_scheduling %s' % e)
+                rospy.logerr('Error at %s in _queue_for_scheduling %s' % (ros_time_to_string(now), e))
 
 
 
@@ -598,6 +608,13 @@ class DailyRoutineRunner(object):
         """ 
             Create a copy of the given task with start and end times instantiated from input variables relative to the start date provided.
         """
+
+
+
+
+
+
+
         instantiated_task = copy(task)
         release_date = datetime.combine(start_of_day.date(), daily_start)
         end_date = release_date + daily_duration
@@ -605,6 +622,10 @@ class DailyRoutineRunner(object):
         instantiated_task.end_before = rospy.Time(unix_time(end_date))
         # print '%s (%s)' % (release_date, instantiated_task.start_after.secs)
         # print '%s (%s)' % (end_date, instantiated_task.end_before.secs)
+
+        # print ros_time_to_string(rospy.get_rostime())
+        # print ros_time_to_string(instantiated_task.start_after)
+        # print ros_time_to_string(instantiated_task.end_before)
 
         return instantiated_task
 

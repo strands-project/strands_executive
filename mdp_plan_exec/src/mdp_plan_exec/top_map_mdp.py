@@ -60,7 +60,9 @@ class TopMapMdp(Mdp):
                             'action_descriptions':deepcopy(self.action_descriptions),
                             'transitions':deepcopy(self.transitions)}
         
-              
+        self.last_prediction_epoch = rospy.Time()
+        self.get_new_preds_threshold = rospy.Duration(60*5)
+        
         rospy.loginfo("Topological MDP initialised")
 
 
@@ -173,7 +175,7 @@ class TopMapMdp(Mdp):
             state_vector_names[int(line[0])]=self.get_waypoint_prop(int(line[1][1:-2]))
         return state_vector_names
     
-    def map_state_vectors_to_waypoint_expectations(self, sta_file, exp_time_state_vector, prob_state_vector=None, exp_prog_state_vector=None): #TODO  also use probs and progs - needs update to PRISM
+    def map_state_vectors_to_waypoint_expectations(self, sta_file, exp_time_state_vector, prob_state_vector=None, exp_prog_state_vector=None):
         waypoint_names=[]
         waypoint_probs=[]
         waypoint_progs=[]
@@ -213,8 +215,10 @@ class TopMapMdp(Mdp):
         rospy.logerr("Waypoint not found!")
         
     def get_waypoint_var_val(self, waypoint_prop):
-        return self.props_def[waypoint_prop].conds['waypoint']
-    
+        if self.props_def.has_key(waypoint_prop):
+            return self.props_def[waypoint_prop].conds['waypoint']
+        else:
+            return None
 
     def get_waypoint_pose_argument(self, waypoint):
         for node in self.top_map.nodes:
@@ -378,9 +382,11 @@ class TopMapMdp(Mdp):
     def add_predictions(self, file_name, epoch=None, set_initial_state=True):
         if epoch is None:
             epoch=rospy.Time.now()
-        self.add_nav_predictions(epoch)
-        if self.explicit_doors:
-            self.add_door_predictions(epoch)
+        if self.last_prediction_epoch - epoch >  self.get_new_preds_threshold or epoch - self.last_prediction_epoch > self.get_new_preds_threshold:
+            self.add_nav_predictions(epoch)
+            self.last_prediction_epoch = epoch
+            if self.explicit_doors:
+                self.add_door_predictions(epoch)
         self.write_prism_model(file_name, set_initial_state)
     
 

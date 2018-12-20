@@ -4,7 +4,7 @@ import rospy
 import actionlib
 
 from actionlib_msgs.msg import GoalStatus
-from strands_executive_msgs.msg import ExecutePolicyExtendedAction, ExecutePolicyExtendedFeedback, ExecutePolicyExtendedGoal, MdpStateVar, StringIntPair, StringTriple, MdpAction, MdpActionOutcome, MdpDomainSpec
+from strands_executive_msgs.msg import ExecutePolicyAction, ExecutePolicyFeedback, ExecutePolicyGoal, MdpStateVar, StringIntPair, StringTriple, MdpAction, MdpActionOutcome, MdpDomainSpec
 from strands_executive_msgs.srv import GetGuaranteesForCoSafeTask, GetGuaranteesForCoSafeTaskRequest
 import strands_executive_msgs.mdp_action_utils as mau
 
@@ -92,12 +92,12 @@ if __name__ == '__main__':
     
     waypoints = [2, 3, 21]
     
-    mdp_ac=actionlib.SimpleActionClient("/mdp_plan_exec/execute_policy_extended", ExecutePolicyExtendedAction)
+    mdp_ac=actionlib.SimpleActionClient("mdp_plan_exec/execute_policy", ExecutePolicyAction)
     
     mdp_ac.wait_for_server()
-    goal=ExecutePolicyExtendedGoal()
+    goal=ExecutePolicyGoal()
     
-    mdp_estimates=rospy.ServiceProxy("/mdp_plan_exec/get_guarantees_for_co_safe_task", GetGuaranteesForCoSafeTask)
+    mdp_estimates=rospy.ServiceProxy("mdp_plan_exec/get_guarantees_for_co_safe_task", GetGuaranteesForCoSafeTask)
     request=GetGuaranteesForCoSafeTaskRequest()
     
     
@@ -115,9 +115,9 @@ if __name__ == '__main__':
     
     #spec.ltl_task='(F ("WayPoint3" & (X "WayPoint4"))) & ((!"WayPoint3") U executed_metric_map_at_WayPoint1=1) & (F executed_metric_map_at_WayPoint2=1) & (F executed_metric_map_at_WayPoint3=1) & (F executed_metric_map_at_WayPoint4=1)'
    # spec.ltl_task='(F executed_metric_map_at_WayPoint2=1) & (F executed_metric_map_at_WayPoint3=1) & (F executed_metric_map_at_WayPoint21=1)'
-    spec.ltl_task='(F "ChargingPoint")'
+    spec.ltl_task='(F "WayPoint3")'
 
-    
+    request.epoch = rospy.Time.now()
     request.spec=spec
     request.initial_waypoint="WayPoint5"
     service_response=mdp_estimates(request)

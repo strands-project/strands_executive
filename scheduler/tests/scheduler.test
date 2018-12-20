@@ -1,6 +1,0 @@
-<launch>
-  <node pkg="scheduler" type="scheduler_node" name="scheduler">
-  	<param name="save_problems" value="false"/>
-  </node>
-  <test test-name="scheduler_tester" pkg="scheduler" type="test_scheduler_node.py" />
-</launch>

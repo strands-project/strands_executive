@@ -10,8 +10,8 @@ import sys
 
 def get_services():
     # get services necessary to do the jon
-    add_tasks_srv_name = '/task_executor/add_tasks'
-    set_exe_stat_srv_name = '/task_executor/set_execution_status'
+    add_tasks_srv_name = 'task_executor/add_tasks'
+    set_exe_stat_srv_name = 'task_executor/set_execution_status'
     rospy.loginfo("Waiting for task_executor service...")
     rospy.wait_for_service(add_tasks_srv_name)
     rospy.wait_for_service(set_exe_stat_srv_name)
@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
     if rospy.get_param('use_sim_time', False):
         rospy.loginfo('Using sim time, waiting for time update')
-        rospy.wait_for_message('clock', Clock)
+        rospy.wait_for_message('/clock', Clock)
 
 
     # get services to call into execution framework
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     print 'Requesting wait at %s for %s seconds' % (sys.argv[1], sys.argv[2])
 
     max_duration = rospy.Duration(int(sys.argv[2]))
-    wait_task = Task(action='wait_action',start_node_id=sys.argv[1], max_duration=max_duration)
+    wait_task = Task(action='wait_action',start_node_id=sys.argv[1], max_duration=rospy.Duration(10))
 
     wait_task.start_after = rospy.get_rostime() 
     wait_task.end_before = wait_task.start_after + max_duration + max_duration + rospy.Duration(1200)
