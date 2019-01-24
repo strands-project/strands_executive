@@ -11,7 +11,7 @@
       node: Station
       recovery_behaviours_config: ''
       top_vel: 0.55
-    localise_by_topic: '{"topic": "/battery_state", "field": "charging", "val": true,
+    localise_by_topic: '{"topic": "battery_state", "field": "charging", "val": true,
       "localise_anywhere": false}'
     map: tsc20160523
     name: ChargingPoint
@@ -58,7 +58,7 @@
       node: Station1
       recovery_behaviours_config: ''
       top_vel: 0.55
-    localise_by_topic: '{"topic": "/battery_state", "field": "charging", "val": true,
+    localise_by_topic: '{"topic": "battery_state", "field": "charging", "val": true,
       "localise_anywhere": false}'
     map: tsc20160523
     name: ChargingPoint1
