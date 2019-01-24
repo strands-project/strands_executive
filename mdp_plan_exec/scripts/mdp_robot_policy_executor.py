@@ -31,7 +31,11 @@ class RobotPolicyExecutor():
         self.current_waypoint_sub=rospy.Subscriber("current_node", String, self.current_waypoint_cb)
         self.closest_waypoint_sub=rospy.Subscriber("closest_node", String, self.closest_waypoint_cb)
 
-        self.mdp=TopMapMdp(explicit_doors=True, forget_doors=True, model_fatal_fails=True)
+        explicit_doors = rospy.get_param("mdp_plan_exec/explicit_doors", True)
+        forget_doors = rospy.get_param("mdp_plan_exec/forget_doors", True)
+        model_fatal_fails = rospy.get_param("mdp_plan_exec/model_fatal_fails", True)
+            
+        self.mdp=TopMapMdp(explicit_doors=explicit_doors, forget_doors=forget_doors, model_fatal_fails=model_fatal_fails)
         self.policy_utils = PolicyExecutionUtils(port, file_dir, file_name, self.mdp)
         self.action_executor=ActionExecutor()
     
