@@ -73,7 +73,7 @@ export PRISM_DIR LD_LIBRARY_PATH
 
 # Main Java class to launch
 if [ "$PRISM_MAINCLASS" = "" ]; then
-	PRISM_MAINCLASS=prism.PartialSatPrismPythonTalker
+	PRISM_MAINCLASS=prism.PrismPythonTalker
 fi
 
 # Do we run headless? (GUI overrides this)
