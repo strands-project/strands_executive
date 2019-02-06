@@ -46,7 +46,7 @@ catkin_package(
 )
 
 ExternalProject_add(prism
-	URL https://github.com/bfalacerda/prism/archive/v4.4.robots.tar.gz
+	URL https://github.com/bfalacerda/prism/archive/v4.4.robots.1.tar.gz
 	PREFIX "${CMAKE_CURRENT_BINARY_DIR}/prism"
 	BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/prism/src/prism/prism"
 	UPDATE_COMMAND ""
