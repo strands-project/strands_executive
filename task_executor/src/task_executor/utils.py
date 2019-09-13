@@ -123,6 +123,9 @@ def python_to_rostime(ptime):
 def rostime_close(target, reading, delta = rospy.Duration(60)):
     return abs((target - reading).to_sec()) <= delta.to_sec()
 
+def is_time_critical(task):
+    """ Checks if the given task is time-critical, i.e. it's start and end times are the same. """
+    return task.task.start_after == task.task.end_before
 
 def get_start_node_ids(task):
     """ 
