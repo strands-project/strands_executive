@@ -13,7 +13,7 @@ from math import floor
 import threading
 import actionlib
 from task_executor.SortedCollection import SortedCollection
-from task_executor.utils import rostime_to_python, rostime_close, get_start_node_ids, ros_duration_to_string, ros_time_to_string, max_duration
+from task_executor.utils import rostime_to_python, rostime_close, get_start_node_ids, ros_duration_to_string, ros_time_to_string, max_duration, is_time_critical
 from dateutil.tz import tzlocal
 from copy import copy, deepcopy
 from actionlib_msgs.msg import GoalStatus
@@ -118,7 +118,6 @@ class MDPTaskExecutor(BaseTaskExecutor):
         self.schedule_publish_thread.start()
 
         self.use_combined_sort_criteria = rospy.get_param('~combined_sort', False) 
-        self.cancel_at_window_end = rospy.get_param('~close_windows', False) 
 
         if self.use_combined_sort_criteria:
             rospy.loginfo('Using combined sort criteria')
@@ -856,18 +855,18 @@ class MDPTaskExecutor(BaseTaskExecutor):
         Take a guarantees struct and determine when the execution should complete by
         """
 
+        # rospy.logwarn('expected duration ' + str(expected_duration.to_sec()))
+
         if expected_duration.secs < 0:
             rospy.logwarn('Expected duration was less that 0, giving a default of 5 minutes')
             expected_duration = rospy.Duration(5 * 60)
 
-        expected_completion_time = rospy.get_rostime() + expected_duration + rospy.Duration(60)
+        now = rospy.get_rostime()
+        expected_completion_time = now + expected_duration + rospy.Duration(60)
 
-        if self.cancel_at_window_end:
-            for mdp_task in self.active_batch:
-                # only curtail tasks to window for non-time critical tasks
-                if mdp_task.task.start_after != mdp_task.task.end_before and mdp_task.task.end_before < expected_completion_time:
-                    # rospy.logwarn('Curtailing execution with end of task window')
-                    expected_completion_time = mdp_task.task.end_before
+        # rospy.logwarn('now '  + str(rostime_to_python(now)))
+        # rospy.logwarn('expected completion ' + str(rostime_to_python(expected_completion_time)))
+
 
         return expected_completion_time
 
