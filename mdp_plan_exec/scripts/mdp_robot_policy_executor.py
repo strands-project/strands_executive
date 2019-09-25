@@ -34,6 +34,9 @@ class RobotPolicyExecutor():
         explicit_doors = rospy.get_param("mdp_plan_exec/explicit_doors", True)
         forget_doors = rospy.get_param("mdp_plan_exec/forget_doors", True)
         model_fatal_fails = rospy.get_param("mdp_plan_exec/model_fatal_fails", True)
+
+        self.nav_before_action_exec = rospy.get_param("mdp_plan_exec/nav_before_action_exec", True) #If True the robot will always navigate to a waypoint before trying to execute an action; if False robot can execute actions anywhere, if they are added without waypoint constraints.
+
             
         self.mdp=TopMapMdp(explicit_doors=explicit_doors, forget_doors=forget_doors, model_fatal_fails=model_fatal_fails)
         self.policy_utils = PolicyExecutionUtils(port, file_dir, file_name, self.mdp)
@@ -98,7 +101,10 @@ class RobotPolicyExecutor():
             return
         
         self.publish_feedback(None, None, self.policy_mdp.get_current_action())
-        starting_exec = True #used to make sure the robot executes calls topological navigation at least once before executing non-nav actions. This is too ensure the robot navigates to the exact pose of a waypoint before executing an action there
+        if self.nav_before_action_exec:
+            starting_exec = True #used to make sure the robot executes calls topological navigation at least once before executing non-nav actions. This is too ensure the robot navigates to the exact pose of a waypoint before executing an action there
+        else:
+            starting_exec = False
         while (self.policy_mdp.has_action_defined() and not self.cancelled) or starting_exec:
             next_action=self.policy_mdp.get_current_action()
             if next_action in self.mdp.nav_actions or starting_exec:
