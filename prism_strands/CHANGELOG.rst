@@ -7,8 +7,8 @@ Changelog for package prism_strands
 * remove bad dependency
 * Contributors: Bruno Lacerda
 
-Forthcoming
------------
+1.2.5 (2020-02-13)
+------------------
 * Merge pull request `#313 <https://github.com/strands-project/strands_executive/issues/313>`_ from bfalacerda/kinetic-devel
   prism update
 * prism update

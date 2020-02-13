@@ -6,8 +6,8 @@ Changelog for package strands_executive_msgs
 1.2.1 (2017-09-15)
 ------------------
 
-Forthcoming
------------
+1.2.5 (2020-02-13)
+------------------
 * Merge pull request `#311 <https://github.com/strands-project/strands_executive/issues/311>`_ from strands-project/ori-kinetic-devel
   Merges in ORI developments from elsewhere
 * Merge remote-tracking branch 'ori/kinetic-devel' into working-kinetic-devel

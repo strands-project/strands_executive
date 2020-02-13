@@ -5,8 +5,8 @@ Changelog for package mdp_plan_exec
 1.2.1 (2017-09-15)
 ------------------
 
-Forthcoming
------------
+1.2.5 (2020-02-13)
+------------------
 * Merge pull request `#319 <https://github.com/strands-project/strands_executive/issues/319>`_ from bfalacerda/kinetic-devel
   re-add logic for nav_before_action_exec param
 * re-add logic for nav_before_action_exec param

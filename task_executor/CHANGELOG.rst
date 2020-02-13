@@ -5,8 +5,8 @@ Changelog for package task_executor
 1.2.1 (2017-09-15)
 ------------------
 
-Forthcoming
------------
+1.2.5 (2020-02-13)
+------------------
 * Merge pull request `#317 <https://github.com/strands-project/strands_executive/issues/317>`_ from strands-project/fix-316
   Removing buggy code for closing task windows during execution.
 * Removing buggy code for closing task windows during execution.
