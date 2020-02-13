@@ -5,6 +5,48 @@ Changelog for package mdp_plan_exec
 1.2.1 (2017-09-15)
 ------------------
 
+Forthcoming
+-----------
+* Merge pull request `#319 <https://github.com/strands-project/strands_executive/issues/319>`_ from bfalacerda/kinetic-devel
+  re-add logic for nav_before_action_exec param
+* re-add logic for nav_before_action_exec param
+* Merge pull request `#315 <https://github.com/strands-project/strands_executive/issues/315>`_ from bfalacerda/kinetic-devel
+  ensuring edge prediction is called first time the mdp action server receives a goal
+* call prediction for first time it is called
+* Merge pull request `#314 <https://github.com/strands-project/strands_executive/issues/314>`_ from bfalacerda/kinetic-devel
+  memorise previous predictions
+* memorise previous predictions
+* added parameters for modelling back in to mdp executor
+* Merge pull request `#311 <https://github.com/strands-project/strands_executive/issues/311>`_ from strands-project/ori-kinetic-devel
+  Merges in ORI developments from elsewhere
+* Added door params to launch files
+* Merge remote-tracking branch 'ori/kinetic-devel' into working-kinetic-devel
+  Adding in ori developments from last few months.
+* Merge pull request `#308 <https://github.com/strands-project/strands_executive/issues/308>`_ from bfalacerda/kinetic-devel
+  namespace sorting and params to adapt door and action exec behaviour
+* params to ignore door configs and execute actions on the spot
+* Merge branch 'kinetic-devel' of https://github.com/strands-project/strands_executive into kinetic-devel
+* Update CMakeLists.txt
+* code cleanup
+* bug fix
+* Merge branch 'kinetic-devel' of bitbucket.org:oxfordroboticsinstitute/strands_executive into kinetic-devel
+* stop redundant predictions
+* correcting small bugs with preemption
+* big code clean: remove old (simplified) mdp nodes and scheduler.
+* update guarantees estmator node to use new policy utils class; more cleaning
+* cleaning code; executor now fully tested with new policy utils class
+* more refactoring
+* code refactoring to allow simulation
+* logging specific navigation statistics
+* logging mdp execution - task level
+* remove import added by mistake
+* correct action server feedback
+* re-add mr launch file to ensure each robot has its own prism dir
+* remove mr launch file
+* changes for multi-robot
+* making topic names relative to use namespaces for multi-robot setup
+* Contributors: Bruno Lacerda, Nick Hawes
+
 1.2.4 (2018-11-07)
 ------------------
 * merge

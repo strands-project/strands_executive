@@ -6,6 +6,22 @@ Changelog for package strands_executive_msgs
 1.2.1 (2017-09-15)
 ------------------
 
+Forthcoming
+-----------
+* Merge pull request `#311 <https://github.com/strands-project/strands_executive/issues/311>`_ from strands-project/ori-kinetic-devel
+  Merges in ORI developments from elsewhere
+* Merge remote-tracking branch 'ori/kinetic-devel' into working-kinetic-devel
+  Adding in ori developments from last few months.
+* Merge pull request `#309 <https://github.com/strands-project/strands_executive/issues/309>`_ from francescodelduchetto/pull-req
+  Add GetBlacklistedNodes srv
+* Add GetBlacklistedNodes srv
+* Merge branch 'kinetic-devel' of https://github.com/strands-project/strands_executive into kinetic-devel
+* more general argument addition for actions
+* big code clean: remove old (simplified) mdp nodes and scheduler.
+* logging specific navigation statistics
+* logging mdp execution - task level
+* Contributors: Bruno Lacerda, Nick Hawes, francescodelduchetto
+
 1.2.4 (2018-11-07)
 ------------------
 * Merge pull request `#305 <https://github.com/strands-project/strands_executive/issues/305>`_ from francescodelduchetto/pull-req

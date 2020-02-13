@@ -5,6 +5,37 @@ Changelog for package task_executor
 1.2.1 (2017-09-15)
 ------------------
 
+Forthcoming
+-----------
+* Merge pull request `#317 <https://github.com/strands-project/strands_executive/issues/317>`_ from strands-project/fix-316
+  Removing buggy code for closing task windows during execution.
+* Removing buggy code for closing task windows during execution.
+  This closes `#316 <https://github.com/strands-project/strands_executive/issues/316>`_
+* removing absolute namespace from battery topic
+* Merge pull request `#311 <https://github.com/strands-project/strands_executive/issues/311>`_ from strands-project/ori-kinetic-devel
+  Merges in ORI developments from elsewhere
+* Blacklist nodes are now excluded from policy execution using the LTL spec.
+* Blacklisted nodes are included as part of MDP LTL spec
+* Merge remote-tracking branch 'ori/kinetic-devel' into working-kinetic-devel
+  Adding in ori developments from last few months.
+* Merge pull request `#308 <https://github.com/strands-project/strands_executive/issues/308>`_ from bfalacerda/kinetic-devel
+  namespace sorting and params to adapt door and action exec behaviour
+* params to ignore door configs and execute actions on the spot
+* Merge branch 'kinetic-devel' of https://github.com/strands-project/strands_executive into kinetic-devel
+* Added sim_time default value
+* Added more policy information into the schedule output
+* Added default for parameter
+* more namespace updates
+* edits for namespaces
+* big code clean: remove old (simplified) mdp nodes and scheduler.
+* remove uneeded multi robot launch file - one cane use ROS_NAMESPACE=ns instead
+* Merge branch 'kinetic-devel' of https://bitbucket.org/oxfordroboticsinstitute/strands_executive into kinetic-devel
+* changes for multi-robot
+* More informative log message.
+* Publishing execution status for easier interaction
+* Merge branch 'kinetic-devel' of https://github.com/strands-project/strands_executive into kinetic-devel
+* Contributors: Bruno Lacerda, Nick Hawes
+
 1.2.4 (2018-11-07)
 ------------------
 * Merge pull request `#305 <https://github.com/strands-project/strands_executive/issues/305>`_ from francescodelduchetto/pull-req

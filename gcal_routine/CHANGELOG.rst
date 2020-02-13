@@ -5,6 +5,16 @@ Changelog for package gcal_routine
 1.2.1 (2017-09-15)
 ------------------
 
+Forthcoming
+-----------
+* Merge pull request `#311 <https://github.com/strands-project/strands_executive/issues/311>`_ from strands-project/ori-kinetic-devel
+  Merges in ORI developments from elsewhere
+* Merge remote-tracking branch 'ori/kinetic-devel' into working-kinetic-devel
+  Adding in ori developments from last few months.
+* Merge branch 'kinetic-devel' of https://github.com/strands-project/strands_executive into kinetic-devel
+* big code clean: remove old (simplified) mdp nodes and scheduler.
+* Contributors: Bruno Lacerda, Nick Hawes
+
 1.2.4 (2018-11-07)
 ------------------
 * Merge pull request `#306 <https://github.com/strands-project/strands_executive/issues/306>`_ from strands-project/marc-hanheide-patch-1

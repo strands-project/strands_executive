@@ -7,6 +7,21 @@ Changelog for package prism_strands
 * remove bad dependency
 * Contributors: Bruno Lacerda
 
+Forthcoming
+-----------
+* Merge pull request `#313 <https://github.com/strands-project/strands_executive/issues/313>`_ from bfalacerda/kinetic-devel
+  prism update
+* prism update
+* Merge pull request `#311 <https://github.com/strands-project/strands_executive/issues/311>`_ from strands-project/ori-kinetic-devel
+  Merges in ORI developments from elsewhere
+* Merge remote-tracking branch 'ori/kinetic-devel' into working-kinetic-devel
+  Adding in ori developments from last few months.
+* Merge branch 'kinetic-devel' of https://github.com/strands-project/strands_executive into kinetic-devel
+* Merge branch 'kinetic-devel' of bitbucket.org:oxfordroboticsinstitute/strands_executive into kinetic-devel
+* updating prism version to install
+* Merge branch 'kinetic-devel' of https://github.com/strands-project/strands_executive into kinetic-devel
+* Contributors: Bruno Lacerda, Nick Hawes
+
 1.2.4 (2018-11-07)
 ------------------
 * merge
